@@ -90,7 +90,6 @@ export default function SettingsPage({ navigate }) {
           <h2 className={sectionHead}>Account</h2>
           <div className={card}>
             <SettingRow label="Edit Profile" onClick={() => navigate('profile')} />
-            <SettingRow label="Change subjects" onClick={() => navigate('profile')} />
             <SettingRow label="Change exam date" onClick={() => navigate('profile')} isLast />
           </div>
         </section>
