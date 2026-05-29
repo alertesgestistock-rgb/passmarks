@@ -16,16 +16,24 @@ export default function QuizSetupScreen({ navigate, viewState }) {
   const [error, setError] = useState(null);
 
   const handleGenerate = async () => {
+    const apiKey = localStorage.getItem('claude_api_key');
+    if (!apiKey) {
+      setError('No API key found. Go to Settings → AI & API Key and enter your Anthropic key.');
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
       const response = await apiServerClient.fetch('/quiz/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-claude-api-key': apiKey,
+        },
         body: JSON.stringify({
           subject,
-          level,
-          numQuestions
+          difficulty: level,
+          count: numQuestions,
         })
       });
 
