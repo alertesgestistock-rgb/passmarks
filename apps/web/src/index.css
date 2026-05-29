@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* PassMark Design Tokens */
+    --background: 222 47% 11%; /* #0F172A */
+    --foreground: 210 40% 98%; /* #F1F5F9 */
+    --primary: 142 71% 45%; /* #22C55E */
+    --primary-foreground: 144 80% 10%; /* #052e16 */
+    --secondary: 217 33% 17%; /* #1E293B */
+    --secondary-foreground: 210 40% 98%; /* #F1F5F9 */
+    --accent: 217 91% 60%; /* #3B82F6 */
+    --accent-foreground: 210 40% 98%; /* #F1F5F9 */
+    --destructive: 0 84% 60%; /* #EF4444 */
+    --destructive-foreground: 210 40% 98%; /* #F1F5F9 */
+    --muted: 215 16% 65%; /* #64748B */
+    --muted-foreground: 210 40% 98%; /* #F1F5F9 */
+    --border: 215 25% 27%; /* #334155 */
+    --input: 217 33% 17%; /* #1E293B */
+    --ring: 142 71% 45%; /* #22C55E */
+    --radius: 12px;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-background text-foreground antialiased overflow-x-hidden;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-balance font-semibold tracking-tight;
+  }
+
+  /* Hide scrollbar for a cleaner mobile feel */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted));
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .fade-in {
+    animation: fadeIn 0.2s ease-in-out forwards;
+  }
+  .slide-transition {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .scale-on-click:active {
+    transform: scale(0.95);
+    transition: transform 0.1s ease;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}

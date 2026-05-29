@@ -1,0 +1,1308 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PassMark — GCE AI Tutor</title>
+  <meta name="description" content="The smartest way to prepare for GCE O Level and A Level in Cameroon. AI-powered tutor, past papers, and quizzes. Free.">
+  <!-- Analytics: Cookie-free, privacy-first tracking placeholder -->
+  <style>
+    :root {
+      --bg: #0F172A;
+      --card: #1E293B;
+      --primary: #22C55E;
+      --primary-dark: #052e16;
+      --blue: #3B82F6;
+      --orange: #F97316;
+      --text: #F1F5F9;
+      --muted: #94A3B8;
+      --border: #334155;
+      --error: #EF4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    body {
+      overflow-x: hidden;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    button {
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Typography */
+    h1, h2, h3, h4 {
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .text-muted { color: var(--muted); }
+    .text-primary { color: var(--primary); }
+    .text-blue { color: var(--blue); }
+    .text-orange { color: var(--orange); }
+    .text-center { text-align: center; }
+
+    /* Animations */
+    .reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.4s ease-out;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25%, 75% { transform: translateX(-4px); }
+      50% { transform: translateX(4px); }
+    }
+    .shake { animation: shake 0.3s ease-in-out; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+    .btn:hover { transform: scale(1.02); }
+    .btn:active { transform: scale(0.98); }
+    
+    .btn-primary {
+      background-color: var(--primary);
+      color: var(--primary-dark);
+    }
+    .btn-primary:hover { opacity: 0.9; }
+
+    .btn-outline {
+      background-color: transparent;
+      border: 0.5px solid var(--border);
+      color: var(--muted);
+    }
+    .btn-outline:hover { border-color: var(--muted); color: var(--text); }
+
+    /* 1. Navbar */
+    .navbar {
+      position: sticky;
+      top: 0;
+      height: 60px;
+      background-color: var(--bg);
+      border-bottom: 0.5px solid var(--card);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+    }
+    .navbar .container {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 18px;
+      font-weight: 500;
+    }
+    .nav-links {
+      display: none;
+      gap: 32px;
+    }
+    .nav-links a {
+      color: var(--muted);
+      font-size: 14px;
+      transition: color 0.15s;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a.active { color: var(--text); font-weight: 500; }
+    .nav-actions {
+      display: none;
+      align-items: center;
+      gap: 16px;
+    }
+    .nav-actions .sign-in {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .nav-actions .sign-in:hover { color: var(--text); }
+    .nav-actions .btn {
+      padding: 8px 18px;
+      font-size: 13px;
+      border-radius: 8px;
+    }
+    .mobile-menu-btn {
+      display: block;
+      color: var(--muted);
+    }
+
+    /* Mobile Menu Overlay */
+    .mobile-menu {
+      position: fixed;
+      top: 60px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--bg);
+      z-index: 99;
+      padding: 24px;
+      display: none;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .mobile-menu.active { display: flex; }
+    .mobile-menu a {
+      font-size: 18px;
+      color: var(--text);
+      padding: 12px 0;
+      border-bottom: 0.5px solid var(--border);
+    }
+
+    @media (min-width: 768px) {
+      .nav-links, .nav-actions { display: flex; }
+      .mobile-menu-btn { display: none; }
+    }
+
+    /* 2. Hero Section */
+    .hero {
+      padding: 80px 24px 64px;
+      text-align: center;
+    }
+    .urgency-pill {
+      display: inline-block;
+      background-color: #14532D;
+      color: #86EFAC;
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .hero h1 {
+      margin-top: 20px;
+      font-size: 48px;
+      line-height: 1.15;
+      letter-spacing: -0.5px;
+    }
+    .hero p {
+      margin: 20px auto 0;
+      font-size: 18px;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 560px;
+    }
+    .hero-ctas {
+      margin-top: 32px;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+    }
+    .hero-ctas .btn {
+      padding: 14px 28px;
+      font-size: 15px;
+    }
+    .trust-line {
+      margin-top: 20px;
+      font-size: 12px;
+      color: #64748B;
+    }
+    .hero-phones {
+      margin-top: 48px;
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      perspective: 1000px;
+    }
+    .phone-mockup {
+      width: 280px;
+      height: 580px;
+      background-color: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: 32px;
+      overflow: hidden;
+      box-shadow: 0 24px 48px rgba(0,0,0,0.4);
+      animation: float 3s infinite ease-in-out;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .phone-left { transform: rotate(-5deg); }
+    .phone-right { transform: rotate(5deg); animation-delay: 1.5s; display: none; }
+    
+    /* Mockup UI */
+    .mockup-header { padding: 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .mockup-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 12px; }
+    .mockup-card { background: var(--card); border-radius: 12px; padding: 12px; border: 1px solid var(--border); }
+    .mockup-bubble-user { background: #14532D; color: white; padding: 12px; border-radius: 16px 16px 4px 16px; align-self: flex-end; font-size: 12px; max-width: 80%; }
+    .mockup-bubble-ai { background: var(--card); color: var(--text); padding: 12px; border-radius: 16px 16px 16px 4px; align-self: flex-start; font-size: 12px; max-width: 85%; border: 1px solid var(--border); }
+
+    @media (max-width: 767px) {
+      .hero { padding: 48px 20px 40px; }
+      .hero h1 { font-size: 32px; }
+      .hero p { font-size: 15px; }
+      .hero-ctas { flex-direction: column; }
+    }
+    @media (min-width: 768px) {
+      .phone-right { display: flex; }
+    }
+
+    /* 3. Social Proof */
+    .social-proof {
+      background-color: var(--card);
+      padding: 20px 24px;
+      border-top: 0.5px solid var(--border);
+      border-bottom: 0.5px solid var(--border);
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    .social-proof::-webkit-scrollbar { display: none; }
+    .social-proof-inner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 40px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .stat-num { font-size: 22px; font-weight: 500; color: var(--primary); }
+    .stat-label { font-size: 12px; color: #64748B; }
+    .stat-divider { width: 1px; height: 24px; background-color: var(--border); }
+
+    @media (max-width: 767px) {
+      .social-proof-inner { justify-content: flex-start; padding: 0 20px; }
+    }
+
+    /* Section Labels */
+    .section-label {
+      display: inline-block;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+    }
+
+    /* 4. Problem Section */
+    .problem { padding: 80px 24px; text-align: center; }
+    .problem .section-label { background-color: #431407; color: #FDBA74; }
+    .problem h2 { font-size: 32px; line-height: 1.3; margin-bottom: 16px; }
+    .problem p.subtitle { font-size: 16px; color: var(--muted); max-width: 520px; margin: 0 auto 40px; }
+    
+    .pain-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      text-align: left;
+    }
+    .pain-card {
+      background-color: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      border: 0.5px solid var(--border);
+    }
+    .pain-icon {
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; margin-bottom: 16px;
+    }
+    .pain-card h3 { font-size: 14px; margin-bottom: 8px; }
+    .pain-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+    @media (max-width: 767px) {
+      .problem { padding: 48px 20px; }
+      .problem h2 { font-size: 24px; }
+      .pain-grid { grid-template-columns: 1fr; }
+    }
+
+    /* 5. Features Section */
+    .features { padding: 80px 24px; background-color: var(--bg); }
+    .features-header { text-align: center; margin-bottom: 64px; }
+    .features .section-label { background-color: #14532D; color: #86EFAC; }
+    .features h2 { font-size: 32px; margin-top: 16px; }
+    
+    .feature-row {
+      display: flex;
+      align-items: center;
+      gap: 48px;
+      margin-bottom: 80px;
+    }
+    .feature-row:nth-child(even) { flex-direction: row-reverse; }
+    .feature-content { flex: 1; }
+    .feature-visual { flex: 1; display: flex; justify-content: center; }
+    
+    .feature-content h3 { font-size: 22px; margin-bottom: 16px; }
+    .feature-content p { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 20px; }
+    .feature-bullets { list-style: none; margin-bottom: 24px; }
+    .feature-bullets li { font-size: 14px; color: var(--muted); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .feature-bullets li::before { content: "·"; color: var(--primary); font-weight: bold; }
+    .feature-link { color: var(--primary); font-size: 14px; font-weight: 500; }
+    .feature-link:hover { text-decoration: underline; }
+
+    @media (max-width: 767px) {
+      .features { padding: 48px 20px; }
+      .features h2 { font-size: 24px; }
+      .feature-row, .feature-row:nth-child(even) { flex-direction: column; gap: 32px; margin-bottom: 56px; }
+    }
+
+    /* 6. How it works */
+    .how-it-works { padding: 80px 24px; background-color: var(--card); text-align: center; }
+    .how-it-works .section-label { background-color: #1E3A5F; color: #93C5FD; }
+    .how-it-works h2 { font-size: 32px; margin: 16px 0 48px; }
+    
+    .steps-container {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .steps-line {
+      position: absolute;
+      top: 20px;
+      left: 10%;
+      right: 10%;
+      height: 1px;
+      border-top: 2px dashed var(--border);
+      z-index: 1;
+    }
+    .step {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      z-index: 2;
+      padding: 0 20px;
+    }
+    .step-num {
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 500; margin-bottom: 16px;
+    }
+    .step h3 { font-size: 14px; margin-bottom: 8px; }
+    .step p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+    @media (max-width: 767px) {
+      .how-it-works { padding: 48px 20px; }
+      .how-it-works h2 { font-size: 24px; }
+      .steps-container { flex-direction: column; gap: 40px; }
+      .steps-line { display: none; }
+    }
+
+    /* 7. Pricing */
+    .pricing { padding: 80px 24px; text-align: center; }
+    .pricing .section-label { background-color: var(--border); color: var(--muted); }
+    .pricing h2 { font-size: 32px; margin: 16px 0 8px; }
+    .pricing p.subtitle { font-size: 16px; color: var(--muted); margin-bottom: 40px; }
+    
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      text-align: left;
+    }
+    .price-card {
+      background-color: var(--card);
+      border: 0.5px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .price-card.featured { border: 2px solid var(--primary); }
+    .price-card.premium { border: 0.5px solid var(--orange); }
+    
+    .price-badge {
+      font-size: 11px; font-weight: 500; padding: 4px 12px; border-radius: 20px;
+      display: inline-block; margin-bottom: 16px;
+    }
+    .badge-free { background: var(--border); color: var(--muted); }
+    .badge-featured { background: var(--primary); color: var(--primary-dark); position: absolute; top: -12px; left: 50%; transform: translateX(-50%); margin-bottom: 0; }
+    .badge-premium { background: #431407; color: #FDBA74; }
+    
+    .price-amount { font-size: 36px; font-weight: 500; margin-bottom: 4px; }
+    .price-period { font-size: 13px; color: #64748B; margin-bottom: 24px; }
+    
+    .price-features { list-style: none; margin-bottom: 32px; flex: 1; }
+    .price-features li { font-size: 13px; margin-bottom: 12px; display: flex; align-items: flex-start; gap: 8px; }
+    .price-features li.disabled { color: #64748B; }
+    
+    .price-card .btn { width: 100%; padding: 12px; font-size: 14px; }
+    .btn-free { background: var(--border); color: var(--text); }
+    .btn-premium { background: var(--orange); color: white; }
+
+    .comparison-note {
+      background: var(--card); border-radius: 10px; padding: 16px; margin-top: 16px;
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      font-size: 13px; color: var(--muted); text-align: left;
+    }
+    .payment-note { font-size: 12px; color: #64748B; margin-top: 12px; }
+
+    @media (max-width: 767px) {
+      .pricing { padding: 48px 20px; }
+      .pricing h2 { font-size: 24px; }
+      .pricing-grid { grid-template-columns: 1fr; gap: 24px; }
+      .price-card.featured { margin-top: 12px; }
+    }
+
+    /* 8. Testimonials */
+    .testimonials { padding: 80px 24px; background-color: var(--card); text-align: center; }
+    .testimonials .section-label { background-color: #14532D; color: #86EFAC; }
+    .testimonials h2 { font-size: 28px; margin: 16px 0 40px; }
+    
+    .test-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      text-align: left;
+    }
+    .test-card {
+      background-color: var(--bg);
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .stars { font-size: 14px; margin-bottom: 12px; }
+    .quote { font-size: 14px; line-height: 1.7; font-style: italic; margin-bottom: 20px; }
+    .author-row { display: flex; align-items: center; gap: 12px; }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: #14532D; color: #86EFAC; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; }
+    .author-info h4 { font-size: 13px; margin-bottom: 2px; }
+    .author-info p { font-size: 11px; color: #64748B; }
+
+    @media (max-width: 767px) {
+      .testimonials { padding: 48px 20px; }
+      .test-grid { grid-template-columns: 1fr; }
+    }
+
+    /* 9. Final CTA */
+    .final-cta { padding: 80px 24px; text-align: center; }
+    .final-cta svg { margin-bottom: 24px; }
+    .final-cta h2 { font-size: 36px; line-height: 1.25; margin-bottom: 16px; }
+    .final-cta p { font-size: 16px; color: var(--muted); max-width: 480px; margin: 0 auto 32px; }
+    .final-cta .btn { padding: 16px 40px; font-size: 16px; width: 100%; max-width: 320px; margin-bottom: 12px; }
+    .final-cta .note { font-size: 12px; color: #64748B; }
+
+    @media (max-width: 767px) {
+      .final-cta { padding: 48px 20px; }
+      .final-cta h2 { font-size: 26px; }
+    }
+
+    /* 10. Footer */
+    .footer { background-color: var(--card); border-top: 0.5px solid var(--border); padding: 32px 24px; }
+    .footer-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; max-width: 1100px; margin: 0 auto 24px; }
+    .footer-logo { display: flex; flex-direction: column; gap: 4px; }
+    .footer-logo-row { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 500; }
+    .footer-tagline { font-size: 12px; color: #64748B; }
+    .footer-links { display: flex; gap: 20px; }
+    .footer-links a { font-size: 12px; color: #64748B; }
+    .footer-links a:hover { color: var(--text); }
+    .footer-social { display: flex; gap: 12px; }
+    .social-icon { width: 40px; height: 40px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; color: var(--muted); transition: all 0.15s; }
+    .social-icon:hover { background: var(--muted); color: var(--bg); }
+    .footer-bottom { border-top: 0.5px solid var(--border); padding-top: 16px; text-align: center; font-size: 12px; color: #64748B; max-width: 1100px; margin: 0 auto; }
+
+    @media (max-width: 767px) {
+      .footer-top { flex-direction: column; gap: 24px; align-items: flex-start; }
+      .footer-links { flex-wrap: wrap; }
+    }
+
+    /* Auth Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .modal-overlay.active { display: flex; opacity: 1; }
+    .modal-card {
+      background: var(--card);
+      border: 0.5px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      width: 100%;
+      max-width: 420px;
+      position: relative;
+      transform: translateY(20px);
+      transition: transform 0.25s ease-out;
+    }
+    .modal-overlay.active .modal-card { transform: translateY(0); }
+    
+    .modal-close { position: absolute; top: 16px; right: 16px; color: #64748B; font-size: 24px; line-height: 1; padding: 4px; }
+    .modal-close:hover { color: var(--text); }
+    
+    .modal-header { text-align: center; margin-bottom: 20px; }
+    .modal-header svg { margin-bottom: 8px; }
+    .modal-header h3 { font-size: 20px; }
+    
+    .modal-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+    .modal-tab { flex: 1; text-align: center; padding-bottom: 12px; font-size: 14px; font-weight: 500; color: #64748B; cursor: pointer; border-bottom: 2px solid transparent; }
+    .modal-tab.active { color: var(--text); border-bottom-color: var(--primary); }
+    
+    .modal-form { display: none; flex-direction: column; gap: 12px; }
+    .modal-form.active { display: flex; }
+    
+    .input-group { position: relative; }
+    .input-field {
+      width: 100%; background: var(--bg); border: 0.5px solid var(--border); border-radius: 10px;
+      padding: 12px; color: var(--text); font-size: 13px; outline: none; transition: border-color 0.15s;
+    }
+    .input-field:focus { border-color: var(--primary); }
+    .input-field.error { border-color: var(--error); }
+    .error-text { color: var(--error); font-size: 11px; margin-top: 4px; display: none; }
+    .input-field.error + .error-text { display: block; }
+    
+    .level-pills { display: flex; gap: 8px; }
+    .level-pill {
+      flex: 1; background: var(--bg); border: 0.5px solid var(--border); border-radius: 8px;
+      padding: 10px; text-align: center; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer;
+    }
+    .level-pill.active { background: var(--primary); color: var(--primary-dark); border-color: var(--primary); }
+    
+    .pwd-toggle { position: absolute; right: 12px; top: 12px; color: #64748B; }
+    
+    .modal-form .btn { width: 100%; padding: 13px; font-size: 14px; margin-top: 4px; }
+    
+    .modal-divider { text-align: center; font-size: 11px; color: #64748B; margin: 12px 0; }
+    .modal-link { color: var(--blue); font-size: 13px; text-align: center; cursor: pointer; }
+    .modal-link:hover { text-decoration: underline; }
+    
+    .modal-footer { text-align: center; font-size: 11px; color: #64748B; margin-top: 24px; }
+    
+    .error-banner { background: #3B0000; color: var(--error); border-radius: 8px; padding: 8px 12px; font-size: 12px; display: none; margin-bottom: 12px; }
+
+    /* Floating WhatsApp */
+    .whatsapp-float {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 52px;
+      height: 52px;
+      background-color: #25D366;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 500;
+      transition: transform 0.2s;
+    }
+    .whatsapp-float:hover { transform: scale(1.1); }
+  </style>
+</head>
+<body>
+
+  <!-- 1. Navbar -->
+  <nav class="navbar">
+    <div class="container">
+      <div class="nav-logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 12L9 18L21 6" stroke="#22C55E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 2L22 12L12 22L2 12L12 2Z" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Pass<span class="text-primary">Mark</span></span>
+      </div>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="pricing.html" id="nav-pricing-link">Pricing</a>
+        <a href="#about">About</a>
+      </div>
+      <div class="nav-actions">
+        <button class="sign-in cta-btn" data-tab="signin">Sign in</button>
+        <button class="btn btn-primary cta-btn" data-tab="signup">Get started free →</button>
+      </div>
+      <button class="mobile-menu-btn" id="mobileMenuBtn">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </nav>
+
+  <div class="mobile-menu" id="mobileMenu">
+    <div style="display: flex; justify-content: flex-end;">
+      <button id="closeMobileMenu" style="color: var(--muted);">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    <a href="#features" class="mobile-link">Features</a>
+    <a href="pricing.html" class="mobile-link">Pricing</a>
+    <a href="#about" class="mobile-link">About</a>
+    <button class="btn btn-primary cta-btn" data-tab="signup" style="padding: 14px; font-size: 16px; margin-top: 16px;">Get started free</button>
+    <button class="cta-btn" data-tab="signin" style="color: var(--muted); font-size: 16px; padding: 12px;">Sign in</button>
+  </div>
+
+  <!-- 2. Hero -->
+  <section class="hero reveal">
+    <div class="container">
+      <div class="urgency-pill">🔥 GCE 2026 — The exam is coming fast</div>
+      <h1>Stop struggling with<br>Past Papers <span class="text-primary">alone.</span></h1>
+      <p>PassMark is your AI tutor, available 24/7. Photo your question, get a full step-by-step solution instantly — even without internet.</p>
+      
+      <div class="hero-ctas">
+        <button class="btn btn-primary cta-btn" data-tab="signup">Start for free →</button>
+        <a href="#features" class="btn btn-outline">See how it works</a>
+      </div>
+      <div class="trust-line">🔒 Free to use · No credit card · Works offline</div>
+
+      <div class="hero-phones">
+        <div class="phone-mockup phone-left">
+          <div class="mockup-header">
+            <span style="font-size: 14px; font-weight: 500;">Good evening 👋</span>
+            <span style="font-size: 10px; background: #14532D; color: #86EFAC; padding: 2px 8px; border-radius: 10px;">142 days</span>
+          </div>
+          <div class="mockup-body">
+            <div class="mockup-card" style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 20px; font-weight: 500;">42</div>
+                <div style="font-size: 10px; color: var(--muted);">Questions solved</div>
+              </div>
+              <div style="font-size: 20px;">🔥</div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <div class="mockup-card" style="text-align: center; padding: 16px 8px;">
+                <div style="color: var(--primary); margin-bottom: 4px;">💬</div>
+                <div style="font-size: 11px;">Ask AI</div>
+              </div>
+              <div class="mockup-card" style="text-align: center; padding: 16px 8px;">
+                <div style="color: var(--blue); margin-bottom: 4px;">📄</div>
+                <div style="font-size: 11px;">Past Papers</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-mockup phone-right">
+          <div class="mockup-header">
+            <span style="font-size: 14px; font-weight: 500;">AI Tutor</span>
+          </div>
+          <div class="mockup-body" style="justify-content: flex-end;">
+            <div class="mockup-bubble-user">Explain Newton's 3rd Law with an example</div>
+            <div class="mockup-bubble-ai">Newton's Third Law states: For every action, there is an equal and opposite reaction.<br><br>Example: When you jump off a small boat, you push the boat backward (action), and the boat pushes you forward (reaction).</div>
+            <div style="background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+              <span style="color: var(--muted); font-size: 12px;">Ask a question...</span>
+              <div style="background: var(--primary); width: 24px; height: 24px; border-radius: 8px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Social Proof -->
+  <div class="social-proof reveal">
+    <div class="social-proof-inner">
+      <div class="stat-item">
+        <span class="stat-num">500+</span>
+        <span class="stat-label">Students already studying</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-num">20+</span>
+        <span class="stat-label">GCE subjects covered</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-num">2015–2024</span>
+        <span class="stat-label">Past papers available</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-num">24/7</span>
+        <span class="stat-label">AI tutor availability</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Problem -->
+  <section class="problem reveal">
+    <div class="container">
+      <span class="section-label">The real problem</span>
+      <h2>You have the questions. But no one to explain the answers.</h2>
+      <p class="subtitle">Kawlo has ads that cover the solutions. Pamphlet costs too much. Your teacher doesn't have time. Your asso doesn't always know either.</p>
+      
+      <div class="pain-grid">
+        <div class="pain-card">
+          <div class="pain-icon" style="background: #1E3A5F;">🧪</div>
+          <h3>Blurry solutions, wrong answers</h3>
+          <p>Existing apps have watermarks, ads, and corrections full of errors. You waste time on wrong methods.</p>
+        </div>
+        <div class="pain-card">
+          <div class="pain-icon" style="background: #431407;">💸</div>
+          <h3>Repetiteurs cost 5 000 FCFA/hour</h3>
+          <p>Private tutors are for rich families. Group lessons go too fast. You're left behind with no one to ask — silently.</p>
+        </div>
+        <div class="pain-card">
+          <div class="pain-icon" style="background: #0D3B2E;">📶</div>
+          <h3>No internet when Eneo cuts power</h3>
+          <p>Data is expensive. Load-shedding hits every evening. You can't study when you need it most.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Features -->
+  <section id="features" class="features reveal">
+    <div class="container">
+      <div class="features-header">
+        <span class="section-label">The PassMark solution</span>
+        <h2>Your personal AI tutor. Always there. Always free.</h2>
+      </div>
+
+      <div class="feature-row reveal">
+        <div class="feature-visual">
+          <div class="phone-mockup" style="height: 400px; transform: none; animation: none;">
+            <div class="mockup-body" style="justify-content: center;">
+              <div class="mockup-bubble-user">Solve: 2x² - 5x + 3 = 0</div>
+              <div class="mockup-bubble-ai">
+                Let's solve this quadratic equation step by step:<br><br>
+                1. Identify a=2, b=-5, c=3<br>
+                2. Use formula: x = [-b ± √(b²-4ac)] / 2a<br>
+                3. x = [5 ± √(25-24)] / 4<br>
+                4. x = (5 ± 1) / 4<br><br>
+                Answers: x = 1.5 or x = 1
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="feature-content">
+          <h3>Photo your question. Get the answer.</h3>
+          <p>Take a photo of any GCE past paper question. PassMark AI reads it and solves it step by step — showing every calculation, every method, exactly how the GCE Board expects it.</p>
+          <ul class="feature-bullets">
+            <li>Works for all A Level and O Level subjects</li>
+            <li>Shows full working, not just the answer</li>
+            <li>Explains in simple English you understand</li>
+          </ul>
+          <button class="feature-link cta-btn" data-tab="signup">Try it free →</button>
+        </div>
+      </div>
+
+      <div class="feature-row reveal">
+        <div class="feature-visual">
+          <div class="phone-mockup" style="height: 400px; transform: none; animation: none; background: var(--card);">
+            <div class="mockup-header">Past Papers</div>
+            <div class="mockup-body">
+              <div class="mockup-card">Physics - 2023 Paper 1</div>
+              <div class="mockup-card">Chemistry - 2023 Paper 2</div>
+              <div class="mockup-card">Mathematics - 2022 Paper 1</div>
+              <div class="mockup-card">Biology - 2022 Paper 2</div>
+            </div>
+          </div>
+        </div>
+        <div class="feature-content">
+          <h3>Every past paper. 2015 to 2024.</h3>
+          <p>Browse all GCE Cameroon official papers and mock exams. Filter by subject, level, and year. Read them inside the app — no download, no printing costs.</p>
+          <ul class="feature-bullets">
+            <li>Physics, Chemistry, Maths, History and more</li>
+            <li>Official papers + regional mock exams</li>
+            <li>Completely free to access</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="feature-row reveal">
+        <div class="feature-visual">
+          <div style="width: 280px; height: 280px; background: #0D3B2E; border-radius: 32px; display: flex; align-items: center; justify-content: center; font-size: 80px;">
+            🔋
+          </div>
+        </div>
+        <div class="feature-content">
+          <h3>Study even when Eneo cuts the light.</h3>
+          <p>PassMark works without internet once loaded. No more losing your revision session because of load-shedding or finishing your data bundle.</p>
+          <ul class="feature-bullets">
+            <li>Offline mode built-in</li>
+            <li>Light on data — uses less than WhatsApp</li>
+            <li>Works on Tecno, Infinix, Itel, Samsung</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="feature-row reveal">
+        <div class="feature-visual">
+          <div class="phone-mockup" style="height: 400px; transform: none; animation: none;">
+            <div class="mockup-header">Quiz: Biology</div>
+            <div class="mockup-body">
+              <div style="font-size: 14px; margin-bottom: 12px;">What is the powerhouse of the cell?</div>
+              <div class="mockup-card" style="border-color: var(--primary); background: #14532D;">A) Mitochondria ✓</div>
+              <div class="mockup-card">B) Nucleus</div>
+              <div class="mockup-card">C) Ribosome</div>
+            </div>
+          </div>
+        </div>
+        <div class="feature-content">
+          <h3>Test yourself. Know where you stand.</h3>
+          <p>Generate AI-powered MCQ quizzes on any subject, any topic. Get instant feedback with explanations. See your Grade A, B, C performance before the real exam.</p>
+          <ul class="feature-bullets">
+            <li>GCE-style multiple choice questions</li>
+            <li>Instant correction with explanations</li>
+            <li>Track your progress over time</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 6. How it works -->
+  <section class="how-it-works reveal">
+    <div class="container">
+      <span class="section-label">How it works</span>
+      <h2>3 steps to your Grade A</h2>
+      
+      <div class="steps-container">
+        <div class="steps-line"></div>
+        <div class="step">
+          <div class="step-num" style="background: var(--primary); color: var(--primary-dark);">1</div>
+          <h3>Create your free profile</h3>
+          <p>Tell us your level (O or A Level) and your subjects. Takes 30 seconds. No account needed to start.</p>
+        </div>
+        <div class="step">
+          <div class="step-num" style="background: var(--blue); color: white;">2</div>
+          <h3>Ask the AI anything</h3>
+          <p>Type a question, upload a photo of your exercise, or open a past paper. The AI solves it step by step, the way your GCE teacher would — but available at 2am when you're cramming.</p>
+        </div>
+        <div class="step">
+          <div class="step-num" style="background: var(--orange); color: white;">3</div>
+          <h3>Pass your GCE</h3>
+          <p>Practice daily. Track your progress. Share your streak with your assos. Show up to the exam hall confident.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. Pricing -->
+  <section id="pricing" class="pricing reveal">
+    <div class="container">
+      <span class="section-label">Simple pricing</span>
+      <h2>Less than a moto-taxi ride.</h2>
+      <p class="subtitle">Everything you need to pass your GCE — for a price your pocket money can handle.</p>
+      
+      <div class="pricing-grid">
+        <div class="price-card">
+          <div>
+            <span class="price-badge badge-free">Free forever</span>
+            <div class="price-amount">0 FCFA</div>
+            <div class="price-period">forever</div>
+          </div>
+          <ul class="price-features">
+            <li>✓ 10 AI questions per day</li>
+            <li>✓ All past papers 2015–2024</li>
+            <li>✓ Basic quiz generator</li>
+            <li>✓ Works offline</li>
+            <li class="disabled">✗ Unlimited AI</li>
+            <li class="disabled">✗ Essay correction</li>
+          </ul>
+          <button class="btn btn-free cta-btn" data-tab="signup">Start free →</button>
+        </div>
+
+        <div class="price-card featured">
+          <span class="price-badge badge-featured">Most popular 🔥</span>
+          <div>
+            <div class="price-amount text-primary">1 500 FCFA</div>
+            <div class="price-period">per month · MTN MoMo / Orange Money</div>
+          </div>
+          <ul class="price-features">
+            <li>✓ Unlimited AI questions</li>
+            <li>✓ All past papers</li>
+            <li>✓ Advanced quiz generator</li>
+            <li>✓ Works offline</li>
+            <li>✓ Photo & PDF solving</li>
+            <li>✓ Progress tracking</li>
+          </ul>
+          <button class="btn btn-primary cta-btn" data-tab="signup">Get Standard →</button>
+        </div>
+
+        <div class="price-card premium">
+          <div>
+            <span class="price-badge badge-premium">Best for exam season</span>
+            <div class="price-amount text-orange">5 000 FCFA</div>
+            <div class="price-period">one-time · valid until June exams</div>
+          </div>
+          <ul class="price-features">
+            <li>✓ Everything in Standard</li>
+            <li>✓ Essay & dissertation correction</li>
+            <li>✓ Mock exam generator</li>
+            <li>✓ WhatsApp priority support</li>
+            <li>✓ Study plan tailored to your exam date</li>
+          </ul>
+          <button class="btn btn-premium cta-btn" data-tab="signup">Get Premium →</button>
+        </div>
+      </div>
+
+      <div class="comparison-note">
+        <span style="font-size: 20px;">⚡</span>
+        <p>One hour with a private répétiteur costs 5 000 FCFA. PassMark Premium gives you unlimited AI help for ALL your subjects for the same price — until your last exam.</p>
+      </div>
+      <div class="payment-note">💳 Pay with MTN MoMo · Orange Money · No credit card needed</div>
+    </div>
+  </section>
+
+  <!-- 8. Testimonials -->
+  <section class="testimonials reveal">
+    <div class="container">
+      <span class="section-label">What students say</span>
+      <h2>From Essos to Makepe to Biyem-Assi.</h2>
+      
+      <div class="test-grid">
+        <div class="test-card">
+          <div class="stars">⭐⭐⭐⭐⭐</div>
+          <p class="quote">"I was failing Chemistry Paper 3 every mock. I took a photo of an organic chemistry question and PassMark explained every step like a real teacher. Passed with a B in my trial exams!"</p>
+          <div class="author-row">
+            <div class="avatar">CO</div>
+            <div class="author-info">
+              <h4>Collins O.</h4>
+              <p>Upper Sixth · GBHS Essos · Yaoundé</p>
+            </div>
+          </div>
+        </div>
+        <div class="test-card">
+          <div class="stars">⭐⭐⭐⭐⭐</div>
+          <p class="quote">"As a Form 5 student, English Language was killing me. I asked PassMark to correct my essays and it told me exactly what the examiner wants to see. This app is chap for real!"</p>
+          <div class="author-row">
+            <div class="avatar">BN</div>
+            <div class="author-info">
+              <h4>Blessing N.</h4>
+              <p>Form 5 · Makepe · Douala</p>
+            </div>
+          </div>
+        </div>
+        <div class="test-card">
+          <div class="stars">⭐⭐⭐⭐⭐</div>
+          <p class="quote">"I'm a private candidate, no school, no répétiteur. PassMark is literally my only teacher. I study at my call box at night. It works even offline. No excuses."</p>
+          <div class="author-row">
+            <div class="avatar">DM</div>
+            <div class="author-info">
+              <h4>Divine M.</h4>
+              <p>Private Candidate · Biyem-Assi · Yaoundé</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. Final CTA -->
+  <section class="final-cta reveal">
+    <div class="container">
+      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 12L9 18L21 6" stroke="#22C55E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M12 2L22 12L12 22L2 12L12 2Z" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h2>Your GCE is in a few months.<br>Don't face it alone.</h2>
+      <p>Join students from Yaoundé, Douala, Buea and Bamenda already using PassMark to secure their sterling A grades.</p>
+      <button class="btn btn-primary cta-btn" data-tab="signup">Start studying free →</button>
+      <div class="note">No account needed · Takes 30 seconds</div>
+    </div>
+  </section>
+
+  <!-- 10. Footer -->
+  <footer class="footer">
+    <div class="footer-top">
+      <div class="footer-logo">
+        <div class="footer-logo-row">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 12L9 18L21 6" stroke="#22C55E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 2L22 12L12 22L2 12L12 2Z" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Pass<span class="text-primary">Mark</span></span>
+        </div>
+        <span class="footer-tagline">GCE AI Tutor · Powered by Claude</span>
+      </div>
+      <div class="footer-links">
+        <a href="#features">Features</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="#about">About</a>
+        <a href="#">Privacy</a>
+        <a href="#">Contact</a>
+      </div>
+      <div class="footer-social">
+        <a href="#" class="social-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+        </a>
+        <a href="#" class="social-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+        </a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2026 PassMark. Built for GCE students in Cameroon. 🇨🇲
+    </div>
+  </footer>
+
+  <!-- Floating WhatsApp -->
+  <a href="https://wa.me/?text=Hello%20PassMark%2C%20I%20want%20to%20know%20more%20about%20the%20app" target="_blank" class="whatsapp-float" aria-label="Chat on WhatsApp">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .1 5.392.1 11.951c0 2.096.546 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.95-5.392 11.953-11.95-.002-3.178-1.236-6.165-3.483-8.412z"/>
+    </svg>
+  </a>
+
+  <!-- Auth Modal -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal-card">
+      <button class="modal-close" id="closeModal">×</button>
+      
+      <div class="modal-header">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 12L9 18L21 6" stroke="#22C55E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 2L22 12L12 22L2 12L12 2Z" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h3>PassMark</h3>
+      </div>
+
+      <div class="modal-tabs">
+        <div class="modal-tab active" data-target="signup-form">Sign up</div>
+        <div class="modal-tab" data-target="signin-form">Sign in</div>
+      </div>
+
+      <!-- Sign Up Form -->
+      <div class="modal-form active" id="signup-form">
+        <div class="input-group">
+          <input type="text" id="su-name" class="input-field" placeholder="Your full name">
+          <div class="error-text">Please enter your name</div>
+        </div>
+        
+        <div class="level-pills">
+          <div class="level-pill" data-level="O Level">O Level</div>
+          <div class="level-pill active" data-level="A Level">A Level</div>
+        </div>
+
+        <div class="input-group">
+          <input type="email" id="su-email" class="input-field" placeholder="your@email.com">
+          <div class="error-text">Please enter a valid email</div>
+        </div>
+
+        <div class="input-group">
+          <input type="password" id="su-pwd" class="input-field" placeholder="Min. 6 characters">
+          <button class="pwd-toggle" onclick="togglePwd('su-pwd')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          </button>
+          <div class="error-text">Password must be at least 6 characters</div>
+        </div>
+
+        <button class="btn btn-primary" id="btn-signup">Create account →</button>
+        
+        <div class="modal-divider">— or —</div>
+        <div class="modal-link" id="btn-guest">Continue without account</div>
+      </div>
+
+      <!-- Sign In Form -->
+      <div class="modal-form" id="signin-form">
+        <div class="error-banner" id="si-error">No account found. Please sign up first.</div>
+        
+        <div class="input-group">
+          <input type="email" id="si-email" class="input-field" placeholder="your@email.com">
+        </div>
+
+        <div class="input-group">
+          <input type="password" id="si-pwd" class="input-field" placeholder="Password">
+          <button class="pwd-toggle" onclick="togglePwd('si-pwd')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          </button>
+        </div>
+
+        <div style="text-align: right;">
+          <span class="modal-link" style="font-size: 11px;" id="btn-forgot">Forgot password?</span>
+        </div>
+
+        <button class="btn btn-primary" id="btn-signin">Sign in →</button>
+      </div>
+
+      <div class="modal-footer">
+        🔒 Your data stays on your device. No ads. No tracking. No nonsense.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Active link check
+    if (window.location.pathname.includes('pricing.html')) {
+      document.getElementById('nav-pricing-link').classList.add('active');
+    }
+
+    // Scroll Animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // Mobile Menu
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const closeMobileMenu = document.getElementById('closeMobileMenu');
+    const mobileMenu = document.getElementById('mobileMenu');
+    const mobileLinks = document.querySelectorAll('.mobile-link');
+
+    mobileMenuBtn.addEventListener('click', () => mobileMenu.classList.add('active'));
+    closeMobileMenu.addEventListener('click', () => mobileMenu.classList.remove('active'));
+    mobileLinks.forEach(link => link.addEventListener('click', () => mobileMenu.classList.remove('active')));
+
+    // Modal Logic
+    const modal = document.getElementById('authModal');
+    const closeModal = document.getElementById('closeModal');
+    const ctaBtns = document.querySelectorAll('.cta-btn');
+    const tabs = document.querySelectorAll('.modal-tab');
+    const forms = document.querySelectorAll('.modal-form');
+
+    ctaBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        mobileMenu.classList.remove('active');
+        modal.classList.add('active');
+        const targetTab = btn.getAttribute('data-tab');
+        if (targetTab) switchTab(targetTab + '-form');
+      });
+    });
+
+    closeModal.addEventListener('click', () => modal.classList.remove('active'));
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.remove('active');
+    });
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        switchTab(tab.getAttribute('data-target'));
+      });
+    });
+
+    function switchTab(targetId) {
+      tabs.forEach(t => t.classList.remove('active'));
+      forms.forEach(f => f.classList.remove('active'));
+      document.querySelector(`[data-target="${targetId}"]`).classList.add('active');
+      document.getElementById(targetId).classList.add('active');
+      document.getElementById('si-error').style.display = 'none';
+    }
+
+    // Level Pills
+    let selectedLevel = 'A Level';
+    document.querySelectorAll('.level-pill').forEach(pill => {
+      pill.addEventListener('click', (e) => {
+        document.querySelectorAll('.level-pill').forEach(p => p.classList.remove('active'));
+        e.target.classList.add('active');
+        selectedLevel = e.target.getAttribute('data-level');
+      });
+    });
+
+    // Password Toggle
+    window.togglePwd = function(id) {
+      const input = document.getElementById(id);
+      input.type = input.type === 'password' ? 'text' : 'password';
+    };
+
+    // Form Validation & Submission
+    function showError(id) {
+      const el = document.getElementById(id);
+      el.classList.add('error', 'shake');
+      setTimeout(() => el.classList.remove('shake'), 300);
+    }
+
+    function clearErrors() {
+      document.querySelectorAll('.input-field').forEach(el => el.classList.remove('error'));
+    }
+
+    document.getElementById('btn-signup').addEventListener('click', () => {
+      clearErrors();
+      const name = document.getElementById('su-name').value.trim();
+      const email = document.getElementById('su-email').value.trim();
+      const pwd = document.getElementById('su-pwd').value;
+      
+      let valid = true;
+      if (!name) { showError('su-name'); valid = false; }
+      if (!email || !email.includes('@')) { showError('su-email'); valid = false; }
+      if (pwd.length < 6) { showError('su-pwd'); valid = false; }
+
+      if (valid) {
+        const user = {
+          name, level: selectedLevel, email, subjects: [], examMonth: "Jun", examYear: "2026",
+          stats: { questionsSolved: 0, papersRead: 0 }, recentActivity: [], chatHistory: []
+        };
+        localStorage.setItem('passmark_user', JSON.stringify(user));
+        window.location.href = '/';
+      }
+    });
+
+    document.getElementById('btn-signin').addEventListener('click', () => {
+      const email = document.getElementById('si-email').value.trim();
+      const stored = localStorage.getItem('passmark_user');
+      
+      if (stored) {
+        const user = JSON.parse(stored);
+        if (user.email === email || !user.email) { // Allow if email matches or if it's an old mock user without email
+          window.location.href = '/';
+          return;
+        }
+      }
+      
+      const errBanner = document.getElementById('si-error');
+      errBanner.style.display = 'block';
+      errBanner.classList.add('shake');
+      setTimeout(() => errBanner.classList.remove('shake'), 300);
+    });
+
+    document.getElementById('btn-guest').addEventListener('click', () => {
+      const user = {
+        name: "Student", level: "A Level", guest: true, subjects: [], examMonth: "Jun", examYear: "2026",
+        stats: { questionsSolved: 0, papersRead: 0 }, recentActivity: [], chatHistory: []
+      };
+      localStorage.setItem('passmark_user', JSON.stringify(user));
+      window.location.href = '/';
+    });
+
+    document.getElementById('btn-forgot').addEventListener('click', (e) => {
+      e.target.innerText = "Password reset coming soon. Try 'Continue without account'.";
+      e.target.style.color = "var(--orange)";
+      e.target.style.textDecoration = "none";
+    });
+
+  </script>
+</body>
+</html>

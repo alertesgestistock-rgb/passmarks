@@ -1,0 +1,182 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="generator" content="Hostinger Horizons">
+  
+  <title>PassMark — GCE AI Tutor</title>
+  <meta name="description" content="The smartest way to prepare for GCE O Level and A Level in Cameroon. AI-powered tutor, past papers, and quizzes. Free.">
+  
+  <meta property="og:title" content="PassMark — GCE AI Tutor">
+  <meta property="og:description" content="Solve any GCE question with AI. Free for Cameroon students.">
+  <meta property="og:image" content="passmark-og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  
+  <!-- PWA Meta Tags -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0F172A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PassMark">
+  
+  <!-- Auth Redirect Logic -->
+  <script>
+    // Check if user exists, if not redirect to landing page
+    // Only redirect if we are at the root path to avoid redirect loops
+    if (!localStorage.getItem('passmark_user') && (window.location.pathname === '/' || window.location.pathname === '/index.html')) {
+      window.location.replace('/landing.html');
+    }
+  </script>
+
+  <!-- PDF.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('SW registered'))
+          .catch(err => console.log('SW error', err));
+      });
+    }
+  </script>
+
+  <style>
+    /* Upgrade Modal Styles */
+    #upgrade-modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+    }
+    #upgrade-modal {
+      display: none;
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: #1E293B;
+      border-radius: 16px;
+      padding: 24px;
+      border: 0.5px solid #F97316;
+      max-width: 380px;
+      width: 90%;
+      z-index: 1000;
+      text-align: center;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    #upgrade-modal .crown-icon {
+      font-size: 48px;
+      color: #F97316;
+      margin-bottom: 16px;
+    }
+    #upgrade-modal h3 {
+      font-size: 14px;
+      font-weight: 500;
+      color: #F1F5F9;
+      margin: 0 0 8px 0;
+    }
+    #upgrade-modal p {
+      font-size: 13px;
+      color: #94A3B8;
+      margin: 0 0 16px 0;
+      line-height: 1.5;
+    }
+    #upgrade-modal .countdown {
+      font-size: 11px;
+      color: #64748B;
+      margin-bottom: 20px;
+    }
+    #upgrade-modal .btn-upgrade {
+      display: block;
+      background: #22C55E;
+      color: #052e16;
+      width: 100%;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      margin-bottom: 8px;
+    }
+    #upgrade-modal .btn-close {
+      display: block;
+      color: #64748B;
+      font-size: 12px;
+      background: none;
+      border: none;
+      width: 100%;
+      cursor: pointer;
+      padding: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- Upgrade Modal -->
+  <div id="upgrade-modal-overlay"></div>
+  <div id="upgrade-modal">
+    <div class="crown-icon">👑</div>
+    <h3>You've used all 10 free questions today 🏆</h3>
+    <p>Upgrade to Standard and get unlimited AI help — for less than 2 moto-taxi rides per month.</p>
+    <div class="countdown" id="upgrade-countdown">Resets in: --:--:--</div>
+    <button class="btn-upgrade" onclick="window.location.href='/pricing.html'">Upgrade — 1 500 FCFA →</button>
+    <button class="btn-close" onclick="closeUpgradeModal()">Continue tomorrow</button>
+  </div>
+
+  <script>
+    // Global function to show modal (can be called from React)
+    window.showUpgradeModal = function() {
+      document.getElementById('upgrade-modal-overlay').style.display = 'block';
+      document.getElementById('upgrade-modal').style.display = 'block';
+      startCountdown();
+    };
+
+    window.closeUpgradeModal = function() {
+      document.getElementById('upgrade-modal-overlay').style.display = 'none';
+      document.getElementById('upgrade-modal').style.display = 'none';
+    };
+
+    function startCountdown() {
+      const el = document.getElementById('upgrade-countdown');
+      setInterval(() => {
+        const now = new Date();
+        const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        const diff = tomorrow - now;
+        
+        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const s = Math.floor((diff % (1000 * 60)) / 1000);
+        
+        el.innerText = `Resets in: ${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+      }, 1000);
+    }
+
+    // Check on load if user hit limit
+    window.addEventListener('load', () => {
+      const stored = localStorage.getItem('passmark_user');
+      if (stored) {
+        try {
+          const user = JSON.parse(stored);
+          // If user is free and has solved >= 10 questions today (mock logic based on total stats for now)
+          if (user.stats && user.stats.questionsSolved >= 10 && user.plan !== 'Standard' && user.plan !== 'Premium') {
+            // Optional: Only show once per session to avoid annoying the user
+            if (!sessionStorage.getItem('upgrade_modal_shown')) {
+              setTimeout(() => {
+                window.showUpgradeModal();
+                sessionStorage.setItem('upgrade_modal_shown', 'true');
+              }, 2000);
+            }
+          }
+        } catch (e) {}
+      }
+    });
+  </script>
+
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>

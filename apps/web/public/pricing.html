@@ -1,0 +1,1106 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PassMark Pricing — GCE AI Tutor</title>
+  <meta name="description" content="Get unlimited AI help for every GCE subject. Less than a moto-taxi ride per month.">
+  <!-- Analytics: Cookie-free, privacy-first tracking placeholder -->
+  <style>
+    :root {
+      --bg: #0F172A;
+      --card: #1E293B;
+      --primary: #22C55E;
+      --primary-dark: #052e16;
+      --blue: #3B82F6;
+      --orange: #F97316;
+      --text: #F1F5F9;
+      --muted: #94A3B8;
+      --border: #334155;
+      --error: #EF4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    body {
+      overflow-x: hidden;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    button {
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Typography */
+    h1, h2, h3, h4 {
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .text-muted { color: var(--muted); }
+    .text-primary { color: var(--primary); }
+    .text-blue { color: var(--blue); }
+    .text-orange { color: var(--orange); }
+    .text-error { color: var(--error); }
+    .text-center { text-align: center; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+    .btn:hover { transform: scale(1.02); }
+    .btn:active { transform: scale(0.98); }
+    
+    .btn-primary {
+      background-color: var(--primary);
+      color: var(--primary-dark);
+    }
+    .btn-primary:hover { opacity: 0.9; }
+
+    /* 1. Navbar */
+    .navbar {
+      position: sticky;
+      top: 0;
+      height: 60px;
+      background-color: var(--bg);
+      border-bottom: 0.5px solid var(--card);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+    }
+    .navbar .container {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 18px;
+      font-weight: 500;
+    }
+    .nav-links {
+      display: none;
+      gap: 32px;
+    }
+    .nav-links a {
+      color: var(--muted);
+      font-size: 14px;
+      transition: color 0.15s;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a.active { color: var(--text); font-weight: 500; }
+    .nav-actions {
+      display: none;
+      align-items: center;
+      gap: 16px;
+    }
+    .nav-actions .sign-in {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .nav-actions .sign-in:hover { color: var(--text); }
+    .nav-actions .btn {
+      padding: 8px 18px;
+      font-size: 13px;
+      border-radius: 8px;
+    }
+    .mobile-menu-btn {
+      display: block;
+      color: var(--muted);
+    }
+
+    @media (min-width: 768px) {
+      .nav-links, .nav-actions { display: flex; }
+      .mobile-menu-btn { display: none; }
+    }
+
+    /* Section Labels */
+    .section-label {
+      display: inline-block;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+    }
+
+    /* 2. Anchor Section */
+    .anchor-section {
+      padding: 80px 24px 64px;
+      text-align: center;
+    }
+    .urgency-pill {
+      display: inline-block;
+      background-color: #431407;
+      color: #FDBA74;
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 20px;
+    }
+    .anchor-section h1 {
+      font-size: 48px;
+      line-height: 1.15;
+      letter-spacing: -0.5px;
+      margin-bottom: 20px;
+    }
+    .anchor-section p {
+      font-size: 18px;
+      color: var(--muted);
+      max-width: 640px;
+      margin: 0 auto 48px;
+      line-height: 1.6;
+    }
+    .anchor-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .anchor-card {
+      flex: 1;
+      background: var(--card);
+      border-radius: 16px;
+      padding: 24px;
+      border: 2px solid transparent;
+    }
+    .anchor-card.bad { border-color: var(--error); }
+    .anchor-card.good { border-color: var(--primary); background: #0D2A1A; }
+    .anchor-arrow {
+      color: var(--muted);
+      font-size: 24px;
+    }
+
+    @media (max-width: 767px) {
+      .anchor-section { padding: 48px 20px 40px; }
+      .anchor-section h1 { font-size: 32px; }
+      .anchor-section p { font-size: 15px; }
+      .anchor-row { flex-direction: column; }
+      .anchor-arrow { transform: rotate(90deg); }
+    }
+
+    /* 3. Pain Amplifier */
+    .pain-section {
+      padding: 80px 24px;
+      background-color: var(--card);
+      text-align: center;
+    }
+    .pain-section .section-label { background-color: #3B0000; color: var(--error); }
+    .pain-section h2 { font-size: 28px; margin-bottom: 40px; }
+    .loss-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+    .loss-card {
+      background: var(--bg);
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      text-align: left;
+    }
+    .loss-icon { font-size: 24px; margin-bottom: 12px; }
+    .loss-card h3 { font-size: 16px; margin-bottom: 8px; }
+    .loss-card p { font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.6; }
+    .loss-cost { font-size: 13px; font-weight: 500; color: var(--error); }
+    .pain-transition {
+      font-size: 16px;
+      color: var(--primary);
+      font-weight: 500;
+    }
+
+    @media (max-width: 767px) {
+      .pain-section { padding: 48px 20px; }
+      .loss-grid { grid-template-columns: 1fr; }
+    }
+
+    /* 4. Comparison Table */
+    .compare-section {
+      padding: 80px 24px;
+      text-align: center;
+    }
+    .compare-section .section-label { background-color: #14532D; color: #86EFAC; }
+    .compare-section h2 { font-size: 28px; margin-bottom: 40px; }
+    .table-container {
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 0.5px solid var(--border);
+    }
+    table {
+      width: 100%;
+      min-width: 700px;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    th, td {
+      padding: 16px;
+      font-size: 14px;
+      border-bottom: 0.5px solid var(--border);
+    }
+    th {
+      background: var(--card);
+      font-weight: 500;
+      color: var(--text);
+    }
+    tr:nth-child(even) { background: var(--card); }
+    tr:nth-child(odd) { background: var(--bg); }
+    .col-standard {
+      background: #0D2A1A !important;
+      border-left: 2px solid var(--primary);
+      border-right: 2px solid var(--primary);
+    }
+    th.col-standard {
+      border-top: 2px solid var(--primary);
+      color: var(--primary);
+    }
+    tr:last-child .col-standard { border-bottom: 2px solid var(--primary); }
+
+    @media (max-width: 767px) {
+      .compare-section { padding: 48px 20px; }
+    }
+
+    /* 5. Pricing Cards */
+    .pricing-section {
+      padding: 80px 24px;
+      background-color: var(--card);
+      text-align: center;
+    }
+    .pricing-section .section-label { background-color: var(--border); color: var(--muted); }
+    .pricing-section h2 { font-size: 28px; margin-bottom: 24px; }
+    
+    .billing-toggle {
+      display: inline-flex;
+      background: var(--bg);
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      padding: 4px;
+      margin-bottom: 48px;
+    }
+    .toggle-btn {
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--muted);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .toggle-btn.active {
+      background: var(--card);
+      color: var(--text);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      text-align: left;
+    }
+    .price-card {
+      background: var(--bg);
+      border: 0.5px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .price-card.featured {
+      background: #0D2A1A;
+      border: 2px solid var(--primary);
+    }
+    .price-card.premium {
+      border-color: var(--orange);
+    }
+    
+    .price-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+      margin-bottom: 16px;
+    }
+    .badge-free { background: var(--border); color: var(--muted); }
+    .badge-featured {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--primary);
+      color: var(--primary-dark);
+      white-space: nowrap;
+    }
+    .badge-premium { background: #431407; color: #FDBA74; }
+    .badge-save { background: #14532D; color: #86EFAC; padding: 2px 8px; border-radius: 4px; font-size: 10px; margin-left: 8px; display: none; }
+    
+    .price-amount-wrap { margin-bottom: 8px; }
+    .price-val { font-size: 52px; font-weight: 500; line-height: 1; }
+    .price-currency { font-size: 20px; }
+    .price-period { font-size: 14px; color: var(--muted); }
+    
+    .price-note { font-size: 11px; font-style: italic; margin-bottom: 16px; color: var(--muted); }
+    .payment-methods {
+      background: #14532D; color: #86EFAC; font-size: 10px; font-weight: 500;
+      padding: 4px 10px; border-radius: 6px; display: inline-block; margin-bottom: 24px;
+    }
+    
+    .price-features { list-style: none; margin-bottom: 24px; flex: 1; }
+    .price-features li { font-size: 13px; margin-bottom: 12px; display: flex; align-items: flex-start; gap: 8px; }
+    .price-features li.disabled { color: var(--muted); }
+    .price-features li.disabled.opacity-50 { opacity: 0.5; }
+    
+    .social-proof-text { font-size: 12px; color: #86EFAC; text-align: center; margin-top: 12px; }
+    .scarcity-text { font-size: 11px; color: #FDBA74; font-weight: 500; margin-bottom: 12px; }
+    
+    .price-card .btn { width: 100%; padding: 13px; font-size: 14px; }
+    .btn-free { background: var(--border); color: var(--text); }
+    .btn-premium { background: var(--orange); color: white; }
+
+    @media (max-width: 767px) {
+      .pricing-section { padding: 48px 20px; }
+      .pricing-grid { grid-template-columns: 1fr; gap: 32px; }
+    }
+
+    /* 6. Bias Boosters */
+    .boosters-section {
+      padding: 64px 24px;
+      text-align: center;
+    }
+    .social-counter {
+      display: inline-flex;
+      background: var(--card);
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 32px;
+      gap: 40px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .counter-item { display: flex; flex-direction: column; align-items: center; }
+    .counter-val { font-size: 24px; font-weight: 500; }
+    .counter-label { font-size: 12px; color: var(--muted); }
+    
+    .loss-banner {
+      margin: 32px auto 0;
+      max-width: 800px;
+      background: #14532D;
+      border: 0.5px solid var(--primary);
+      border-radius: 12px;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      text-align: left;
+    }
+    .loss-banner-content { flex: 1; }
+    .loss-banner h4 { font-size: 14px; color: var(--text); margin-bottom: 4px; }
+    .loss-banner p { font-size: 13px; color: #86EFAC; }
+    
+    .authority-badge {
+      margin: 32px auto 0;
+      display: inline-flex;
+      align-items: center;
+      background: var(--card);
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 24px;
+      gap: 12px;
+      text-align: left;
+      max-width: 600px;
+    }
+    .auth-icon {
+      width: 44px; height: 44px; border-radius: 50%; background: var(--bg);
+      color: var(--blue); display: flex; align-items: center; justify-content: center; font-size: 22px;
+      flex-shrink: 0;
+    }
+    .auth-content h4 { font-size: 13px; color: var(--text); margin-bottom: 2px; }
+    .auth-content p { font-size: 12px; color: var(--muted); }
+
+    .referral-box {
+      margin: 16px auto 0;
+      max-width: 600px;
+      background: #1E3A5F;
+      border: 0.5px solid var(--blue);
+      border-radius: 12px;
+      padding: 20px 24px;
+    }
+    .referral-box h4 { font-size: 14px; color: #93C5FD; margin-bottom: 4px; }
+    .referral-box p { font-size: 12px; color: #94A3B8; margin-bottom: 16px; }
+
+    @media (max-width: 767px) {
+      .loss-banner { flex-direction: column; text-align: center; }
+      .authority-badge { flex-direction: column; text-align: center; }
+    }
+
+    /* 7. FAQ */
+    .faq-section {
+      padding: 80px 24px;
+      background: var(--card);
+      text-align: center;
+    }
+    .faq-section .section-label { background-color: var(--border); color: var(--muted); }
+    .faq-section h2 { font-size: 28px; margin-bottom: 40px; }
+    .faq-list {
+      max-width: 700px;
+      margin: 0 auto;
+      text-align: left;
+    }
+    .faq-item {
+      background: var(--bg);
+      border: 0.5px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 8px;
+      overflow: hidden;
+    }
+    .faq-header {
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .faq-icon {
+      transition: transform 0.2s ease;
+      color: var(--muted);
+    }
+    .faq-item.active .faq-icon { transform: rotate(180deg); }
+    .faq-body {
+      padding: 0 20px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.7;
+      max-height: 0;
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+    .faq-item.active .faq-body {
+      padding-bottom: 16px;
+      max-height: 300px;
+      opacity: 1;
+    }
+
+    /* 8. Final CTA */
+    .final-cta {
+      padding: 80px 24px;
+      text-align: center;
+    }
+    .final-cta .urgency-pill { margin-bottom: 24px; }
+    .final-cta h2 {
+      font-size: 36px;
+      line-height: 1.25;
+      max-width: 520px;
+      margin: 0 auto 16px;
+    }
+    .final-cta p {
+      font-size: 16px;
+      color: var(--muted);
+      max-width: 480px;
+      margin: 0 auto 32px;
+    }
+    .final-cta .btn-primary {
+      padding: 16px 40px;
+      font-size: 16px;
+      width: 100%;
+      max-width: 320px;
+    }
+    .final-cta .secondary-link {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      text-decoration: underline;
+      margin-top: 12px;
+      margin-bottom: 24px;
+    }
+    .final-cta .trust-line {
+      font-size: 12px;
+      color: #64748B;
+    }
+
+    @media (max-width: 767px) {
+      .final-cta { padding: 48px 20px; }
+      .final-cta h2 { font-size: 26px; }
+    }
+
+    /* 9. Footer */
+    .footer { background-color: var(--card); border-top: 0.5px solid var(--border); padding: 32px 24px; }
+    .footer-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; max-width: 1100px; margin: 0 auto 24px; }
+    .footer-logo { display: flex; flex-direction: column; gap: 4px; }
+    .footer-logo-row { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 500; }
+    .footer-tagline { font-size: 12px; color: #64748B; }
+    .footer-links { display: flex; gap: 20px; }
+    .footer-links a { font-size: 12px; color: #64748B; }
+    .footer-links a:hover { color: var(--text); }
+    .footer-social { display: flex; gap: 12px; }
+    .social-icon { width: 40px; height: 40px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; color: var(--muted); transition: all 0.15s; }
+    .social-icon:hover { background: var(--muted); color: var(--bg); }
+    .footer-bottom { border-top: 0.5px solid var(--border); padding-top: 16px; text-align: center; font-size: 12px; color: #64748B; max-width: 1100px; margin: 0 auto; }
+
+    @media (max-width: 767px) {
+      .footer-top { flex-direction: column; gap: 24px; align-items: flex-start; }
+      .footer-links { flex-wrap: wrap; }
+    }
+
+    /* Floating WhatsApp */
+    .whatsapp-float {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 52px;
+      height: 52px;
+      background-color: #25D366;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 500;
+      transition: transform 0.2s;
+    }
+    .whatsapp-float:hover { transform: scale(1.1); }
+  </style>
+</head>
+<body>
+
+  <!-- 1. Navbar -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="landing.html" class="nav-logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 12L9 18L21 6" stroke="#22C55E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 2L22 12L12 22L2 12L12 2Z" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Pass<span class="text-primary">Mark</span></span>
+      </a>
+      <div class="nav-links">
+        <a href="landing.html#features">Features</a>
+        <a href="pricing.html" class="active">Pricing</a>
+        <a href="landing.html#about">About</a>
+      </div>
+      <div class="nav-actions">
+        <a href="landing.html" class="sign-in">Sign in</a>
+        <a href="landing.html" class="btn btn-primary">Get started free →</a>
+      </div>
+      <button class="mobile-menu-btn">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- 2. Anchor Section -->
+  <section class="anchor-section">
+    <div class="container">
+      <div class="urgency-pill">⏰ GCE 2026 exams are getting closer</div>
+      <h1><del class="text-muted">5 000 FCFA per hour.</del><br>PassMark costs <span class="text-primary">less per month.</span></h1>
+      <p>Stop paying for tutors who are only available 2 hours a week. Get unlimited AI help for every subject, every night, even without internet.</p>
+      
+      <div class="anchor-row">
+        <div class="anchor-card bad">
+          <div style="font-size: 24px; margin-bottom: 8px;">👨‍🏫</div>
+          <h3 style="font-size: 16px; margin-bottom: 4px;">Répétiteur privé</h3>
+          <div class="text-error" style="font-size: 20px; font-weight: 500; margin-bottom: 12px;">5 000 FCFA / hr</div>
+          <div style="font-size: 13px; color: var(--muted);">1 subject only. Limited hours.</div>
+        </div>
+        <div class="anchor-arrow">→</div>
+        <div class="anchor-card good">
+          <div style="font-size: 24px; margin-bottom: 8px;">🤖</div>
+          <h3 style="font-size: 16px; margin-bottom: 4px; color: var(--text);">PassMark Standard</h3>
+          <div class="text-primary" style="font-size: 20px; font-weight: 500; margin-bottom: 12px;">1 500 FCFA / month</div>
+          <div style="font-size: 13px; color: #86EFAC;">ALL subjects. Available 24/7.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Pain Amplifier -->
+  <section class="pain-section">
+    <div class="container">
+      <span class="section-label">What failing the GCE really costs</span>
+      <h2>The most expensive thing is doing nothing.</h2>
+      
+      <div class="loss-grid">
+        <div class="loss-card">
+          <div class="loss-icon">💸</div>
+          <h3>Retaking costs more</h3>
+          <p>GCE registration fees are 9,000 FCFA base + 2,000 FCFA per subject. Plus practicals. Failing means paying it all again next year.</p>
+          <div class="loss-cost">Potential loss: 50,000+ FCFA</div>
+        </div>
+        <div class="loss-card">
+          <div class="loss-icon">⏳</div>
+          <h3>One year of your life</h3>
+          <p>Watching your friends move to university while you stay behind in uniform for another 12 months of the same classes.</p>
+          <div class="loss-cost">Cost: 1 year delay</div>
+        </div>
+        <div class="loss-card">
+          <div class="loss-icon">🎓</div>
+          <h3>The university slot goes to someone else</h3>
+          <p>Competitive programs at UB, UBa, or professional schools have limited seats. A poor grade closes doors permanently.</p>
+          <div class="loss-cost">Cost: your future career</div>
+        </div>
+      </div>
+      
+      <div class="pain-transition">
+        PassMark Standard: 1,500 FCFA/month. That's the price of 2 moto-taxi rides. → Which risk is really more expensive?
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Comparison Table -->
+  <section class="compare-section">
+    <div class="container">
+      <span class="section-label">Compare your options</span>
+      <h2>Not all study tools are equal.</h2>
+      
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th>Kawlo</th>
+              <th>Répétiteur</th>
+              <th>PassMark Free</th>
+              <th class="col-standard">PassMark Standard ⭐</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Price</td>
+              <td>Free + ads</td>
+              <td class="text-error">5,000/hr</td>
+              <td class="text-primary">0 FCFA</td>
+              <td class="col-standard text-primary" style="font-weight: 500;">1,500 FCFA/mo</td>
+            </tr>
+            <tr>
+              <td>AI explanations</td>
+              <td>❌</td>
+              <td>✅ when available</td>
+              <td>✅ 10/day</td>
+              <td class="col-standard text-primary">✅ Unlimited</td>
+            </tr>
+            <tr>
+              <td>Photo solving</td>
+              <td>❌</td>
+              <td>✅</td>
+              <td>✅</td>
+              <td class="col-standard text-primary">✅</td>
+            </tr>
+            <tr>
+              <td>Works offline</td>
+              <td>Partial</td>
+              <td>❌ needs presence</td>
+              <td>✅</td>
+              <td class="col-standard text-primary">✅</td>
+            </tr>
+            <tr>
+              <td>All subjects</td>
+              <td>✅ with ads</td>
+              <td>❌ 1 subject only</td>
+              <td>✅</td>
+              <td class="col-standard text-primary">✅</td>
+            </tr>
+            <tr>
+              <td>Past papers 2015–2024</td>
+              <td>✅ watermarked</td>
+              <td>❌</td>
+              <td>✅</td>
+              <td class="col-standard text-primary">✅</td>
+            </tr>
+            <tr>
+              <td>Essay correction</td>
+              <td>❌</td>
+              <td>✅</td>
+              <td>❌</td>
+              <td class="col-standard text-primary">✅</td>
+            </tr>
+            <tr>
+              <td>Available at 2am</td>
+              <td>❌ server issues</td>
+              <td>❌</td>
+              <td>✅</td>
+              <td class="col-standard text-primary">✅</td>
+            </tr>
+            <tr>
+              <td>MTN MoMo payment</td>
+              <td>N/A</td>
+              <td>Cash only</td>
+              <td>N/A</td>
+              <td class="col-standard text-primary">✅</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Pricing Cards -->
+  <section class="pricing-section">
+    <div class="container">
+      <span class="section-label">Choose your plan</span>
+      <h2>Start free. Upgrade when you're ready.</h2>
+      
+      <div class="billing-toggle">
+        <div class="toggle-btn active" id="btn-monthly">Monthly</div>
+        <div class="toggle-btn" id="btn-season">Season pass</div>
+      </div>
+      
+      <div class="pricing-grid">
+        <!-- Free -->
+        <div class="price-card">
+          <div>
+            <span class="price-badge badge-free">Zero risk</span>
+            <div class="price-amount-wrap">
+              <span class="price-val text-text">0</span>
+              <span class="price-currency text-text">FCFA</span>
+            </div>
+            <div class="price-period">Free forever — no credit card</div>
+            <div class="price-note">Try everything. No payment. No pressure.</div>
+          </div>
+          <ul class="price-features">
+            <li>✅ 10 AI questions per day</li>
+            <li>✅ All past papers 2015–2024</li>
+            <li>✅ Basic quiz generator (5 questions)</li>
+            <li>✅ Works offline</li>
+            <li>✅ Photo question solving</li>
+            <li class="disabled">❌ Unlimited AI questions</li>
+            <li class="disabled">❌ Essay & dissertation correction</li>
+            <li class="disabled">❌ Priority WhatsApp support</li>
+            <li class="disabled">❌ Advanced mock exams</li>
+          </ul>
+          <a href="landing.html" class="btn btn-free">Start for free →</a>
+        </div>
+
+        <!-- Standard -->
+        <div class="price-card featured">
+          <span class="price-badge badge-featured">🔥 Most popular among GCE students</span>
+          <div>
+            <div class="price-amount-wrap">
+              <span class="price-val text-primary" id="std-price">1 500</span>
+              <span class="price-currency" style="color: #86EFAC;">FCFA</span>
+              <span class="price-period" id="std-period">/month</span>
+              <span class="badge-save" id="std-save">Save 22%</span>
+            </div>
+            <div class="price-note" style="color: #86EFAC;" id="std-note">= 2 moto-taxi rides. Less than 1 hr with a répétiteur.</div>
+            <div class="payment-methods">Pay with: MTN MoMo · Orange Money</div>
+          </div>
+          <ul class="price-features">
+            <li class="text-primary">✅ Unlimited AI questions</li>
+            <li>✅ All past papers 2015–2024</li>
+            <li>✅ Advanced quiz generator (unlimited)</li>
+            <li>✅ Works offline</li>
+            <li>✅ Photo & PDF solving</li>
+            <li>✅ Progress tracking by subject</li>
+            <li>✅ Essay correction (History, Literature)</li>
+            <li class="disabled opacity-50" style="color: #86EFAC;">❌ WhatsApp priority support</li>
+            <li class="disabled opacity-50" style="color: #86EFAC;">❌ Full mock exam generator</li>
+          </ul>
+          <div class="social-proof-text">Join 500+ students already on Standard</div>
+          <a href="landing.html" class="btn btn-primary" style="margin-top: 12px;" id="std-btn">Get Standard — 1 500 FCFA →</a>
+        </div>
+
+        <!-- Premium -->
+        <div class="price-card premium">
+          <div>
+            <span class="price-badge badge-premium">Best for exam season 🏆</span>
+            <div class="price-amount-wrap">
+              <span class="price-val text-orange">5 000</span>
+              <span class="price-currency" style="color: #FDBA74;">FCFA</span>
+              <span class="badge-save" id="prm-save" style="background: #431407; color: #FDBA74;">Save 22%</span>
+            </div>
+            <div class="price-period" id="prm-period">one-time · valid until June 2026</div>
+            <div class="price-note" style="color: var(--muted);">The GCE Board has one chance per year. Your parents already paid the registration fees. Don't waste that investment.</div>
+          </div>
+          <ul class="price-features">
+            <li class="text-orange">✅ Everything in Standard</li>
+            <li>✅ Full essay & dissertation correction</li>
+            <li>✅ Complete mock exam generator</li>
+            <li>✅ WhatsApp priority support</li>
+            <li>✅ Personalized study plan</li>
+            <li>✅ Valid until your last June exam</li>
+            <li>✅ Unlimited everything</li>
+          </ul>
+          <div class="scarcity-text">⚡ Limited spots for WhatsApp support</div>
+          <a href="landing.html" class="btn btn-premium">Get Premium — 5 000 FCFA →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. Bias Boosters -->
+  <section class="boosters-section">
+    <div class="container">
+      <div class="social-counter">
+        <div class="counter-item">
+          <span class="counter-val text-primary">500+</span>
+          <span class="counter-label">Active students</span>
+        </div>
+        <div class="counter-item">
+          <span class="counter-val text-orange">4.8★</span>
+          <span class="counter-label">Average rating</span>
+        </div>
+        <div class="counter-item">
+          <span class="counter-val text-blue">93%</span>
+          <span class="counter-label">Pass rate reported</span>
+        </div>
+      </div>
+
+      <div class="loss-banner">
+        <div style="font-size: 32px;">⚠️</div>
+        <div class="loss-banner-content">
+          <h4>Every week without PassMark is a week of wasted revision time.</h4>
+          <p>The students who fail GCE are the ones who waited too long, studied alone, and had no one to explain their mistakes. Which one are you?</p>
+        </div>
+        <a href="landing.html" class="btn btn-primary" style="padding: 10px 20px; font-size: 13px; border-radius: 8px;">Start now →</a>
+      </div>
+
+      <div class="authority-badge">
+        <div class="auth-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg>
+        </div>
+        <div class="auth-content">
+          <h4>Powered by Claude AI</h4>
+          <p>Built by Anthropic — the same AI used by researchers and universities worldwide. Now available for GCE students in Cameroon.</p>
+        </div>
+      </div>
+
+      <div class="referral-box">
+        <h4>🎁 Share PassMark with 3 assos. Get 7 days of Standard free.</h4>
+        <p>Copy your referral link and send it to your study group on WhatsApp.</p>
+        <button class="btn" style="background: var(--blue); color: white; padding: 10px 20px; font-size: 13px; border-radius: 8px;">Get my referral link →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. FAQ -->
+  <section class="faq-section">
+    <div class="container">
+      <span class="section-label">Questions & answers</span>
+      <h2>Every question you have. Answered.</h2>
+      
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-header">
+            <span>Is PassMark really free?</span>
+            <svg class="faq-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="faq-body">Yes. The Free plan is permanently free — no trial period, no hidden fees. You get 10 AI questions per day, all past papers, and offline access. No credit card, ever. We want every GCE student to have access, regardless of their family's budget.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-header">
+            <span>Can the AI really solve GCE questions?</span>
+            <svg class="faq-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="faq-body">PassMark uses Claude — the same AI built by Anthropic, used by top researchers and universities worldwide. It knows the GCE Cameroon syllabus, past paper formats, and marking schemes for O Level and A Level. It solves Physics, Chemistry, Maths, History, Economics and more — step by step.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-header">
+            <span>How do I pay? I don't have a bank card.</span>
+            <svg class="faq-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="faq-body">You don't need a bank card. PassMark accepts MTN Mobile Money and Orange Money — the same way you buy data bundles or pay school fees. Your parent can validate the payment in 1 minute on their phone.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-header">
+            <span>What if the AI gives wrong answers?</span>
+            <svg class="faq-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="faq-body">PassMark AI is trained to follow GCE Board marking schemes. Every solution shows full working so you can verify each step. 93% of students who used PassMark reported improvement in their mock exam results. If you ever find an error, report it and we fix it within 24 hours.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-header">
+            <span>Does it work without internet?</span>
+            <svg class="faq-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="faq-body">Yes. Once the app is loaded, you can access past papers and review previous AI conversations offline. We built this specifically for Cameroonian students dealing with load-shedding and expensive data bundles. Your revision session will never be interrupted by Eneo again.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-header">
+            <span>Is my data private?</span>
+            <svg class="faq-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="faq-body">Your data stays on your device. We don't sell your information. We don't show you ads. No tracking, no surveillance. PassMark is a study tool, not a social network. Your conversations with the AI are private.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-header">
+            <span>What subjects are covered?</span>
+            <svg class="faq-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="faq-body">All GCE O Level and A Level subjects: Physics, Chemistry, Biology, Mathematics, Further Maths, Computer Science, English Language, Literature, History, Geography, Economics, French, Religious Studies, Food & Nutrition and more. If your subject is in the GCE syllabus, PassMark covers it.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-header">
+            <span>Can I cancel my subscription?</span>
+            <svg class="faq-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="faq-body">You can stop at any time — no penalty, no complicated process. Standard is monthly, so you simply don't renew next month. Premium is a one-time payment valid until June exams, so there is nothing to cancel.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-header">
+            <span>My phone has low storage. Will it work?</span>
+            <svg class="faq-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="faq-body">PassMark is a web app — it installs like a shortcut on your phone and uses almost no storage (under 5MB). It works on Tecno Spark, Infinix Hot, Itel S15, Samsung A-series — any Android phone running version 8 or above. If your phone can run WhatsApp, it can run PassMark.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-header">
+            <span>Will this actually help me pass?</span>
+            <svg class="faq-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="faq-body">The students who fail GCE are the ones who waited too long, studied alone, and had no one to explain their mistakes. PassMark gives you an AI tutor available at 2am when you're cramming, explains every step of every past paper question, and generates practice quizzes so you find your weak points before the examiner does. The tool works. The question is: will you?</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. Final CTA -->
+  <section class="final-cta">
+    <div class="container">
+      <div class="urgency-pill" style="background: #431407; color: #FDBA74; display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 500;">⏰ GCE 2026 — every day counts</div>
+      <h2>The exam doesn't care if you were almost ready.</h2>
+      <p>Collins from Essos started in January. Blessing from Makepe started in February. Divine from Biyem-Assi started last week. When are you starting?</p>
+      
+      <a href="landing.html" class="btn btn-primary">Start free today →</a>
+      <a href="#pricing" class="secondary-link">Or get Standard for 1 500 FCFA →</a>
+      <div class="trust-line">🔒 Free plan available · MTN MoMo · Orange Money · No credit card</div>
+    </div>
+  </section>
+
+  <!-- 9. Footer -->
+  <footer class="footer">
+    <div class="footer-top">
+      <div class="footer-logo">
+        <div class="footer-logo-row">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 12L9 18L21 6" stroke="#22C55E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 2L22 12L12 22L2 12L12 2Z" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Pass<span class="text-primary">Mark</span></span>
+        </div>
+        <span class="footer-tagline">GCE AI Tutor · Powered by Claude</span>
+      </div>
+      <div class="footer-links">
+        <a href="landing.html#features">Features</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="landing.html#about">About</a>
+        <a href="#">Privacy</a>
+        <a href="#">Contact</a>
+      </div>
+      <div class="footer-social">
+        <a href="#" class="social-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+        </a>
+        <a href="#" class="social-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+        </a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2026 PassMark. Built for GCE students in Cameroon. 🇨🇲
+    </div>
+  </footer>
+
+  <!-- Floating WhatsApp -->
+  <a href="https://wa.me/?text=Hello%20PassMark%2C%20I%20want%20to%20know%20more%20about%20the%20app" target="_blank" class="whatsapp-float" aria-label="Chat on WhatsApp">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .1 5.392.1 11.951c0 2.096.546 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.95-5.392 11.953-11.95-.002-3.178-1.236-6.165-3.483-8.412z"/>
+    </svg>
+  </a>
+
+  <script>
+    // FAQ Accordion
+    document.querySelectorAll('.faq-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const item = header.parentElement;
+        const isActive = item.classList.contains('active');
+        document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
+        if (!isActive) item.classList.add('active');
+      });
+    });
+
+    // Pricing Toggle
+    const btnMonthly = document.getElementById('btn-monthly');
+    const btnSeason = document.getElementById('btn-season');
+    
+    const stdPrice = document.getElementById('std-price');
+    const stdPeriod = document.getElementById('std-period');
+    const stdNote = document.getElementById('std-note');
+    const stdSave = document.getElementById('std-save');
+    const stdBtn = document.getElementById('std-btn');
+    
+    const prmPeriod = document.getElementById('prm-period');
+    const prmSave = document.getElementById('prm-save');
+
+    btnMonthly.addEventListener('click', () => {
+      btnMonthly.classList.add('active');
+      btnSeason.classList.remove('active');
+      
+      stdPrice.innerText = '1 500';
+      stdPeriod.innerText = '/month';
+      stdNote.innerText = '= 2 moto-taxi rides. Less than 1 hr with a répétiteur.';
+      stdSave.style.display = 'none';
+      stdBtn.innerText = 'Get Standard — 1 500 FCFA →';
+      
+      prmPeriod.innerText = 'one-time · valid until June 2026';
+      prmSave.style.display = 'none';
+    });
+
+    btnSeason.addEventListener('click', () => {
+      btnSeason.classList.add('active');
+      btnMonthly.classList.remove('active');
+      
+      stdPrice.innerText = '3 500';
+      stdPeriod.innerText = '/ 3 months';
+      stdNote.innerText = 'Pay once, study for 3 months.';
+      stdSave.style.display = 'inline-block';
+      stdBtn.innerText = 'Get Standard — 3 500 FCFA →';
+      
+      prmPeriod.innerText = 'until June';
+      prmSave.style.display = 'inline-block';
+    });
+  </script>
+</body>
+</html>
