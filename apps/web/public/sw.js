@@ -1,47 +1,68 @@
-const CACHE_NAME = 'passmark-v3';
-const STATIC_ASSETS = ['/index.html', '/manifest.json'];
+/* eslint-disable no-restricted-globals */
 
-self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(STATIC_ASSETS))
-      .then(() => self.skipWaiting())
+const CACHE_NAME = 'passmark-v4';
+const STATIC_ASSETS = ['/index.html', '/manifest.json', '/offline.html'];
+
+// --- Lifecycle ---
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) =>
+      Promise.allSettled(STATIC_ASSETS.map((url) => cache.add(url)))
+    )
   );
 });
 
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys()
-      .then((names) => Promise.all(names.map((n) => n !== CACHE_NAME && caches.delete(n))))
-      .then(() => self.clients.claim())
-  );
-});
-
-self.addEventListener('fetch', (e) => {
-  const url = new URL(e.request.url);
-
-  // Never intercept cross-origin requests (Supabase, Claude API, CDNs)
-  if (url.origin !== self.location.origin) return;
-
-  // SPA navigation — always serve index.html
-  if (e.request.mode === 'navigate') {
-    e.respondWith(
-      caches.match('/index.html').then((cached) => cached || fetch('/index.html'))
-    );
-    return;
+// App can send SKIP_WAITING to activate new SW without a full page reload
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
   }
+});
 
-  // Static assets — cache first, fall back to network
-  e.respondWith(
-    caches.match(e.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(e.request).then((res) => {
-        if (res.ok && e.request.method === 'GET') {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then((c) => c.put(e.request, clone));
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((names) =>
+      Promise.all(names.map((n) => n !== CACHE_NAME && caches.delete(n)))
+    )
+  );
+  self.clients.claim();
+});
+
+// --- Fetch: Network-first with offline fallback ---
+
+self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+
+  // Skip cross-origin requests (Supabase, Claude API, CDNs)
+  if (url.origin !== self.location.origin) return;
+  // Skip API routes
+  if (url.pathname.startsWith('/api')) return;
+
+  event.respondWith(
+    fetch(event.request)
+      .then((networkResponse) => {
+        // Cache successful same-origin responses dynamically
+        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
-        return res;
-      });
-    })
+        return networkResponse;
+      })
+      .catch(() =>
+        caches.match(event.request).then((cached) => {
+          if (cached) return cached;
+          // Navigation request while offline → show offline page
+          if (
+            event.request.mode === 'navigate' ||
+            (event.request.headers.get('accept') || '').includes('text/html')
+          ) {
+            return caches.match('/offline.html');
+          }
+          return new Response('', { status: 408, statusText: 'Request Timeout' });
+        })
+      )
   );
 });
