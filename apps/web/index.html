@@ -21,15 +21,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="PassMark">
   
-  <!-- Auth Redirect Logic -->
-  <script>
-    // Check if user exists, if not redirect to landing page
-    // Only redirect if we are at the root path to avoid redirect loops
-    if (!localStorage.getItem('passmark_user') && (window.location.pathname === '/' || window.location.pathname === '/index.html')) {
-      window.location.replace('/landing.html');
-    }
-  </script>
-
   <!-- PDF.js CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
