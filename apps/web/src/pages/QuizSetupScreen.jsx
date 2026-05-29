@@ -30,16 +30,10 @@ export default function QuizSetupScreen({ navigate, viewState }) {
           'Content-Type': 'application/json',
           'x-claude-api-key': apiKey,
         },
-        body: JSON.stringify({
-          subject,
-          difficulty: level,
-          count: numQuestions,
-        })
+        body: JSON.stringify({ subject, difficulty: level, count: numQuestions })
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to generate quiz. Check API connection.');
-      }
+      if (!response.ok) throw new Error('Failed to generate quiz. Check API connection.');
 
       const questions = await response.json();
       if (!Array.isArray(questions) || questions.length === 0) {
@@ -57,26 +51,26 @@ export default function QuizSetupScreen({ navigate, viewState }) {
 
   return (
     <div className="max-w-[500px] mx-auto">
-      <button 
+      <button
         onClick={() => navigate('home')}
-        className="flex items-center gap-1 text-[#64748B] hover:text-white font-medium text-[13px] mb-6 transition-colors"
+        className="flex items-center gap-1 text-slate-500 dark:text-[#64748B] hover:text-slate-900 dark:hover:text-white font-medium text-[13px] mb-6 transition-colors"
       >
         <ArrowLeft size={16} /> Back
       </button>
 
-      <h1 className="text-[24px] font-bold text-white mb-8 tracking-tight">Quick Quiz ✨</h1>
+      <h1 className="text-[24px] font-bold text-slate-900 dark:text-white mb-8 tracking-tight">Quick Quiz ✨</h1>
 
-      <div className="bg-[#1E293B] rounded-2xl p-5 border border-[#334155]/50 flex flex-col gap-6 shadow-sm">
-        
+      <div className="bg-white dark:bg-[#1E293B] rounded-2xl p-5 border border-slate-200 dark:border-[#334155]/50 flex flex-col gap-6 shadow-sm">
+
         {error && (
-          <div className="bg-[#450a0a] text-[#EF4444] p-3 rounded-xl text-[12px] flex items-center gap-2 border border-[#7f1d1d]">
+          <div className="bg-red-50 dark:bg-[#450a0a] text-red-600 dark:text-[#EF4444] p-3 rounded-xl text-[12px] flex items-center gap-2 border border-red-200 dark:border-[#7f1d1d]">
             <AlertCircle size={16} className="shrink-0" /> {error}
           </div>
         )}
 
         {/* Level */}
         <div>
-          <label className="block text-[13px] font-semibold text-[#94A3B8] mb-3 uppercase tracking-wider">Level</label>
+          <label className="block text-[13px] font-semibold text-slate-400 dark:text-[#94A3B8] mb-3 uppercase tracking-wider">Level</label>
           <div className="flex gap-3">
             {['O Level', 'A Level'].map(lvl => (
               <button
@@ -84,7 +78,9 @@ export default function QuizSetupScreen({ navigate, viewState }) {
                 onClick={() => setLevel(lvl)}
                 className={cn(
                   "flex-1 py-2.5 rounded-xl text-[14px] font-medium border transition-all active:scale-95",
-                  level === lvl ? "bg-[#3B82F6]/20 border-[#3B82F6] text-[#93C5FD]" : "bg-[#0F172A] border-[#334155] text-[#94A3B8] hover:border-[#475569]"
+                  level === lvl
+                    ? "bg-[#3B82F6]/20 border-[#3B82F6] text-[#3B82F6]"
+                    : "bg-slate-100 dark:bg-[#0F172A] border-slate-200 dark:border-[#334155] text-slate-500 dark:text-[#94A3B8] hover:border-slate-300 dark:hover:border-[#475569]"
                 )}
               >
                 {lvl}
@@ -95,7 +91,7 @@ export default function QuizSetupScreen({ navigate, viewState }) {
 
         {/* Subject */}
         <div>
-          <label className="block text-[13px] font-semibold text-[#94A3B8] mb-3 uppercase tracking-wider">Subject</label>
+          <label className="block text-[13px] font-semibold text-slate-400 dark:text-[#94A3B8] mb-3 uppercase tracking-wider">Subject</label>
           <div className="flex flex-wrap gap-2">
             {SUBJECTS.map(sub => (
               <button
@@ -103,7 +99,9 @@ export default function QuizSetupScreen({ navigate, viewState }) {
                 onClick={() => setSubject(sub)}
                 className={cn(
                   "px-4 py-2 rounded-xl text-[13px] font-medium border transition-all active:scale-95",
-                  subject === sub ? "bg-[#22C55E]/20 border-[#22C55E] text-[#86EFAC]" : "bg-[#0F172A] border-[#334155] text-[#94A3B8] hover:border-[#475569]"
+                  subject === sub
+                    ? "bg-[#22C55E]/20 border-[#22C55E] text-[#22C55E]"
+                    : "bg-slate-100 dark:bg-[#0F172A] border-slate-200 dark:border-[#334155] text-slate-500 dark:text-[#94A3B8] hover:border-slate-300 dark:hover:border-[#475569]"
                 )}
               >
                 {sub}
@@ -114,7 +112,7 @@ export default function QuizSetupScreen({ navigate, viewState }) {
 
         {/* Number of Questions */}
         <div>
-          <label className="block text-[13px] font-semibold text-[#94A3B8] mb-3 uppercase tracking-wider">Questions</label>
+          <label className="block text-[13px] font-semibold text-slate-400 dark:text-[#94A3B8] mb-3 uppercase tracking-wider">Questions</label>
           <div className="flex gap-3">
             {[5, 10, 15].map(num => (
               <button
@@ -122,7 +120,9 @@ export default function QuizSetupScreen({ navigate, viewState }) {
                 onClick={() => setNumQuestions(num)}
                 className={cn(
                   "flex-1 py-2.5 rounded-xl text-[14px] font-medium border transition-all active:scale-95",
-                  numQuestions === num ? "bg-[#F97316]/20 border-[#F97316] text-[#FDBA74]" : "bg-[#0F172A] border-[#334155] text-[#94A3B8] hover:border-[#475569]"
+                  numQuestions === num
+                    ? "bg-[#F97316]/20 border-[#F97316] text-[#F97316]"
+                    : "bg-slate-100 dark:bg-[#0F172A] border-slate-200 dark:border-[#334155] text-slate-500 dark:text-[#94A3B8] hover:border-slate-300 dark:hover:border-[#475569]"
                 )}
               >
                 {num}

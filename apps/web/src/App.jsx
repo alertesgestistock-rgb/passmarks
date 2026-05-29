@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { UserProvider, useUser } from './contexts/UserContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 
 import LandingPage from './pages/LandingPage';
 import PricingPage from './pages/PricingPage';
@@ -79,9 +80,11 @@ export default function App() {
   return (
     <BrowserRouter>
       <ThemeProvider>
-        <UserProvider>
-          <AppRoutes />
-        </UserProvider>
+        <NotificationProvider>
+          <UserProvider>
+            <AppRoutes />
+          </UserProvider>
+        </NotificationProvider>
       </ThemeProvider>
     </BrowserRouter>
   );

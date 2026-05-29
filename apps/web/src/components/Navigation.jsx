@@ -1,7 +1,8 @@
 
 import React, { useEffect } from 'react';
-import { Home, BookOpen, Bot, User, Search, Settings } from 'lucide-react';
+import { Home, BookOpen, Bot, User, Search, Settings, Sun, Moon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/contexts/ThemeContext';
 import InstallBanner from './InstallBanner';
 import NotificationCenter from './NotificationCenter';
 
@@ -15,7 +16,7 @@ export function Sidebar({ activeTab, setActiveTab }) {
   ];
 
   return (
-    <div className="hidden lg:flex fixed top-0 left-0 h-screen w-[220px] xl:w-[260px] bg-[#1E293B] border-r border-[#334155]/50 flex-col z-50">
+    <div className="hidden lg:flex fixed top-0 left-0 h-screen w-[220px] xl:w-[260px] bg-white dark:bg-[#1E293B] border-r border-slate-200 dark:border-[#334155]/50 flex-col z-50">
       <div className="h-[64px] flex items-center px-4 gap-2 shrink-0">
         <div className="text-[#22C55E]">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -23,7 +24,7 @@ export function Sidebar({ activeTab, setActiveTab }) {
             <path d="M12 2L22 12L12 22L2 12L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </div>
-        <span className="text-[20px] font-semibold tracking-tight text-white">PassMark</span>
+        <span className="text-[20px] font-semibold tracking-tight text-slate-900 dark:text-white">PassMark</span>
       </div>
 
       <nav className="flex-1 px-4 py-6 flex flex-col gap-2 overflow-y-auto">
@@ -35,9 +36,9 @@ export function Sidebar({ activeTab, setActiveTab }) {
               onClick={() => setActiveTab(item.id)}
               className={cn(
                 "flex items-center gap-3 h-[44px] px-4 rounded-lg transition-all duration-200 shrink-0 w-full text-left relative group",
-                isActive 
-                  ? "bg-[#0F172A] text-[#22C55E] font-medium" 
-                  : "text-[#94A3B8] hover:bg-[#0F172A] hover:text-[#F1F5F9] hover:-translate-y-[2px]"
+                isActive
+                  ? "bg-slate-100 dark:bg-[#0F172A] text-[#22C55E] font-medium"
+                  : "text-slate-500 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#0F172A] hover:text-slate-900 dark:hover:text-[#F1F5F9] hover:-translate-y-[2px]"
               )}
             >
               {isActive && (
@@ -60,8 +61,10 @@ export function Sidebar({ activeTab, setActiveTab }) {
 }
 
 export function TopNav({ setActiveTab }) {
+  const { theme, toggleTheme } = useTheme();
+
   return (
-    <div className="sticky top-0 w-full z-40 bg-[#0F172A] lg:bg-[#0F172A]/90 lg:backdrop-blur-sm border-b lg:border-none border-[#334155]">
+    <div className="sticky top-0 w-full z-40 bg-white dark:bg-[#0F172A] lg:bg-white/90 dark:lg:bg-[#0F172A]/90 lg:backdrop-blur-sm border-b border-slate-200 dark:border-[#334155] lg:border-none">
       <div className="h-[64px] flex items-center px-4 lg:px-8">
         {/* Mobile Logo */}
         <div className="flex lg:hidden items-center gap-2 flex-1">
@@ -70,29 +73,38 @@ export function TopNav({ setActiveTab }) {
               <path d="M3 12L9 18L21 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
-          <span className="text-[18px] font-semibold text-white">PassMark</span>
+          <span className="text-[18px] font-semibold text-slate-900 dark:text-white">PassMark</span>
         </div>
 
-        {/* Desktop Space Placeholder for Sidebar */}
+        {/* Desktop sidebar placeholder */}
         <div className="hidden lg:block w-[220px] xl:w-[260px] shrink-0"></div>
 
         {/* Center Search (Desktop) */}
         <div className="hidden lg:flex flex-1 justify-center">
           <div className="relative w-full max-w-[280px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748B]" size={16} />
-            <input 
-              type="text" 
-              placeholder="Search subject or question..." 
-              className="w-full bg-[#1E293B] text-[#F1F5F9] rounded-[20px] py-2 pl-9 pr-4 text-[13px] outline-none border border-transparent focus:border-[#334155] placeholder:text-[#64748B] transition-all"
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#64748B]" size={16} />
+            <input
+              type="text"
+              placeholder="Search subject or question..."
+              className="w-full bg-slate-100 dark:bg-[#1E293B] text-slate-900 dark:text-[#F1F5F9] rounded-[20px] py-2 pl-9 pr-4 text-[13px] outline-none border border-transparent focus:border-slate-300 dark:focus:border-[#334155] placeholder:text-slate-400 dark:placeholder:text-[#64748B] transition-all"
             />
           </div>
         </div>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-3 shrink-0 lg:ml-auto">
+        <div className="flex items-center gap-2 shrink-0 lg:ml-auto">
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
+            className="w-[36px] h-[36px] rounded-full bg-slate-100 dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 flex items-center justify-center text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-[#334155] transition-colors"
+          >
+            {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+          </button>
+
           <NotificationCenter navigate={setActiveTab} />
-          
-          <button 
+
+          <button
             onClick={() => setActiveTab('profile')}
             className="w-[36px] h-[36px] rounded-full bg-gradient-to-br from-[#22C55E] to-[#16A34A] flex items-center justify-center text-white text-[14px] font-bold shadow-md hover:brightness-110 scale-on-click"
           >
@@ -110,20 +122,20 @@ export function BottomNav({ activeTab, setActiveTab }) {
     { id: "home", icon: Home, label: "Home" },
     { id: "papers", icon: BookOpen, label: "Past Papers" },
     { id: "tutor", icon: Bot, label: "AI Tutor" },
-    { id: "profile", icon: User, label: "Profile" },
+    { id: "settings", icon: Settings, label: "Settings" },
   ];
 
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 w-full h-[64px] md:h-[72px] bg-[#1E293B] border-t border-[#334155] z-50 flex justify-around items-center pb-safe">
+    <div className="lg:hidden fixed bottom-0 left-0 w-full h-[64px] md:h-[72px] bg-white dark:bg-[#1E293B] border-t border-slate-200 dark:border-[#334155] z-50 flex justify-around items-center pb-safe">
       {navItems.map((item) => {
-        const isActive = activeTab === item.id || (item.id === 'profile' && activeTab === 'settings');
+        const isActive = activeTab === item.id;
         return (
           <button
             key={item.id}
             onClick={() => setActiveTab(item.id)}
             className={cn(
               "flex flex-col items-center justify-center w-full h-full gap-1 transition-colors relative",
-              isActive ? "text-[#22C55E]" : "text-[#64748B]"
+              isActive ? "text-[#22C55E]" : "text-slate-400 dark:text-[#64748B]"
             )}
           >
             {isActive && (
@@ -139,7 +151,6 @@ export function BottomNav({ activeTab, setActiveTab }) {
 }
 
 export function MainLayout({ children, activeTab, setActiveTab }) {
-  
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.ctrlKey) {
@@ -157,7 +168,7 @@ export function MainLayout({ children, activeTab, setActiveTab }) {
   }, [setActiveTab]);
 
   return (
-    <div className="min-h-screen bg-[#0F172A] flex flex-col">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0F172A] flex flex-col">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       <TopNav setActiveTab={setActiveTab} />
       <main className="flex-1 mb-[64px] md:mb-[72px] lg:mb-0 lg:ml-[220px] xl:ml-[260px] p-4 lg:p-8 md:max-w-[600px] md:mx-auto lg:mx-0 lg:max-w-[720px] xl:max-w-[860px] w-full slide-transition fade-in">

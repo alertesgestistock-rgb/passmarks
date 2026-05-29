@@ -26,16 +26,16 @@ export default function PastPapersPage() {
   const availableFilters = ['A Level', 'O Level', 'Sciences', 'Arts'];
 
   const toggleFilter = (filter) => {
-    setActiveFilters(prev => 
+    setActiveFilters(prev =>
       prev.includes(filter) ? prev.filter(f => f !== filter) : [...prev, filter]
     );
   };
 
   const filteredSubjects = useMemo(() => {
     return ALL_SUBJECTS.filter(sub => {
-      const matchesSearch = sub.name.toLowerCase().includes(search.toLowerCase()) || 
+      const matchesSearch = sub.name.toLowerCase().includes(search.toLowerCase()) ||
                             sub.code.includes(search);
-      
+
       if (!matchesSearch) return false;
       if (activeFilters.length === 0) return true;
 
@@ -44,10 +44,10 @@ export default function PastPapersPage() {
       const isSci = activeFilters.includes('Sciences');
       const isArts = activeFilters.includes('Arts');
 
-      const matchesLevel = (!isALevel && !isOLevel) || 
-                           (isALevel && sub.level === 'A Level') || 
+      const matchesLevel = (!isALevel && !isOLevel) ||
+                           (isALevel && sub.level === 'A Level') ||
                            (isOLevel && sub.level === 'O Level');
-                           
+
       const matchesCategory = (!isSci && !isArts) ||
                               (isSci && sub.category === 'Sciences') ||
                               (isArts && sub.category === 'Arts');
@@ -61,16 +61,15 @@ export default function PastPapersPage() {
       updateUser({ stats: { ...user.stats, papersRead: (user.stats?.papersRead || 0) + 1 } });
       addRecentActivity({ type: 'paper', subject: sub.name, paper: '2023 Paper 1', date: new Date().toISOString() });
     }
-    // In a real app, this would navigate to the PDF reader
     alert(`Opening ${sub.name} papers...`);
   };
 
   if (isLoading) {
     return (
       <div className="animate-pulse flex flex-col gap-4">
-        <div className="h-12 bg-[#1E293B] rounded-2xl"></div>
-        <div className="h-24 bg-[#1E293B] rounded-2xl"></div>
-        <div className="h-24 bg-[#1E293B] rounded-2xl"></div>
+        <div className="h-12 bg-slate-200 dark:bg-[#1E293B] rounded-2xl"></div>
+        <div className="h-24 bg-slate-200 dark:bg-[#1E293B] rounded-2xl"></div>
+        <div className="h-24 bg-slate-200 dark:bg-[#1E293B] rounded-2xl"></div>
       </div>
     );
   }
@@ -79,16 +78,16 @@ export default function PastPapersPage() {
     <div className="fade-in">
       <div className="flex flex-col md:flex-row gap-3 mb-5">
         <div className="flex-1 relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B]" size={18} />
-          <input 
-            type="text" 
-            placeholder="Search subjects..." 
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#64748B]" size={18} />
+          <input
+            type="text"
+            placeholder="Search subjects..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-[#1E293B] text-[#F1F5F9] rounded-2xl py-3.5 pl-11 pr-4 text-[14px] outline-none border border-[#334155]/50 focus:border-[#22C55E] transition-all shadow-sm"
+            className="w-full bg-white dark:bg-[#1E293B] text-slate-900 dark:text-[#F1F5F9] rounded-2xl py-3.5 pl-11 pr-4 text-[14px] outline-none border border-slate-200 dark:border-[#334155]/50 focus:border-[#22C55E] transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-[#64748B]"
           />
         </div>
-        
+
         <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 hide-scrollbar shrink-0 items-center">
           {availableFilters.map(filter => (
             <button
@@ -98,7 +97,7 @@ export default function PastPapersPage() {
                 "whitespace-nowrap px-4 py-2 rounded-full text-[13px] font-medium border transition-all scale-on-click h-[44px]",
                 activeFilters.includes(filter)
                   ? "bg-[#22C55E]/10 text-[#22C55E] border-[#22C55E]/50"
-                  : "bg-[#1E293B] text-[#94A3B8] border-transparent hover:border-[#334155]"
+                  : "bg-white dark:bg-[#1E293B] text-slate-500 dark:text-[#94A3B8] border-slate-200 dark:border-transparent hover:border-slate-300 dark:hover:border-[#334155]"
               )}
             >
               {filter}
@@ -117,32 +116,32 @@ export default function PastPapersPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredSubjects.map(sub => (
-          <div 
-            key={sub.id} 
+          <div
+            key={sub.id}
             onClick={() => handleOpenSubject(sub)}
-            className="bg-[#1E293B] border border-[#334155]/50 rounded-2xl p-4 flex items-center gap-4 cursor-pointer hover:border-[#22C55E]/50 hover:-translate-y-0.5 transition-all group"
+            className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 rounded-2xl p-4 flex items-center gap-4 cursor-pointer hover:border-[#22C55E]/50 hover:-translate-y-0.5 transition-all group"
           >
-            <div className="w-[44px] h-[44px] rounded-xl bg-[#0F172A] flex items-center justify-center shrink-0 text-[#F1F5F9]">
+            <div className="w-[44px] h-[44px] rounded-xl bg-slate-100 dark:bg-[#0F172A] flex items-center justify-center shrink-0 text-slate-700 dark:text-[#F1F5F9]">
               <span className="font-medium text-[16px] uppercase">{sub.name.charAt(0)}</span>
             </div>
             <div className="flex-1 min-w-0 flex items-center gap-2">
               <div className="flex-1 truncate">
-                <h3 className="text-[14px] font-medium text-[#F1F5F9] truncate">{sub.name}</h3>
-                <p className="text-[12px] text-[#64748B]">{sub.level} · {sub.code}</p>
+                <h3 className="text-[14px] font-medium text-slate-900 dark:text-[#F1F5F9] truncate">{sub.name}</h3>
+                <p className="text-[12px] text-slate-400 dark:text-[#64748B]">{sub.level} · {sub.code}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="bg-[#0F172A] text-[#94A3B8] text-[11px] px-2.5 py-0.5 rounded-full font-medium">
+              <span className="bg-slate-100 dark:bg-[#0F172A] text-slate-500 dark:text-[#94A3B8] text-[11px] px-2.5 py-0.5 rounded-full font-medium">
                 {sub.papers}
               </span>
-              <ChevronRight size={18} className="text-[#64748B] group-hover:text-[#22C55E] transition-colors" />
+              <ChevronRight size={18} className="text-slate-400 dark:text-[#64748B] group-hover:text-[#22C55E] transition-colors" />
             </div>
           </div>
         ))}
         {filteredSubjects.length === 0 && (
           <div className="col-span-full py-12 text-center flex flex-col items-center gap-1">
-            <p className="text-[#94A3B8] text-[12px]">No subjects found for '{search}'</p>
-            <p className="text-[#64748B] text-[12px]">Try 'Physics' or 'Economics'</p>
+            <p className="text-slate-500 dark:text-[#94A3B8] text-[12px]">No subjects found for '{search}'</p>
+            <p className="text-slate-400 dark:text-[#64748B] text-[12px]">Try 'Physics' or 'Economics'</p>
           </div>
         )}
       </div>

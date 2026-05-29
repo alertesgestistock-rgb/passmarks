@@ -6,29 +6,48 @@
 
 @layer base {
   :root {
-    /* PassMark Design Tokens */
-    --background: 222 47% 11%; /* #0F172A */
-    --foreground: 210 40% 98%; /* #F1F5F9 */
-    --primary: 142 71% 45%; /* #22C55E */
-    --primary-foreground: 144 80% 10%; /* #052e16 */
-    --secondary: 217 33% 17%; /* #1E293B */
-    --secondary-foreground: 210 40% 98%; /* #F1F5F9 */
-    --accent: 217 91% 60%; /* #3B82F6 */
-    --accent-foreground: 210 40% 98%; /* #F1F5F9 */
-    --destructive: 0 84% 60%; /* #EF4444 */
-    --destructive-foreground: 210 40% 98%; /* #F1F5F9 */
-    --muted: 215 16% 65%; /* #64748B */
-    --muted-foreground: 210 40% 98%; /* #F1F5F9 */
-    --border: 215 25% 27%; /* #334155 */
-    --input: 217 33% 17%; /* #1E293B */
-    --ring: 142 71% 45%; /* #22C55E */
+    /* Light mode (default) */
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+    --primary: 142 71% 45%;
+    --primary-foreground: 144 80% 10%;
+    --secondary: 215 25% 93%;
+    --secondary-foreground: 222 47% 11%;
+    --accent: 217 91% 60%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --muted: 215 20% 65%;
+    --muted-foreground: 222 47% 11%;
+    --border: 215 25% 88%;
+    --input: 215 25% 93%;
+    --ring: 142 71% 45%;
     --radius: 12px;
   }
-  
+
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --primary: 142 71% 45%;
+    --primary-foreground: 144 80% 10%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --accent: 217 91% 60%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --muted: 215 16% 65%;
+    --muted-foreground: 210 40% 98%;
+    --border: 215 25% 27%;
+    --input: 217 33% 17%;
+    --ring: 142 71% 45%;
+    --radius: 12px;
+  }
+
   html {
     scroll-behavior: smooth;
   }
-  
+
   body {
     @apply bg-background text-foreground antialiased overflow-x-hidden;
     font-family: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -40,7 +59,6 @@
     @apply font-semibold tracking-tight;
   }
 
-  /* Thin scrollbar */
   ::-webkit-scrollbar {
     width: 5px;
     height: 5px;
@@ -90,19 +108,18 @@
   .active\:scale-98:active {
     transform: scale(0.98);
   }
-  
+
   @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
   }
-  
+
   @keyframes float {
     0%, 100% { transform: translateY(0px); }
     50% { transform: translateY(-8px); }
   }
-  
+
   .animate-float {
     animation: float 3s ease-in-out infinite;
   }
 }
-

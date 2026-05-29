@@ -13,10 +13,10 @@ export default function QuizResultsScreen({ navigate, viewState }) {
   const subject = viewState?.subject || 'General';
   const percentage = Math.round((score / totalQuestions) * 100);
 
-  let gradeBadge = { text: "Keep studying 💪", colors: "bg-[#334155] text-[#94A3B8] border-[#475569]" };
-  if (percentage >= 90) gradeBadge = { text: "Grade A ⭐", colors: "bg-[#14532D] text-[#86EFAC] border-[#22C55E]/50" };
-  else if (percentage >= 70) gradeBadge = { text: "Grade B", colors: "bg-[#1E3A5F] text-[#93C5FD] border-[#3B82F6]/50" };
-  else if (percentage >= 50) gradeBadge = { text: "Grade C", colors: "bg-[#431407] text-[#FDBA74] border-[#F97316]/50" };
+  let gradeBadge = { text: "Keep studying 💪", colors: "bg-slate-100 dark:bg-[#334155] text-slate-500 dark:text-[#94A3B8] border-slate-200 dark:border-[#475569]" };
+  if (percentage >= 90) gradeBadge = { text: "Grade A ⭐", colors: "bg-green-50 dark:bg-[#14532D] text-[#22C55E] border-[#22C55E]/50" };
+  else if (percentage >= 70) gradeBadge = { text: "Grade B", colors: "bg-blue-50 dark:bg-[#1E3A5F] text-[#3B82F6] border-[#3B82F6]/50" };
+  else if (percentage >= 50) gradeBadge = { text: "Grade C", colors: "bg-orange-50 dark:bg-[#431407] text-[#F97316] border-[#F97316]/50" };
 
   useEffect(() => {
     if (percentage >= 80 && !hasCelebrated) {
@@ -32,25 +32,25 @@ export default function QuizResultsScreen({ navigate, viewState }) {
 
   return (
     <>
-      <ShareSheet 
-        isOpen={isShareOpen} 
-        onClose={() => setIsShareOpen(false)} 
-        shareType="quiz" 
+      <ShareSheet
+        isOpen={isShareOpen}
+        onClose={() => setIsShareOpen(false)}
+        shareType="quiz"
         quizData={{ score, totalQuestions, subject }}
       />
-      
+
       <div className="max-w-[500px] mx-auto py-8 flex flex-col items-center">
-        
+
         <Trophy size={56} className="text-[#EAB308] mb-6 drop-shadow-[0_0_20px_rgba(234,179,8,0.4)]" />
-        
-        <h1 className="text-[24px] font-bold text-white mb-2 tracking-tight">Quiz Complete!</h1>
-        <p className="text-[#94A3B8] text-[15px] mb-8 font-medium">{subject} · {totalQuestions} Questions</p>
+
+        <h1 className="text-[24px] font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Quiz Complete!</h1>
+        <p className="text-slate-500 dark:text-[#94A3B8] text-[15px] mb-8 font-medium">{subject} · {totalQuestions} Questions</p>
 
         {/* Circular Progress */}
         <div className="relative w-[140px] h-[140px] mb-8 flex items-center justify-center">
           <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="45" fill="none" stroke="#1E293B" strokeWidth="8" />
-            <circle 
+            <circle cx="50" cy="50" r="45" fill="none" className="stroke-slate-200 dark:stroke-[#1E293B]" strokeWidth="8" />
+            <circle
               cx="50" cy="50" r="45" fill="none" stroke="#22C55E" strokeWidth="8" strokeLinecap="round"
               strokeDasharray="282.7"
               strokeDashoffset={282.7 - (282.7 * percentage) / 100}
@@ -58,21 +58,21 @@ export default function QuizResultsScreen({ navigate, viewState }) {
             />
           </svg>
           <div className="absolute flex flex-col items-center justify-center">
-            <span className="text-[32px] font-bold text-white leading-none tracking-tighter" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            <span className="text-[32px] font-bold text-slate-900 dark:text-white leading-none tracking-tighter" style={{ fontVariantNumeric: 'tabular-nums' }}>
               {percentage}%
             </span>
           </div>
         </div>
 
-        <div className="text-[24px] font-bold text-white mb-4">
-          {score} <span className="text-[#64748B]">/</span> {totalQuestions} Correct
+        <div className="text-[24px] font-bold text-slate-900 dark:text-white mb-4">
+          {score} <span className="text-slate-400 dark:text-[#64748B]">/</span> {totalQuestions} Correct
         </div>
-        
+
         <div className={`px-5 py-2 rounded-full border text-[14px] font-bold uppercase tracking-wider mb-8 ${gradeBadge.colors}`}>
           {gradeBadge.text}
         </div>
 
-        <button 
+        <button
           onClick={() => setIsShareOpen(true)}
           className="mb-12 bg-[#22C55E] text-[#052e16] px-5 py-2.5 rounded-xl text-[14px] font-bold flex items-center gap-2 hover:brightness-110 active:scale-95 transition-all shadow-md"
         >
@@ -80,16 +80,16 @@ export default function QuizResultsScreen({ navigate, viewState }) {
         </button>
 
         <div className="w-full flex flex-col gap-4">
-          <button 
+          <button
             onClick={() => navigate('quiz-setup')}
-            className="w-full bg-[#1E293B] text-white border border-[#334155] rounded-xl py-4 text-[16px] font-bold flex items-center justify-center gap-2 hover:bg-[#334155] active:scale-[0.98] transition-all"
+            className="w-full bg-white dark:bg-[#1E293B] text-slate-900 dark:text-white border border-slate-200 dark:border-[#334155] rounded-xl py-4 text-[16px] font-bold flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-[#334155] active:scale-[0.98] transition-all"
           >
             <RefreshCw size={20} /> New Quiz
           </button>
-          
-          <button 
+
+          <button
             onClick={() => navigate('home')}
-            className="w-full bg-[#0F172A] text-[#94A3B8] border border-[#334155] rounded-xl py-4 text-[16px] font-bold flex items-center justify-center gap-2 hover:text-[#F1F5F9] hover:border-[#475569] active:scale-[0.98] transition-all"
+            className="w-full bg-slate-100 dark:bg-[#0F172A] text-slate-500 dark:text-[#94A3B8] border border-slate-200 dark:border-[#334155] rounded-xl py-4 text-[16px] font-bold flex items-center justify-center gap-2 hover:text-slate-900 dark:hover:text-[#F1F5F9] hover:border-slate-300 dark:hover:border-[#475569] active:scale-[0.98] transition-all"
           >
             <Home size={18} /> Home
           </button>
