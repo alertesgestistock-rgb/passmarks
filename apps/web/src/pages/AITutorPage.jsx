@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Send, Image as ImageIcon, FileText, Bot, AlertCircle,
+  Send, Image as ImageIcon, FileText, Bot,
   X, ArrowLeft, Plus, MessageSquare, ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -43,9 +43,8 @@ function formatRelativeDate(dateStr) {
 // ─────────────────────────────────────────────────────────────
 // Chat View
 // ─────────────────────────────────────────────────────────────
-function ChatView({ initConvId, initialMessage, onBack, navigate, user, apiKey }) {
+function ChatView({ initConvId, initialMessage, onBack, navigate, user }) {
   const { updateUser, addRecentActivity } = useUser();
-  const hasKey = Boolean(apiKey);
 
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [input, setInput] = useState('');
@@ -70,7 +69,6 @@ function ChatView({ initConvId, initialMessage, onBack, navigate, user, apiKey }
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
 
-  // Load existing conversation messages on mount
   useEffect(() => {
     if (!initConvId) return;
     supabase
@@ -88,9 +86,8 @@ function ChatView({ initConvId, initialMessage, onBack, navigate, user, apiKey }
       });
   }, [initConvId]);
 
-  // Handle initial message pushed from another page
   useEffect(() => {
-    if (initialMessage && hasKey) handleSend(initialMessage);
+    if (initialMessage) handleSend(initialMessage);
   }, []);
 
   const getOrCreateConversation = async (firstText) => {
@@ -160,7 +157,7 @@ function ChatView({ initConvId, initialMessage, onBack, navigate, user, apiKey }
   const handleSend = async (textOverride) => {
     const text = typeof textOverride === 'string' ? textOverride : input.trim();
     const image = pendingImage;
-    if ((!text && !image) || !hasKey || isLoading || isOffline) return;
+    if ((!text && !image) || isLoading || isOffline) return;
 
     setInput('');
     setPendingImage(null);
@@ -177,13 +174,13 @@ function ChatView({ initConvId, initialMessage, onBack, navigate, user, apiKey }
     try {
       const response = await apiServerClient.fetch('/chat/message', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-claude-api-key': apiKey },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: buildClaudeMessages(messages, text, image), system: SYSTEM_PROMPT }),
       });
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        throw new Error(err.error || 'API Error');
+        throw new Error(err.error || 'Erreur de connexion');
       }
 
       const { content } = await response.json();
@@ -211,7 +208,7 @@ function ChatView({ initConvId, initialMessage, onBack, navigate, user, apiKey }
     } catch (error) {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: error.message || 'Connection issue. Check your internet or API key and try again.',
+        content: error.message || 'Erreur de connexion. Réessaie.',
         isError: true,
         timestamp: new Date().toISOString(),
       }]);
@@ -233,31 +230,18 @@ function ChatView({ initConvId, initialMessage, onBack, navigate, user, apiKey }
         </div>
       )}
 
-      {!hasKey && (
-        <div className="bg-orange-50 dark:bg-[#431407] text-orange-700 dark:text-[#FDBA74] p-3 text-[13px] flex items-center justify-between shrink-0 rounded-xl mb-4 border border-orange-200 dark:border-transparent">
-          <div className="flex items-center gap-2">
-            <AlertCircle size={16} /> Add your Claude API key in Settings to activate the AI Tutor
-          </div>
-          <button onClick={() => navigate('settings')} className="text-[#F97316] font-medium hover:underline">
-            Go to Settings →
-          </button>
-        </div>
-      )}
-
       {/* Chat Header */}
-      <div className="bg-white dark:bg-[#1E293B] rounded-2xl p-3 mb-4 flex items-center justify-between shrink-0 shadow-sm border border-slate-200 dark:border-[#334155]/50">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="w-[36px] h-[36px] rounded-xl flex items-center justify-center text-slate-400 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#334155] transition-colors"
-          >
-            <ArrowLeft size={18} />
-          </button>
-          <div className="w-[36px] h-[36px] rounded-xl bg-[#22C55E]/10 flex items-center justify-center shrink-0">
-            <Bot size={18} className="text-[#22C55E]" />
-          </div>
-          <h2 className="text-[14px] font-medium text-slate-900 dark:text-white">AI Tutor</h2>
+      <div className="bg-white dark:bg-[#1E293B] rounded-2xl p-3 mb-4 flex items-center gap-3 shrink-0 shadow-sm border border-slate-200 dark:border-[#334155]/50">
+        <button
+          onClick={onBack}
+          className="w-[36px] h-[36px] rounded-xl flex items-center justify-center text-slate-400 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#334155] transition-colors"
+        >
+          <ArrowLeft size={18} />
+        </button>
+        <div className="w-[36px] h-[36px] rounded-xl bg-[#22C55E]/10 flex items-center justify-center shrink-0">
+          <Bot size={18} className="text-[#22C55E]" />
         </div>
+        <h2 className="text-[14px] font-medium text-slate-900 dark:text-white">AI Tutor</h2>
       </div>
 
       {/* Messages */}
@@ -334,7 +318,7 @@ function ChatView({ initConvId, initialMessage, onBack, navigate, user, apiKey }
 
         <button
           onClick={() => imageInputRef.current?.click()}
-          disabled={!hasKey || isOffline}
+          disabled={isOffline}
           title="Attach image"
           className="w-[40px] h-[40px] rounded-xl flex items-center justify-center text-slate-400 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#334155] transition-colors shrink-0 disabled:opacity-40"
         >
@@ -342,7 +326,7 @@ function ChatView({ initConvId, initialMessage, onBack, navigate, user, apiKey }
         </button>
         <button
           onClick={() => pdfInputRef.current?.click()}
-          disabled={!hasKey || isOffline}
+          disabled={isOffline}
           title="Attach PDF"
           className="w-[40px] h-[40px] rounded-xl flex items-center justify-center text-slate-400 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#334155] transition-colors shrink-0 disabled:opacity-40"
         >
@@ -355,13 +339,13 @@ function ChatView({ initConvId, initialMessage, onBack, navigate, user, apiKey }
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Ask a question..."
-          disabled={!hasKey || isLoading || isOffline}
+          disabled={isLoading || isOffline}
           className="flex-1 bg-transparent border-none outline-none text-[14px] text-slate-900 dark:text-white px-2 placeholder:text-slate-400 dark:placeholder:text-[#64748B] disabled:opacity-50"
         />
 
         <button
           onClick={() => handleSend()}
-          disabled={(!input.trim() && !pendingImage) || !hasKey || isLoading || isOffline}
+          disabled={(!input.trim() && !pendingImage) || isLoading || isOffline}
           className="w-[40px] h-[40px] rounded-xl bg-[#22C55E] flex items-center justify-center shrink-0 disabled:opacity-50 scale-on-click"
         >
           <Send size={18} className="text-[#052e16] ml-0.5" />
@@ -376,8 +360,6 @@ function ChatView({ initConvId, initialMessage, onBack, navigate, user, apiKey }
 // ─────────────────────────────────────────────────────────────
 export default function AITutorPage({ navigate, viewState }) {
   const { user, isLoading: userLoading } = useUser();
-  const apiKey = localStorage.getItem('claude_api_key') || '';
-  const hasKey = Boolean(apiKey);
 
   const [view, setView] = useState('list');
   const [activeConvId, setActiveConvId] = useState(null);
@@ -388,7 +370,6 @@ export default function AITutorPage({ navigate, viewState }) {
     if (user?.id) loadConversations();
   }, [user?.id]);
 
-  // If navigated here with an initial message, go straight to new chat
   useEffect(() => {
     if (viewState?.initialMessage) {
       setActiveConvId(null);
@@ -407,16 +388,8 @@ export default function AITutorPage({ navigate, viewState }) {
     setConvLoading(false);
   };
 
-  const openConversation = (convId) => {
-    setActiveConvId(convId);
-    setView('chat');
-  };
-
-  const openNewChat = () => {
-    setActiveConvId(null);
-    setView('chat');
-  };
-
+  const openConversation = (convId) => { setActiveConvId(convId); setView('chat'); };
+  const openNewChat = () => { setActiveConvId(null); setView('chat'); };
   const handleBack = () => {
     setView('list');
     if (user?.id) loadConversations();
@@ -435,7 +408,6 @@ export default function AITutorPage({ navigate, viewState }) {
         onBack={handleBack}
         navigate={navigate}
         user={user}
-        apiKey={apiKey}
       />
     );
   }
@@ -456,22 +428,10 @@ export default function AITutorPage({ navigate, viewState }) {
         </div>
       </div>
 
-      {!hasKey && (
-        <div className="bg-orange-50 dark:bg-[#431407] text-orange-700 dark:text-[#FDBA74] p-3 text-[13px] flex items-center justify-between rounded-xl mb-4 border border-orange-200 dark:border-transparent">
-          <div className="flex items-center gap-2">
-            <AlertCircle size={16} /> Add your Claude API key in Settings to activate the AI Tutor
-          </div>
-          <button onClick={() => navigate('settings')} className="text-[#F97316] font-medium hover:underline shrink-0">
-            Go to Settings →
-          </button>
-        </div>
-      )}
-
       {/* New conversation button */}
       <button
         onClick={openNewChat}
-        disabled={!hasKey}
-        className="w-full bg-[#22C55E] disabled:opacity-50 text-white rounded-2xl p-4 flex items-center justify-center gap-2 font-semibold text-[15px] mb-5 scale-on-click shadow-sm shadow-[#22C55E]/20"
+        className="w-full bg-[#22C55E] text-white rounded-2xl p-4 flex items-center justify-center gap-2 font-semibold text-[15px] mb-5 scale-on-click shadow-sm shadow-[#22C55E]/20"
       >
         <Plus size={20} />
         Nouvelle conversation

@@ -19,12 +19,7 @@ export default function SettingsPage({ navigate }) {
     streakReminder: true,
     sound: true,
     fontSize: 'Normal',
-    apiKey: localStorage.getItem('claude_api_key') || '',
-    aiLanguage: 'English',
-    responseStyle: 'Detailed'
   });
-
-  const [showKey, setShowKey] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('passmark_settings');
@@ -223,58 +218,6 @@ export default function SettingsPage({ navigate }) {
           </div>
         </section>
 
-        {/* AI & API */}
-        <section>
-          <h2 className={sectionHead}>AI Settings</h2>
-          <div className={cn(card, "p-1")}>
-            <div className="p-3 border-b border-slate-100 dark:border-[#334155]/50">
-              <label className="block text-[13px] font-medium text-slate-800 dark:text-[#F1F5F9] mb-2">Claude API Key</label>
-              {showKey ? (
-                <input
-                  type="text"
-                  value={settings.apiKey}
-                  onChange={(e) => {
-                    updateSetting('apiKey', e.target.value);
-                    localStorage.setItem('claude_api_key', e.target.value);
-                  }}
-                  onBlur={() => setShowKey(false)}
-                  autoFocus
-                  placeholder="sk-ant-..."
-                  className="w-full bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] focus:border-[#22C55E] rounded-lg px-3 py-2 text-[13px] text-slate-900 dark:text-white outline-none"
-                />
-              ) : (
-                <div
-                  onClick={() => setShowKey(true)}
-                  className="w-full bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-lg px-3 py-2 text-[13px] text-slate-500 dark:text-[#94A3B8] cursor-pointer hover:border-slate-300 dark:hover:border-[#475569] transition-colors"
-                >
-                  {settings.apiKey ? `●●●●●●●●${settings.apiKey.slice(-6)}` : 'Tap to set API key'}
-                </div>
-              )}
-            </div>
-
-            <div className="p-3 border-b border-slate-100 dark:border-[#334155]/50">
-              <label className="block text-[13px] font-medium text-slate-800 dark:text-[#F1F5F9] mb-3">AI Language</label>
-              <div className="flex gap-2">
-                {['English', 'French'].map(opt => (
-                  <Pill key={opt} active={settings.aiLanguage === opt} onClick={() => updateSetting('aiLanguage', opt)}>
-                    {opt}
-                  </Pill>
-                ))}
-              </div>
-            </div>
-
-            <div className="p-3">
-              <label className="block text-[13px] font-medium text-slate-800 dark:text-[#F1F5F9] mb-3">Response style</label>
-              <div className="flex gap-2">
-                {['Detailed', 'Concise'].map(opt => (
-                  <Pill key={opt} active={settings.responseStyle === opt} onClick={() => updateSetting('responseStyle', opt)}>
-                    {opt}
-                  </Pill>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* Data & Privacy */}
         <section>
