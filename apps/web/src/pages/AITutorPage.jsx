@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Send, Image as ImageIcon, FileText, Bot,
+  Send, Image as ImageIcon, FileText, GraduationCap,
   X, ArrowLeft, Plus, MessageSquare, Pencil, Check, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -351,7 +351,7 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
           </button>
         )}
         <div className="w-[36px] h-[36px] rounded-xl bg-[#22C55E]/10 flex items-center justify-center shrink-0">
-          <Bot size={18} className="text-[#22C55E]" />
+          <GraduationCap size={18} className="text-[#22C55E]" />
         </div>
         <h2 className="text-[14px] font-medium text-slate-900 dark:text-white">AI Tutor</h2>
       </div>
@@ -486,7 +486,7 @@ function DesktopEmptyState({ onNewChat }) {
   return (
     <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
       <div className="w-[72px] h-[72px] rounded-2xl bg-[#22C55E]/10 flex items-center justify-center">
-        <Bot size={32} className="text-[#22C55E]" />
+        <GraduationCap size={32} className="text-[#22C55E]" />
       </div>
       <div>
         <p className="text-[16px] font-semibold text-slate-700 dark:text-[#F1F5F9]">AI Tutor PassMark</p>
@@ -578,7 +578,7 @@ export default function AITutorPage({ navigate, viewState }) {
       {/* Logo + titre + bouton collapse */}
       <div className="flex items-center gap-2 px-3 pt-4 pb-3 shrink-0">
         <div className="w-[28px] h-[28px] rounded-lg bg-[#22C55E]/10 flex items-center justify-center shrink-0">
-          <Bot size={14} className="text-[#22C55E]" />
+          <GraduationCap size={14} className="text-[#22C55E]" />
         </div>
         <span className="text-[13px] font-semibold text-slate-800 dark:text-[#F1F5F9] flex-1">AI Tutor</span>
         <button
@@ -689,7 +689,7 @@ export default function AITutorPage({ navigate, viewState }) {
         <div className="lg:hidden h-[calc(100vh-160px)] md:h-[calc(100vh-168px)] overflow-hidden">
           <div className="flex items-center gap-3 mb-5">
             <div className="w-[44px] h-[44px] rounded-xl bg-[#22C55E]/10 flex items-center justify-center shrink-0">
-              <Bot size={22} className="text-[#22C55E]" />
+              <GraduationCap size={22} className="text-[#22C55E]" />
             </div>
             <div>
               <h1 className="text-[20px] font-bold text-slate-900 dark:text-white leading-tight">AI Tutor</h1>

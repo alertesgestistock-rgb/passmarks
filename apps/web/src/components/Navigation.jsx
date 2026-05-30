@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Home, BookOpen, Bot, User, Search, Settings, Sun, Moon, Calculator as CalcIcon, WifiOff } from 'lucide-react';
+import { Home, BookOpen, GraduationCap, User, Search, Settings, Sun, Moon, Calculator as CalcIcon, WifiOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
 import InstallBanner from './InstallBanner';
@@ -11,7 +11,7 @@ export function Sidebar({ activeTab, setActiveTab }) {
   const navItems = [
     { id: "home", icon: Home, label: "Home" },
     { id: "papers", icon: BookOpen, label: "Past Papers" },
-    { id: "tutor", icon: Bot, label: "AI Tutor" },
+    { id: "tutor", icon: GraduationCap, label: "AI Tutor" },
     { id: "profile", icon: User, label: "Profile" },
     { id: "settings", icon: Settings, label: "Settings" },
   ];
@@ -157,7 +157,7 @@ export function BottomNav({ activeTab, setActiveTab }) {
   const navItems = [
     { id: "home", icon: Home, label: "Home" },
     { id: "papers", icon: BookOpen, label: "Past Papers" },
-    { id: "tutor", icon: Bot, label: "AI Tutor" },
+    { id: "tutor", icon: GraduationCap, label: "AI Tutor" },
     { id: "settings", icon: Settings, label: "Settings" },
   ];
 
