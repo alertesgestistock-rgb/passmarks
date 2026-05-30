@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Send, Image as ImageIcon, FileText, Bot,
-  X, ArrowLeft, Plus, MessageSquare,
+  X, ArrowLeft, Plus, MessageSquare, Pencil, Check,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/contexts/UserContext';
@@ -307,7 +307,7 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
       )}
 
       {/* Input Bar */}
-      <div className="shrink-0 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 rounded-2xl p-2 flex items-center gap-2">
+      <div className="shrink-0 sticky bottom-0 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 rounded-2xl p-2 flex items-center gap-2">
         <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
         <input ref={pdfInputRef} type="file" accept=".pdf" className="hidden" onChange={handlePDFSelect} />
         <button onClick={() => imageInputRef.current?.click()} disabled={isOffline} title="Joindre une image"
@@ -368,10 +368,14 @@ export default function AITutorPage({ navigate, viewState }) {
   const [view, setView] = useState('list');
   const [activeConvId, setActiveConvId] = useState(null);
   const [conversations, setConversations] = useState([]);
-  const [convLoading, setConvLoading] = useState(true);
+  const [convLoading, setConvLoading] = useState(false);
+  const [editingConvId, setEditingConvId] = useState(null);
+  const [editingTitle, setEditingTitle] = useState('');
 
   useEffect(() => {
-    if (user?.id) loadConversations();
+    if (user?.id) {
+      loadConversations();
+    }
   }, [user?.id]);
 
   useEffect(() => {
@@ -387,6 +391,21 @@ export default function AITutorPage({ navigate, viewState }) {
       .order('updated_at', { ascending: false });
     setConversations(data || []);
     setConvLoading(false);
+  };
+
+  const startRename = (e, conv) => {
+    e.stopPropagation();
+    setEditingConvId(conv.id);
+    setEditingTitle(conv.title || '');
+  };
+
+  const saveRename = async (convId) => {
+    const trimmed = editingTitle.trim();
+    if (trimmed) {
+      await supabase.from('conversations').update({ title: trimmed }).eq('id', convId);
+      setConversations(prev => prev.map(c => c.id === convId ? { ...c, title: trimmed } : c));
+    }
+    setEditingConvId(null);
   };
 
   const openNewChat = () => { setActiveConvId(null); setView('chat'); };
@@ -430,28 +449,49 @@ export default function AITutorPage({ navigate, viewState }) {
           </div>
         ) : (
           conversations.map(conv => (
-            <button
+            <div
               key={conv.id}
-              onClick={() => openConversation(conv.id)}
               className={cn(
-                'w-full flex items-start gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all',
+                'w-full flex items-start gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all group',
                 activeConvId === conv.id
-                  ? 'bg-[#22C55E]/10 text-[#22C55E]'
-                  : 'hover:bg-slate-100 dark:hover:bg-[#1E293B] text-slate-600 dark:text-[#94A3B8]'
+                  ? 'bg-[#22C55E]/10'
+                  : 'hover:bg-slate-100 dark:hover:bg-[#1E293B]'
               )}
             >
-              <MessageSquare size={14} className="shrink-0 mt-0.5" />
-              <div className="flex-1 min-w-0">
-                <p className={cn('text-[13px] truncate leading-tight font-medium',
-                  activeConvId === conv.id ? 'text-[#22C55E]' : 'text-slate-700 dark:text-[#CBD5E1]'
-                )}>
-                  {conv.title || 'Conversation'}
-                </p>
-                <p className="text-[11px] text-slate-400 dark:text-[#475569] mt-0.5">
-                  {formatRelativeDate(conv.updated_at)}
-                </p>
-              </div>
-            </button>
+              <button onClick={() => openConversation(conv.id)} className="flex items-start gap-2.5 flex-1 min-w-0">
+                <MessageSquare size={14} className={cn('shrink-0 mt-0.5', activeConvId === conv.id ? 'text-[#22C55E]' : 'text-slate-400 dark:text-[#64748B]')} />
+                <div className="flex-1 min-w-0">
+                  {editingConvId === conv.id ? (
+                    <input
+                      autoFocus
+                      value={editingTitle}
+                      onChange={e => setEditingTitle(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') saveRename(conv.id); if (e.key === 'Escape') setEditingConvId(null); }}
+                      onClick={e => e.stopPropagation()}
+                      className="w-full bg-white dark:bg-[#0F172A] border border-[#22C55E]/50 rounded px-1.5 py-0.5 text-[13px] text-slate-800 dark:text-[#F1F5F9] outline-none"
+                    />
+                  ) : (
+                    <p className={cn('text-[13px] truncate leading-tight font-medium',
+                      activeConvId === conv.id ? 'text-[#22C55E]' : 'text-slate-700 dark:text-[#CBD5E1]'
+                    )}>
+                      {conv.title || 'Conversation'}
+                    </p>
+                  )}
+                  <p className="text-[11px] text-slate-400 dark:text-[#475569] mt-0.5">
+                    {formatRelativeDate(conv.updated_at)}
+                  </p>
+                </div>
+              </button>
+              {editingConvId === conv.id ? (
+                <button onClick={() => saveRename(conv.id)} className="shrink-0 text-[#22C55E] hover:opacity-80 mt-0.5">
+                  <Check size={13} />
+                </button>
+              ) : (
+                <button onClick={e => startRename(e, conv)} className="shrink-0 text-slate-300 dark:text-[#475569] hover:text-slate-500 dark:hover:text-[#94A3B8] opacity-0 group-hover:opacity-100 transition-opacity mt-0.5">
+                  <Pencil size={12} />
+                </button>
+              )}
+            </div>
           ))
         )}
       </div>
@@ -470,7 +510,7 @@ export default function AITutorPage({ navigate, viewState }) {
 
       {/* ── Mobile : vue liste (plein écran) ──────────────── */}
       {view === 'list' && (
-        <div className="lg:hidden h-[calc(100vh-128px)] md:h-[calc(100vh-136px)] overflow-hidden">
+        <div className="lg:hidden h-[calc(100vh-160px)] md:h-[calc(100vh-168px)] overflow-hidden">
           <div className="flex items-center gap-3 mb-5">
             <div className="w-[44px] h-[44px] rounded-xl bg-[#22C55E]/10 flex items-center justify-center shrink-0">
               <Bot size={22} className="text-[#22C55E]" />
@@ -516,9 +556,8 @@ export default function AITutorPage({ navigate, viewState }) {
           Mobile  : visible seulement en mode 'chat'.
       ────────────────────────────────────────────────────── */}
       <div className={cn(
-        'h-[calc(100vh-128px)] md:h-[calc(100vh-136px)] lg:h-[calc(100vh-64px)]',
-        // Desktop: compense le padding main (p-8=32px) + largeur sidebar (260px) → 260-32=228px extra
-        'lg:ml-[228px]',
+        'h-[calc(100vh-160px)] md:h-[calc(100vh-168px)] lg:h-[calc(100vh-128px)]',
+        'lg:ml-[228px] overflow-hidden',
         view === 'chat' ? 'block' : 'hidden lg:block',
       )}>
         {view === 'chat' || activeConvId !== null ? (
