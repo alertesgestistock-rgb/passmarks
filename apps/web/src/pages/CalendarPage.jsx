@@ -314,23 +314,32 @@ export default function CalendarPage() {
 
   // ── Load events for current month ─────────────────────────────────────────
   const loadEvents = useCallback(async () => {
-    if (!user) return;
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const startDate = toDateStr(currentYear, currentMonth, 1);
     const endDate   = toDateStr(currentYear, currentMonth, getDaysInMonth(currentYear, currentMonth));
 
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .select('*')
-      .eq('user_id', user.id)
-      .gte('event_date', startDate)
-      .lte('event_date', endDate)
-      .order('event_date', { ascending: true })
-      .order('start_time', { ascending: true, nullsFirst: true });
+    try {
+      const { data, error } = await supabase
+        .from('calendar_events')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('event_date', startDate)
+        .lte('event_date', endDate)
+        .order('event_date', { ascending: true })
+        .order('start_time', { ascending: true, nullsFirst: true });
 
-    if (!error && data) setEvents(data);
-    setLoading(false);
-  }, [user, currentYear, currentMonth]);
+      if (!error && data) setEvents(data);
+      else setEvents([]);
+    } catch {
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id, currentYear, currentMonth]);
 
   useEffect(() => { loadEvents(); }, [loadEvents]);
 
@@ -382,6 +391,7 @@ export default function CalendarPage() {
 
   // ── CRUD ───────────────────────────────────────────────────────────────────
   const handleSave = async (formData) => {
+    if (!user?.id) return;
     if (editingEvent) {
       const { error } = await supabase
         .from('calendar_events')
@@ -398,6 +408,7 @@ export default function CalendarPage() {
   };
 
   const handleDelete = async (eventId) => {
+    if (!user?.id) return;
     const { error } = await supabase
       .from('calendar_events')
       .delete()
