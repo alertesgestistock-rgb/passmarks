@@ -22,10 +22,13 @@ function toOpenAIMessages(system, messages) {
   return result;
 }
 
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
 async function requireAuth(req) {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) return null;
-  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
   return user;
@@ -41,7 +44,7 @@ export default async function handler(req, res) {
   const user = await requireAuth(req);
   if (!user) return res.status(401).json({ error: 'Authentication required' });
 
-  const apiKey = process.env.OPENROUTER_API_KEY?.trim();
+  const apiKey = (process.env.OPENROUTER_API_KEY || process.env.VITE_OPENROUTER_API_KEY)?.trim();
   if (!apiKey) return res.status(500).json({ error: 'Service not configured' });
 
   const { messages, system } = req.body;
