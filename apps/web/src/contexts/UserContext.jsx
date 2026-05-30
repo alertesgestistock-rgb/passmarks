@@ -34,9 +34,10 @@ const userToProfile = (updates) => {
 };
 
 export const UserProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [streak, setStreak] = useState({ current: 0, lastActive: null });
-  const [isLoading, setIsLoading] = useState(true);
+  const cached = loadUserFromLocalStorage();
+  const [user, setUser] = useState(cached || null);
+  const [streak, setStreak] = useState(() => cached ? checkAndUpdateStreak() : { current: 0, lastActive: null });
+  const [isLoading, setIsLoading] = useState(!cached);
 
   useEffect(() => {
     let cancelled = false;
@@ -62,13 +63,8 @@ export const UserProvider = ({ children }) => {
     const init = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       const loaded = await loadFromSession(session);
-      if (!loaded && !cancelled) {
-        // Guest fallback: localStorage only
-        const cached = loadUserFromLocalStorage();
-        if (cached) {
-          setUser(cached);
-          setStreak(checkAndUpdateStreak());
-        }
+      if (!loaded && !cancelled && !cached) {
+        // No session and no cache — nothing to show
       }
       if (!cancelled) setIsLoading(false);
     };
