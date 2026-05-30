@@ -321,8 +321,15 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
+        if (response.status === 402) {
+          throw new InsufficientTokensError(err.balance ?? 0);
+        }
         throw new Error(err.error || 'Connection error');
       }
+
+      // Solde après déduction transmis dans le header de réponse
+      const balanceHeader = response.headers.get('X-Balance-After');
+      if (balanceHeader !== null) updateTokenBalance(Number(balanceHeader));
 
       // ── Lecture du stream SSE ──────────────────────────────
       const reader = response.body.getReader();
