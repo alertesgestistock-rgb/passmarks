@@ -119,16 +119,6 @@ export function TopNav({ setActiveTab }) {
             </div>
           )}
 
-          {/* Calendar button */}
-          <button
-            onClick={() => setActiveTab('calendar')}
-            aria-label="Open calendar"
-            title="My Study Calendar"
-            className="w-[36px] h-[36px] rounded-full bg-slate-100 dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 flex items-center justify-center text-slate-500 dark:text-[#94A3B8] hover:text-[#22C55E] hover:bg-slate-200 dark:hover:bg-[#334155] transition-colors"
-          >
-            <CalendarDays size={17} />
-          </button>
-
           {/* Calculator button */}
           <button
             onClick={() => setShowCalc(v => !v)}
