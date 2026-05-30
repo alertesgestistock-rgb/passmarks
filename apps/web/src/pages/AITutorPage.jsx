@@ -101,7 +101,7 @@ function MarkdownText({ content }) {
 // ─────────────────────────────────────────────────────────────
 // Chat View
 // ─────────────────────────────────────────────────────────────
-function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) {
+function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, onConversationCreated }) {
   const { updateUser, addRecentActivity } = useUser();
 
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -133,6 +133,17 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
     setConversationId(initConvId || null);
     setMessages([buildWelcome(user)]);
     if (!initConvId) return;
+
+    // Show cached messages instantly
+    const cacheKey = `pm_msgs_${initConvId}`;
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        setMessages([buildWelcome(user), ...JSON.parse(cached)]);
+      }
+    } catch {}
+
+    // Refresh from DB in background
     supabase
       .from('messages')
       .select('role, content, created_at')
@@ -140,10 +151,9 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
       .order('created_at', { ascending: true })
       .then(({ data: msgs }) => {
         if (msgs && msgs.length > 0) {
-          setMessages([
-            buildWelcome(user),
-            ...msgs.map(m => ({ role: m.role, content: m.content, timestamp: m.created_at })),
-          ]);
+          const mapped = msgs.map(m => ({ role: m.role, content: m.content, timestamp: m.created_at }));
+          setMessages([buildWelcome(user), ...mapped]);
+          try { localStorage.setItem(cacheKey, JSON.stringify(mapped)); } catch {}
         }
       });
   }, [initConvId]);
@@ -152,7 +162,7 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
     if (initialMessage) handleSend(initialMessage);
   }, []);
 
-  const getOrCreateConversation = async (firstText) => {
+  const getOrCreateConversation = async (firstText, onCreated) => {
     if (conversationId) return conversationId;
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return null;
@@ -162,13 +172,25 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
       .insert({ user_id: session.user.id, title })
       .select('id')
       .single();
-    if (conv) { setConversationId(conv.id); return conv.id; }
+    if (conv) {
+      setConversationId(conv.id);
+      if (onCreated) onCreated({ id: conv.id, title, updated_at: new Date().toISOString() });
+      return conv.id;
+    }
     return null;
   };
 
   const saveMessage = async (convId, role, content) => {
     if (!convId) return;
     await supabase.from('messages').insert({ conversation_id: convId, role, content, content_type: 'text' });
+    // Update local cache immediately
+    try {
+      const cacheKey = `pm_msgs_${convId}`;
+      const cached = localStorage.getItem(cacheKey);
+      const msgs = cached ? JSON.parse(cached) : [];
+      msgs.push({ role, content, timestamp: new Date().toISOString() });
+      localStorage.setItem(cacheKey, JSON.stringify(msgs));
+    } catch {}
   };
 
   const handleImageSelect = (e) => {
@@ -296,7 +318,7 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
       const { content } = await response.json();
       setMessages(prev => [...prev, { role: 'assistant', content, timestamp: new Date().toISOString() }]);
 
-      const convId = await getOrCreateConversation(text);
+      const convId = await getOrCreateConversation(text, onConversationCreated);
       if (convId) {
         await saveMessage(convId, 'user', image ? `[Image] ${text}` : text);
         await saveMessage(convId, 'assistant', content);
@@ -535,17 +557,35 @@ export default function AITutorPage({ navigate, viewState }) {
     if (viewState?.initialMessage) { setActiveConvId(null); setView('chat'); }
   }, [viewState]);
 
+  const CONV_CACHE_KEY = `pm_convs_${user?.id}`;
+
   const loadConversations = async () => {
-    setConvLoading(true);
+    // Show cached list instantly — no spinner if cache exists
+    try {
+      const cached = localStorage.getItem(CONV_CACHE_KEY);
+      if (cached) {
+        setConversations(JSON.parse(cached));
+        setConvLoading(false);
+      } else {
+        setConvLoading(true);
+      }
+    } catch {
+      setConvLoading(true);
+    }
+
+    // Refresh from DB in background
     try {
       const { data, error } = await supabase
         .from('conversations')
         .select('id, title, updated_at')
         .eq('user_id', user.id)
         .order('updated_at', { ascending: false });
-      if (!error) setConversations(data || []);
+      if (!error && data) {
+        setConversations(data);
+        try { localStorage.setItem(CONV_CACHE_KEY, JSON.stringify(data)); } catch {}
+      }
     } catch {
-      // show empty list on error
+      // keep cached data on error
     } finally {
       setConvLoading(false);
     }
@@ -745,6 +785,15 @@ export default function AITutorPage({ navigate, viewState }) {
             onBack={handleBack}
             showBackButton={view === 'chat'}
             user={user}
+            onConversationCreated={(newConv) => {
+              setConversations(prev => [newConv, ...prev]);
+              try {
+                const key = `pm_convs_${user?.id}`;
+                const cached = localStorage.getItem(key);
+                const list = cached ? JSON.parse(cached) : [];
+                localStorage.setItem(key, JSON.stringify([newConv, ...list]));
+              } catch {}
+            }}
           />
         ) : (
           <DesktopEmptyState onNewChat={openNewChat} />

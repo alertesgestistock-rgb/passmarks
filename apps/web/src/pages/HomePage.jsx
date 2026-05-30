@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageSquare, Camera, FileText, Award } from 'lucide-react';
+import { MessageSquare, Camera, FileText, Award, CalendarDays } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { getTimeGreeting, calculateDaysToExam, getStreakColor } from '@/lib/userStorage';
 
@@ -56,6 +56,13 @@ export default function HomePage({ navigate }) {
             <div className={`inline-flex items-center text-[12px] font-medium ${streakColor}`}>
               🔥 {streak.current} day streak
             </div>
+            <button
+              onClick={() => navigate('calendar')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold bg-[#22C55E]/10 text-[#22C55E] border border-[#22C55E]/20 hover:bg-[#22C55E]/20 transition-colors"
+            >
+              <CalendarDays size={13} />
+              My Calendar
+            </button>
           </div>
         </div>
 

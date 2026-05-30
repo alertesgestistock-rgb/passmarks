@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Home, BookOpen, GraduationCap, User, Search, Settings, Sun, Moon, Calculator as CalcIcon, WifiOff } from 'lucide-react';
+import { Home, BookOpen, GraduationCap, User, Search, Settings, Sun, Moon, Calculator as CalcIcon, WifiOff, CalendarDays } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
 import InstallBanner from './InstallBanner';
@@ -9,11 +9,12 @@ import Calculator from './Calculator';
 
 export function Sidebar({ activeTab, setActiveTab }) {
   const navItems = [
-    { id: "home", icon: Home, label: "Home" },
-    { id: "papers", icon: BookOpen, label: "Past Papers" },
-    { id: "tutor", icon: GraduationCap, label: "AI Tutor" },
-    { id: "profile", icon: User, label: "Profile" },
-    { id: "settings", icon: Settings, label: "Settings" },
+    { id: "home",     icon: Home,         label: "Home" },
+    { id: "papers",   icon: BookOpen,      label: "Past Papers" },
+    { id: "tutor",    icon: GraduationCap, label: "AI Tutor" },
+    { id: "calendar", icon: CalendarDays,  label: "Calendar" },
+    { id: "profile",  icon: User,          label: "Profile" },
+    { id: "settings", icon: Settings,      label: "Settings" },
   ];
 
   return (
@@ -63,7 +64,7 @@ export function Sidebar({ activeTab, setActiveTab }) {
 
 export function TopNav({ setActiveTab }) {
   const { theme, toggleTheme } = useTheme();
-  const [showCalc, setShowCalc] = useState(false);
+  const [showCalc,  setShowCalc]  = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   useEffect(() => {
@@ -118,11 +119,21 @@ export function TopNav({ setActiveTab }) {
             </div>
           )}
 
+          {/* Calendar button */}
+          <button
+            onClick={() => setActiveTab('calendar')}
+            aria-label="Open calendar"
+            title="My Study Calendar"
+            className="w-[36px] h-[36px] rounded-full bg-slate-100 dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 flex items-center justify-center text-slate-500 dark:text-[#94A3B8] hover:text-[#22C55E] hover:bg-slate-200 dark:hover:bg-[#334155] transition-colors"
+          >
+            <CalendarDays size={17} />
+          </button>
+
           {/* Calculator button */}
           <button
             onClick={() => setShowCalc(v => !v)}
-            aria-label="Ouvrir la calculatrice"
-            title="Calculatrice"
+            aria-label="Open calculator"
+            title="Calculator"
             className="w-[36px] h-[36px] rounded-full bg-slate-100 dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 flex items-center justify-center text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-[#334155] transition-colors"
           >
             <CalcIcon size={17} />
@@ -155,10 +166,11 @@ export function TopNav({ setActiveTab }) {
 
 export function BottomNav({ activeTab, setActiveTab }) {
   const navItems = [
-    { id: "home", icon: Home, label: "Home" },
-    { id: "papers", icon: BookOpen, label: "Past Papers" },
-    { id: "tutor", icon: GraduationCap, label: "AI Tutor" },
-    { id: "settings", icon: Settings, label: "Settings" },
+    { id: "home",     icon: Home,         label: "Home" },
+    { id: "papers",   icon: BookOpen,      label: "Papers" },
+    { id: "tutor",    icon: GraduationCap, label: "AI Tutor" },
+    { id: "calendar", icon: CalendarDays,  label: "Calendar" },
+    { id: "settings", icon: Settings,      label: "Settings" },
   ];
 
   return (

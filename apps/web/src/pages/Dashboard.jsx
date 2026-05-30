@@ -9,6 +9,7 @@ import SettingsPage from './SettingsPage';
 import QuizSetupScreen from './QuizSetupScreen';
 import QuizPlayScreen from './QuizPlayScreen';
 import QuizResultsScreen from './QuizResultsScreen';
+import CalendarPage from './CalendarPage';
 
 export default function Dashboard() {
   const [view, setView] = useState({ path: 'home', state: null });
@@ -35,6 +36,8 @@ export default function Dashboard() {
         return <QuizPlayScreen navigate={navigate} viewState={view.state} />;
       case 'quiz-results':
         return <QuizResultsScreen navigate={navigate} viewState={view.state} />;
+      case 'calendar':
+        return <CalendarPage navigate={navigate} />;
       default:
         return <HomePage navigate={navigate} />;
     }
@@ -44,6 +47,8 @@ export default function Dashboard() {
     if (view.path.startsWith('quiz')) return 'home';
     return view.path;
   };
+
+
 
   return (
     <MainLayout activeTab={getActiveTab()} setActiveTab={(tab) => navigate(tab)}>
