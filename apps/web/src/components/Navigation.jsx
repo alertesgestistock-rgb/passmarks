@@ -1,10 +1,11 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Home, BookOpen, Bot, User, Search, Settings, Sun, Moon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
 import InstallBanner from './InstallBanner';
 import NotificationCenter from './NotificationCenter';
+import Calculator from './Calculator';
 
 export function Sidebar({ activeTab, setActiveTab }) {
   const navItems = [
@@ -62,9 +63,10 @@ export function Sidebar({ activeTab, setActiveTab }) {
 
 export function TopNav({ setActiveTab }) {
   const { theme, toggleTheme } = useTheme();
+  const [showCalc, setShowCalc] = useState(false);
 
   return (
-    <div className="sticky top-0 w-full z-40 bg-white dark:bg-[#0F172A] lg:bg-white/90 dark:lg:bg-[#0F172A]/90 lg:backdrop-blur-sm border-b border-slate-200 dark:border-[#334155] lg:border-none">
+    <div className="fixed top-0 left-0 right-0 z-40 bg-white dark:bg-[#0F172A] lg:bg-white/90 dark:lg:bg-[#0F172A]/90 lg:backdrop-blur-sm border-b border-slate-200 dark:border-[#334155] lg:border-none">
       <div className="h-[64px] flex items-center px-4 lg:px-8">
         {/* Mobile Logo */}
         <div className="flex lg:hidden items-center gap-2 flex-1">
@@ -93,6 +95,16 @@ export function TopNav({ setActiveTab }) {
 
         {/* Right Actions */}
         <div className="flex items-center gap-2 shrink-0 lg:ml-auto">
+          {/* Calculator button */}
+          <button
+            onClick={() => setShowCalc(v => !v)}
+            aria-label="Ouvrir la calculatrice"
+            title="Calculatrice"
+            className="w-[36px] h-[36px] rounded-full bg-slate-100 dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 flex items-center justify-center text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-[#334155] transition-colors text-[16px]"
+          >
+            🧮
+          </button>
+
           {/* Theme toggle */}
           <button
             onClick={toggleTheme}
@@ -113,6 +125,7 @@ export function TopNav({ setActiveTab }) {
         </div>
       </div>
       <InstallBanner />
+      {showCalc && <Calculator onClose={() => setShowCalc(false)} />}
     </div>
   );
 }
@@ -171,7 +184,7 @@ export function MainLayout({ children, activeTab, setActiveTab }) {
     <div className="min-h-screen bg-slate-50 dark:bg-[#0F172A] flex flex-col overflow-x-hidden">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       <TopNav setActiveTab={setActiveTab} />
-      <main className="flex-1 mb-[64px] md:mb-[72px] lg:mb-0 lg:ml-[220px] xl:ml-[260px] p-4 lg:p-8 min-w-0 overflow-hidden slide-transition fade-in">
+      <main className="flex-1 mt-[64px] mb-[64px] md:mb-[72px] lg:mb-0 lg:ml-[220px] xl:ml-[260px] p-4 lg:p-8 min-w-0 overflow-hidden slide-transition fade-in">
         {children}
       </main>
       <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
