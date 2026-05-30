@@ -31,16 +31,16 @@ export default function ExamCountdown({ examMonth, examYear }) {
 
   let message, colorClass;
   if (diffDays < 0) {
-    message = 'Examen passé';
+    message = 'Exam passed';
     colorClass = 'text-slate-400 dark:text-[#64748B]';
   } else if (diffDays === 0) {
-    message = "C'est aujourd'hui !";
+    message = "It's today!";
     colorClass = 'text-[#22C55E]';
   } else if (diffDays <= 30) {
-    message = `${diffDays} jour${diffDays > 1 ? 's' : ''} avant l'examen`;
+    message = `${diffDays} day${diffDays > 1 ? 's' : ''} until exam`;
     colorClass = 'text-[#F97316]';
   } else {
-    message = `${diffDays} jours avant l'examen`;
+    message = `${diffDays} days until exam`;
     colorClass = 'text-slate-700 dark:text-[#F1F5F9]';
   }
 

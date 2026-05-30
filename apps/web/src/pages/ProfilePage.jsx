@@ -61,7 +61,7 @@ export default function ProfilePage() {
       <StatsGrid stats={user.stats} />
 
       <div>
-        <h2 className="text-[16px] font-medium text-slate-900 dark:text-white mb-4">Ma progression</h2>
+        <h2 className="text-[16px] font-medium text-slate-900 dark:text-white mb-4">My progress</h2>
         <ProgressSection subjects={user.subjects} subjectAccuracy={subjectAccuracy} />
       </div>
     </div>
