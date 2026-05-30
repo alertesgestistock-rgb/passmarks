@@ -4,6 +4,7 @@ import { ArrowLeft, ChevronRight, Lock, Trash2, Download, ExternalLink, Moon, Su
 import { cn } from '@/lib/utils';
 import { useUser } from '@/contexts/UserContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 export default function SettingsPage({ navigate }) {
@@ -60,11 +61,12 @@ export default function SettingsPage({ navigate }) {
     }
   };
 
-  const handleClearChat = () => {
+  const handleClearChat = async () => {
     if (window.confirm("Are you sure you want to clear your AI Tutor history?")) {
-      const stored = JSON.parse(localStorage.getItem('passmark_user'));
-      stored.chatHistory = [];
-      localStorage.setItem('passmark_user', JSON.stringify(stored));
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await supabase.from('conversations').delete().eq('user_id', session.user.id);
+      }
       toast.success("Chat history cleared.");
     }
   };

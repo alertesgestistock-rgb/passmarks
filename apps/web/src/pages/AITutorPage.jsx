@@ -1,170 +1,231 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Image as ImageIcon, FileText, Bot, AlertCircle } from 'lucide-react';
+import {
+  Send, Image as ImageIcon, FileText, Bot, AlertCircle,
+  X, ArrowLeft, Plus, MessageSquare, ChevronRight,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/contexts/UserContext';
+import { supabase } from '@/lib/supabase';
+import { apiServerClient } from '@/lib/apiServerClient';
 
-export default function AITutorPage({ navigate, viewState }) {
-  const { user, updateUser, addRecentActivity, isLoading: userLoading } = useUser();
+const SYSTEM_PROMPT = `You are PassMark AI Tutor, an expert GCE Cameroon exam coach for O Level and A Level students. You help students solve past paper questions step by step. Be concise, clear, and educational.`;
 
-  const [apiKey, setApiKey] = useState('');
-  const [hasKey, setHasKey] = useState(false);
+const SUGGESTED_QUESTIONS = {
+  'Physics': "Explain Newton's 3rd Law",
+  'Chemistry': 'What is the Born-Haber cycle?',
+  'Mathematics': 'Solve quadratic equations',
+  'History': 'Causes of World War 1',
+  'Economics': 'Explain price elasticity',
+};
+
+function getSuggestedQuestion(subject) {
+  return SUGGESTED_QUESTIONS[subject] || `Help me with ${subject}`;
+}
+
+function buildWelcome(user) {
+  return {
+    role: 'assistant',
+    content: `Hey ${user?.name || ''}! 👋 I'm your PassMark AI Tutor. I can solve any GCE ${user?.level || ''} question — just type it, send a photo, or upload a PDF. What are you working on today?`,
+    timestamp: new Date().toISOString(),
+  };
+}
+
+function formatRelativeDate(dateStr) {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return "Aujourd'hui";
+  if (diffDays === 1) return 'Hier';
+  if (diffDays < 7) return `Il y a ${diffDays} jours`;
+  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+}
+
+// ─────────────────────────────────────────────────────────────
+// Chat View
+// ─────────────────────────────────────────────────────────────
+function ChatView({ initConvId, initialMessage, onBack, navigate, user, apiKey }) {
+  const { updateUser, addRecentActivity } = useUser();
+  const hasKey = Boolean(apiKey);
+
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
-
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [pendingImage, setPendingImage] = useState(null);
+  const [conversationId, setConversationId] = useState(initConvId || null);
+  const [messages, setMessages] = useState([buildWelcome(user)]);
 
   const messagesEndRef = useRef(null);
-
-  const welcomeMessage = {
-    role: 'assistant',
-    content: `Hey ${user?.name || ''}! 👋 I'm your PassMark AI Tutor. I can solve any GCE ${user?.level || ''} question — just type it, send a photo, or upload a PDF. What are you working on today?`
-  };
-
-  const [messages, setMessages] = useState(() => {
-    if (user?.chatHistory && user.chatHistory.length > 0) {
-      return user.chatHistory;
-    }
-    return [welcomeMessage];
-  });
+  const imageInputRef = useRef(null);
+  const pdfInputRef = useRef(null);
 
   useEffect(() => {
-    const handleOnline = () => setIsOffline(false);
-    const handleOffline = () => setIsOffline(true);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
+    const on = () => setIsOffline(false);
+    const off = () => setIsOffline(true);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
   }, []);
-
-  useEffect(() => {
-    const stored = localStorage.getItem('claude_api_key');
-    if (stored) {
-      setApiKey(stored);
-      setHasKey(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (viewState?.initialMessage && hasKey) {
-      handleSend(viewState.initialMessage);
-      navigate('tutor', null);
-    }
-  }, [viewState, hasKey]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
 
+  // Load existing conversation messages on mount
   useEffect(() => {
-    if (messages.length > 0 && user) {
-      updateUser({ chatHistory: messages.slice(-20) });
-    }
-  }, [messages]);
+    if (!initConvId) return;
+    supabase
+      .from('messages')
+      .select('role, content, created_at')
+      .eq('conversation_id', initConvId)
+      .order('created_at', { ascending: true })
+      .then(({ data: msgs }) => {
+        if (msgs && msgs.length > 0) {
+          setMessages([
+            buildWelcome(user),
+            ...msgs.map(m => ({ role: m.role, content: m.content, timestamp: m.created_at })),
+          ]);
+        }
+      });
+  }, [initConvId]);
 
-  const handleNewChat = () => {
-    setMessages([welcomeMessage]);
+  // Handle initial message pushed from another page
+  useEffect(() => {
+    if (initialMessage && hasKey) handleSend(initialMessage);
+  }, []);
+
+  const getOrCreateConversation = async (firstText) => {
+    if (conversationId) return conversationId;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+    const title = (firstText || 'Conversation').substring(0, 60);
+    const { data: conv } = await supabase
+      .from('conversations')
+      .insert({ user_id: session.user.id, title })
+      .select('id')
+      .single();
+    if (conv) { setConversationId(conv.id); return conv.id; }
+    return null;
   };
 
-  const getSuggestedQuestion = (subject) => {
-    const map = {
-      'Physics': "Explain Newton's 3rd Law",
-      'Chemistry': "What is the Born-Haber cycle?",
-      'Mathematics': "Solve quadratic equations",
-      'History': "Causes of World War 1",
-      'Economics': "Explain price elasticity"
+  const saveMessage = async (convId, role, content) => {
+    if (!convId) return;
+    await supabase.from('messages').insert({ conversation_id: convId, role, content, content_type: 'text' });
+  };
+
+  const handleImageSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target.result;
+      setPendingImage({ base64: dataUrl.split(',')[1], mimeType: file.type, preview: dataUrl });
     };
-    return map[subject] || `Help me with ${subject}`;
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
-  const callClaude = async (userText) => {
+  const handlePDFSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !window.pdfjsLib) return;
+    e.target.value = '';
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(ev.target.result) }).promise;
+      let text = '';
+      for (let i = 1; i <= Math.min(pdf.numPages, 10); i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map(item => item.str).join(' ') + '\n';
+      }
+      const extracted = text.trim().substring(0, 4000);
+      if (extracted) setInput(prev => prev ? `${prev}\n\n[PDF]\n${extracted}` : `[PDF]\n${extracted}`);
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const buildClaudeMessages = (history, newText, image) => {
+    const past = history
+      .filter((_, i) => i !== 0)
+      .slice(-18)
+      .map(m => ({ role: m.role, content: m.content }));
+    const newContent = image
+      ? [
+          { type: 'image', source: { type: 'base64', media_type: image.mimeType, data: image.base64 } },
+          { type: 'text', text: newText || 'Please analyze this image.' },
+        ]
+      : newText;
+    return [...past, { role: 'user', content: newContent }];
+  };
+
+  const handleSend = async (textOverride) => {
+    const text = typeof textOverride === 'string' ? textOverride : input.trim();
+    const image = pendingImage;
+    if ((!text && !image) || !hasKey || isLoading || isOffline) return;
+
+    setInput('');
+    setPendingImage(null);
+
+    const userMsg = {
+      role: 'user',
+      content: image ? (text || '📷 Image') : text,
+      imagePreview: image?.preview,
+      timestamp: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, userMsg]);
     setIsLoading(true);
 
-    const systemPrompt = `You are PassMark AI Tutor, an expert GCE Cameroon exam coach for O Level and A Level students. You help students solve past paper questions step by step.`;
-
-    const historyPayload = messages.slice(-19).map(m => ({
-      role: m.role,
-      content: m.content
-    }));
-    historyPayload.push({ role: 'user', content: userText });
-
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await apiServerClient.fetch('/chat/message', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({
-          model: 'claude-3-5-sonnet-20241022',
-          max_tokens: 1000,
-          system: systemPrompt,
-          messages: historyPayload
-        })
+        headers: { 'Content-Type': 'application/json', 'x-claude-api-key': apiKey },
+        body: JSON.stringify({ messages: buildClaudeMessages(messages, text, image), system: SYSTEM_PROMPT }),
       });
 
-      if (!response.ok) throw new Error('API Error');
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || 'API Error');
+      }
 
-      const data = await response.json();
-      setMessages(prev => [...prev, { role: 'assistant', content: data.content[0].text, timestamp: new Date().toISOString() }]);
+      const { content } = await response.json();
+      setMessages(prev => [...prev, { role: 'assistant', content, timestamp: new Date().toISOString() }]);
+
+      const convId = await getOrCreateConversation(text);
+      if (convId) {
+        await saveMessage(convId, 'user', image ? `[Image] ${text}` : text);
+        await saveMessage(convId, 'assistant', content);
+      }
 
       const subject = user?.subjects?.[0] || 'General';
-      const currentSubjectCount = user?.stats?.bySubject?.[subject] || 0;
-
       updateUser({
         stats: {
           ...user.stats,
           questionsSolved: (user.stats?.questionsSolved || 0) + 1,
-          bySubject: { ...user.stats?.bySubject, [subject]: currentSubjectCount + 1 }
-        }
+          bySubject: { ...user.stats?.bySubject, [subject]: (user.stats?.bySubject?.[subject] || 0) + 1 },
+        },
       });
-
       addRecentActivity({
-        type: 'question',
-        subject: subject,
-        preview: userText.substring(0, 40),
-        date: new Date().toISOString(),
-        solved: true
+        type: 'question', subject,
+        preview: (text || 'Image question').substring(0, 40),
+        date: new Date().toISOString(), solved: true,
       });
-
     } catch (error) {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: "Connection issue. Check your internet or API key and try again.",
+        content: error.message || 'Connection issue. Check your internet or API key and try again.',
         isError: true,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       }]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSend = (textOverride) => {
-    const text = typeof textOverride === 'string' ? textOverride : input.trim();
-    if (!text || !hasKey || isLoading || isOffline) return;
-
-    setInput('');
-    setMessages(prev => [...prev, { role: 'user', content: text, timestamp: new Date().toISOString() }]);
-    callClaude(text);
-  };
-
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
-
-  if (userLoading) {
-    return <div className="animate-pulse h-full bg-slate-200 dark:bg-[#1E293B] rounded-2xl m-4"></div>;
-  }
 
   return (
-    <div className="max-w-[680px] mx-auto h-[calc(100vh-140px)] lg:h-[calc(100vh-64px)] flex flex-col relative fade-in">
+    <div className="max-w-[680px] mx-auto h-[calc(100vh-140px)] lg:h-[calc(100vh-64px)] flex flex-col relative fade-in overflow-hidden">
 
       {isOffline && (
         <div className="bg-slate-100 dark:bg-[#1E293B] text-[#F97316] border-b-[0.5px] border-[#F97316] p-2 text-center text-[12px] shrink-0">
@@ -186,32 +247,33 @@ export default function AITutorPage({ navigate, viewState }) {
       {/* Chat Header */}
       <div className="bg-white dark:bg-[#1E293B] rounded-2xl p-3 mb-4 flex items-center justify-between shrink-0 shadow-sm border border-slate-200 dark:border-[#334155]/50">
         <div className="flex items-center gap-3">
-          <div className="w-[40px] h-[40px] rounded-xl bg-[#22C55E]/10 flex items-center justify-center shrink-0">
-            <Bot size={20} className="text-[#22C55E]" />
+          <button
+            onClick={onBack}
+            className="w-[36px] h-[36px] rounded-xl flex items-center justify-center text-slate-400 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#334155] transition-colors"
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <div className="w-[36px] h-[36px] rounded-xl bg-[#22C55E]/10 flex items-center justify-center shrink-0">
+            <Bot size={18} className="text-[#22C55E]" />
           </div>
-          <div>
-            <h2 className="text-[14px] font-medium text-slate-900 dark:text-white">AI Tutor</h2>
-          </div>
+          <h2 className="text-[14px] font-medium text-slate-900 dark:text-white">AI Tutor</h2>
         </div>
-        <button
-          onClick={handleNewChat}
-          className="bg-slate-100 dark:bg-[#334155] text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white px-[10px] py-[4px] rounded-[6px] text-[11px] transition-colors scale-on-click"
-        >
-          New chat
-        </button>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto mb-4 flex flex-col gap-4 pr-2 pb-4 hide-scrollbar">
+      <div className="flex-1 min-h-0 overflow-y-auto mb-4 flex flex-col gap-4 pr-2 pb-4 hide-scrollbar">
         {messages.map((msg, idx) => (
-          <div key={idx} className={cn("flex flex-col gap-1 w-full", msg.role === 'user' ? "items-end" : "items-start")}>
+          <div key={idx} className={cn('flex flex-col gap-1 w-full', msg.role === 'user' ? 'items-end' : 'items-start')}>
+            {msg.imagePreview && (
+              <img src={msg.imagePreview} alt="Attached" className="max-w-[200px] rounded-xl mb-1 border border-slate-200 dark:border-[#334155]" />
+            )}
             <div className={cn(
-              "max-w-[85%] md:max-w-[75%] p-4 rounded-2xl text-[14px] leading-relaxed",
+              'max-w-[85%] md:max-w-[75%] p-4 rounded-2xl text-[14px] leading-relaxed',
               msg.role === 'user'
-                ? "bg-[#14532D] text-white rounded-br-sm"
+                ? 'bg-[#14532D] text-white rounded-br-sm'
                 : msg.isError
-                  ? "bg-red-50 dark:bg-[#450a0a] text-red-600 dark:text-[#EF4444] border border-red-200 dark:border-[#7f1d1d] rounded-bl-sm"
-                  : "bg-slate-100 dark:bg-[#1E293B] text-slate-800 dark:text-[#F1F5F9] rounded-bl-sm border border-slate-200 dark:border-[#334155]/50"
+                  ? 'bg-red-50 dark:bg-[#450a0a] text-red-600 dark:text-[#EF4444] border border-red-200 dark:border-[#7f1d1d] rounded-bl-sm'
+                  : 'bg-slate-100 dark:bg-[#1E293B] text-slate-800 dark:text-[#F1F5F9] rounded-bl-sm border border-slate-200 dark:border-[#334155]/50'
             )}>
               {msg.content}
             </div>
@@ -249,12 +311,41 @@ export default function AITutorPage({ navigate, viewState }) {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Pending image preview */}
+      {pendingImage && (
+        <div className="shrink-0 mb-2 flex items-center gap-2 px-2">
+          <div className="relative">
+            <img src={pendingImage.preview} alt="Pending" className="h-[60px] w-[60px] object-cover rounded-xl border border-slate-200 dark:border-[#334155]" />
+            <button
+              onClick={() => setPendingImage(null)}
+              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-slate-800 text-white flex items-center justify-center"
+            >
+              <X size={10} />
+            </button>
+          </div>
+          <span className="text-[12px] text-slate-500 dark:text-[#64748B]">Image ready to send</span>
+        </div>
+      )}
+
       {/* Input Bar */}
-      <div className="shrink-0 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 rounded-2xl p-2 flex items-center gap-2">
-        <button className="w-[40px] h-[40px] rounded-xl flex items-center justify-center text-slate-400 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#334155] transition-colors shrink-0">
+      <div className="shrink-0 sticky bottom-0 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 rounded-2xl p-2 flex items-center gap-2">
+        <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+        <input ref={pdfInputRef} type="file" accept=".pdf" className="hidden" onChange={handlePDFSelect} />
+
+        <button
+          onClick={() => imageInputRef.current?.click()}
+          disabled={!hasKey || isOffline}
+          title="Attach image"
+          className="w-[40px] h-[40px] rounded-xl flex items-center justify-center text-slate-400 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#334155] transition-colors shrink-0 disabled:opacity-40"
+        >
           <ImageIcon size={20} />
         </button>
-        <button className="w-[40px] h-[40px] rounded-xl flex items-center justify-center text-slate-400 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#334155] transition-colors shrink-0">
+        <button
+          onClick={() => pdfInputRef.current?.click()}
+          disabled={!hasKey || isOffline}
+          title="Attach PDF"
+          className="w-[40px] h-[40px] rounded-xl flex items-center justify-center text-slate-400 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#334155] transition-colors shrink-0 disabled:opacity-40"
+        >
           <FileText size={20} />
         </button>
 
@@ -270,13 +361,163 @@ export default function AITutorPage({ navigate, viewState }) {
 
         <button
           onClick={() => handleSend()}
-          disabled={!input.trim() || !hasKey || isLoading || isOffline}
+          disabled={(!input.trim() && !pendingImage) || !hasKey || isLoading || isOffline}
           className="w-[40px] h-[40px] rounded-xl bg-[#22C55E] flex items-center justify-center shrink-0 disabled:opacity-50 scale-on-click"
         >
           <Send size={18} className="text-[#052e16] ml-0.5" />
         </button>
       </div>
+    </div>
+  );
+}
 
+// ─────────────────────────────────────────────────────────────
+// Conversations List (default view)
+// ─────────────────────────────────────────────────────────────
+export default function AITutorPage({ navigate, viewState }) {
+  const { user, isLoading: userLoading } = useUser();
+  const apiKey = localStorage.getItem('claude_api_key') || '';
+  const hasKey = Boolean(apiKey);
+
+  const [view, setView] = useState('list');
+  const [activeConvId, setActiveConvId] = useState(null);
+  const [conversations, setConversations] = useState([]);
+  const [convLoading, setConvLoading] = useState(true);
+
+  useEffect(() => {
+    if (user?.id) loadConversations();
+  }, [user?.id]);
+
+  // If navigated here with an initial message, go straight to new chat
+  useEffect(() => {
+    if (viewState?.initialMessage) {
+      setActiveConvId(null);
+      setView('chat');
+    }
+  }, [viewState]);
+
+  const loadConversations = async () => {
+    setConvLoading(true);
+    const { data } = await supabase
+      .from('conversations')
+      .select('id, title, updated_at')
+      .eq('user_id', user.id)
+      .order('updated_at', { ascending: false });
+    setConversations(data || []);
+    setConvLoading(false);
+  };
+
+  const openConversation = (convId) => {
+    setActiveConvId(convId);
+    setView('chat');
+  };
+
+  const openNewChat = () => {
+    setActiveConvId(null);
+    setView('chat');
+  };
+
+  const handleBack = () => {
+    setView('list');
+    if (user?.id) loadConversations();
+    navigate('tutor', null);
+  };
+
+  if (userLoading) {
+    return <div className="animate-pulse h-full bg-slate-200 dark:bg-[#1E293B] rounded-2xl m-4" />;
+  }
+
+  if (view === 'chat') {
+    return (
+      <ChatView
+        initConvId={activeConvId}
+        initialMessage={viewState?.initialMessage}
+        onBack={handleBack}
+        navigate={navigate}
+        user={user}
+        apiKey={apiKey}
+      />
+    );
+  }
+
+  return (
+    <div className="max-w-[680px] mx-auto pb-8 fade-in">
+
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-[44px] h-[44px] rounded-xl bg-[#22C55E]/10 flex items-center justify-center shrink-0">
+          <Bot size={22} className="text-[#22C55E]" />
+        </div>
+        <div>
+          <h1 className="text-[20px] font-bold text-slate-900 dark:text-white leading-tight">AI Tutor</h1>
+          <p className="text-[12px] text-slate-400 dark:text-[#64748B]">
+            {conversations.length > 0 ? `${conversations.length} conversation${conversations.length > 1 ? 's' : ''}` : 'Aucune conversation'}
+          </p>
+        </div>
+      </div>
+
+      {!hasKey && (
+        <div className="bg-orange-50 dark:bg-[#431407] text-orange-700 dark:text-[#FDBA74] p-3 text-[13px] flex items-center justify-between rounded-xl mb-4 border border-orange-200 dark:border-transparent">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={16} /> Add your Claude API key in Settings to activate the AI Tutor
+          </div>
+          <button onClick={() => navigate('settings')} className="text-[#F97316] font-medium hover:underline shrink-0">
+            Go to Settings →
+          </button>
+        </div>
+      )}
+
+      {/* New conversation button */}
+      <button
+        onClick={openNewChat}
+        disabled={!hasKey}
+        className="w-full bg-[#22C55E] disabled:opacity-50 text-white rounded-2xl p-4 flex items-center justify-center gap-2 font-semibold text-[15px] mb-5 scale-on-click shadow-sm shadow-[#22C55E]/20"
+      >
+        <Plus size={20} />
+        Nouvelle conversation
+      </button>
+
+      {/* List */}
+      {convLoading ? (
+        <div className="flex flex-col gap-3">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="bg-white dark:bg-[#1E293B] rounded-2xl p-4 border border-slate-200 dark:border-[#334155]/50 animate-pulse h-[70px]" />
+          ))}
+        </div>
+      ) : conversations.length === 0 ? (
+        <div className="text-center py-16">
+          <div className="w-[64px] h-[64px] rounded-2xl bg-slate-100 dark:bg-[#1E293B] flex items-center justify-center mx-auto mb-4">
+            <MessageSquare size={28} className="text-slate-300 dark:text-[#475569]" />
+          </div>
+          <p className="text-[15px] font-medium text-slate-500 dark:text-[#94A3B8]">Aucune conversation</p>
+          <p className="text-[13px] text-slate-400 dark:text-[#64748B] mt-1">
+            Cliquez sur "Nouvelle conversation" pour commencer
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {conversations.map(conv => (
+            <button
+              key={conv.id}
+              onClick={() => openConversation(conv.id)}
+              className="bg-white dark:bg-[#1E293B] rounded-2xl p-4 flex items-center gap-3 text-left border border-slate-200 dark:border-[#334155]/50 hover:border-[#22C55E]/40 hover:shadow-sm transition-all scale-on-click w-full"
+            >
+              <div className="w-[42px] h-[42px] rounded-xl bg-[#22C55E]/10 flex items-center justify-center shrink-0">
+                <MessageSquare size={18} className="text-[#22C55E]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[14px] font-medium text-slate-800 dark:text-[#F1F5F9] truncate">
+                  {conv.title || 'Conversation'}
+                </p>
+                <p className="text-[12px] text-slate-400 dark:text-[#64748B] mt-0.5">
+                  {formatRelativeDate(conv.updated_at)}
+                </p>
+              </div>
+              <ChevronRight size={16} className="text-slate-300 dark:text-[#475569] shrink-0" />
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
