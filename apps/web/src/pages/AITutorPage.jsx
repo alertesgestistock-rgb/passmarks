@@ -33,11 +33,15 @@ function buildWelcome(user) {
 function formatRelativeDate(dateStr) {
   const date = new Date(dateStr);
   const now = new Date();
+  const isSameDay = date.toDateString() === now.toDateString();
+  const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+  const isYesterday = date.toDateString() === yesterday.toDateString();
+  const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  if (isSameDay) return `Today · ${time}`;
+  if (isYesterday) return `Yesterday · ${time}`;
   const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return "Aujourd'hui";
-  if (diffDays === 1) return 'Hier';
-  if (diffDays < 7) return `Il y a ${diffDays} jours`;
-  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  if (diffDays < 7) return `${diffDays} days ago`;
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -194,11 +198,11 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
     if (!file) return;
     e.target.value = '';
     if (file.size > 15 * 1024 * 1024) {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'PDF trop volumineux (max 15 MB).', isError: true, timestamp: new Date().toISOString() }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: 'PDF too large (max 15 MB).', isError: true, timestamp: new Date().toISOString() }]);
       return;
     }
     if (!window.pdfjsLib) {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Lecteur PDF non disponible. Réessaie dans un instant.', isError: true, timestamp: new Date().toISOString() }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: 'PDF reader not available. Please try again in a moment.', isError: true, timestamp: new Date().toISOString() }]);
       return;
     }
     setPdfLoading(true);
@@ -230,7 +234,7 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
           setPendingPdf({ name: file.name, text: null, images, pageCount: pdf.numPages });
         }
       } catch {
-        setMessages(prev => [...prev, { role: 'assistant', content: 'Erreur lors de la lecture du PDF.', isError: true, timestamp: new Date().toISOString() }]);
+        setMessages(prev => [...prev, { role: 'assistant', content: 'Error reading PDF. Please try again.', isError: true, timestamp: new Date().toISOString() }]);
       } finally {
         setPdfLoading(false);
       }
@@ -245,7 +249,7 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
       // PDF scanné : envoyer les pages comme images
       newContent = [
         ...pdf.images.map(b64 => ({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } })),
-        { type: 'text', text: newText || `Analyse ce PDF (${pdf.name}) et explique son contenu.` },
+        { type: 'text', text: newText || `Analyze this PDF (${pdf.name}) and explain its content.` },
       ];
     } else if (image) {
       newContent = [
@@ -314,7 +318,7 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
     } catch (error) {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: error.message || 'Erreur de connexion. Réessaie.',
+        content: error.message || 'Connection error. Please try again.',
         isError: true,
         timestamp: new Date().toISOString(),
       }]);
@@ -332,7 +336,7 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
 
       {isOffline && (
         <div className="bg-slate-100 dark:bg-[#1E293B] text-[#F97316] p-2 text-center text-[12px] shrink-0 rounded-xl mb-3">
-          Hors ligne — le Tutor AI nécessite une connexion internet.
+          You're offline — AI Tutor requires an internet connection.
         </div>
       )}
 
@@ -424,7 +428,7 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
           {pdfLoading && (
             <div className="flex items-center gap-2 bg-slate-100 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl px-3 py-2">
               <div className="w-3 h-3 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin" />
-              <span className="text-[12px] text-slate-500 dark:text-[#64748B]">Lecture du PDF…</span>
+              <span className="text-[12px] text-slate-500 dark:text-[#64748B]">Reading PDF…</span>
             </div>
           )}
           {pendingPdf && (
@@ -433,7 +437,7 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
               <div className="flex-1 min-w-0">
                 <p className="text-[12px] text-[#22C55E] font-medium truncate">{pendingPdf.name}</p>
                 <p className="text-[10px] text-[#22C55E]/70">
-                  {pendingPdf.images ? `📷 ${pendingPdf.images.length} page(s) en image` : '📝 Texte extrait'}
+                  {pendingPdf.images ? `📷 ${pendingPdf.images.length} page(s) as image` : '📝 Text extracted'}
                 </p>
               </div>
               <button onClick={() => setPendingPdf(null)} className="shrink-0 text-[#22C55E]/60 hover:text-[#22C55E]">
@@ -460,7 +464,7 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
           type="text" value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Pose une question..."
+          placeholder="Ask a question..."
           disabled={isLoading || isOffline}
           className="flex-1 bg-transparent border-none outline-none text-[14px] text-slate-900 dark:text-white px-2 placeholder:text-slate-400 dark:placeholder:text-[#64748B] disabled:opacity-50"
         />
@@ -487,11 +491,11 @@ function DesktopEmptyState({ onNewChat }) {
       <div>
         <p className="text-[16px] font-semibold text-slate-700 dark:text-[#F1F5F9]">AI Tutor PassMark</p>
         <p className="text-[13px] text-slate-400 dark:text-[#64748B] mt-1 max-w-[240px]">
-          Sélectionne une conversation ou commence-en une nouvelle
+          Select a conversation or start a new one
         </p>
       </div>
       <button onClick={onNewChat} className="flex items-center gap-2 bg-[#22C55E] text-white rounded-xl px-5 py-2.5 text-[13px] font-semibold scale-on-click">
-        <Plus size={16} /> Nouvelle conversation
+        <Plus size={16} /> New conversation
       </button>
     </div>
   );
@@ -592,7 +596,7 @@ export default function AITutorPage({ navigate, viewState }) {
           onClick={openNewChat}
           className="w-full flex items-center justify-center gap-2 bg-[#22C55E] hover:bg-[#16a34a] text-white rounded-xl px-3 py-2.5 text-[13px] font-semibold transition-colors scale-on-click"
         >
-          <Plus size={15} /> Nouvelle conversation
+          <Plus size={15} /> New conversation
         </button>
       </div>
 
@@ -606,7 +610,7 @@ export default function AITutorPage({ navigate, viewState }) {
         ) : conversations.length === 0 ? (
           <div className="text-center py-8 px-3">
             <MessageSquare size={22} className="text-slate-300 dark:text-[#475569] mx-auto mb-2" />
-            <p className="text-[12px] text-slate-400 dark:text-[#64748B]">Aucune conversation</p>
+            <p className="text-[12px] text-slate-400 dark:text-[#64748B]">No conversations</p>
           </div>
         ) : (
           conversations.map(conv => (
@@ -673,7 +677,7 @@ export default function AITutorPage({ navigate, viewState }) {
       {!sidebarOpen && (
         <button
           onClick={toggleSidebar}
-          title="Afficher les conversations"
+          title="Show conversations"
           className="hidden lg:flex fixed top-[76px] left-[228px] xl:left-[268px] z-40 w-[32px] h-[32px] items-center justify-center rounded-lg bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] text-slate-500 dark:text-[#94A3B8] hover:text-[#22C55E] shadow-sm transition-colors"
         >
           <PanelLeftOpen size={15} />
@@ -690,19 +694,19 @@ export default function AITutorPage({ navigate, viewState }) {
             <div>
               <h1 className="text-[20px] font-bold text-slate-900 dark:text-white leading-tight">AI Tutor</h1>
               <p className="text-[12px] text-slate-400 dark:text-[#64748B]">
-                {conversations.length > 0 ? `${conversations.length} conversation${conversations.length > 1 ? 's' : ''}` : 'Aucune conversation'}
+                {conversations.length > 0 ? `${conversations.length} conversation${conversations.length > 1 ? 's' : ''}` : 'No conversations yet'}
               </p>
             </div>
           </div>
           <button onClick={openNewChat} className="w-full bg-[#22C55E] text-white rounded-2xl p-4 flex items-center justify-center gap-2 font-semibold text-[15px] mb-4 scale-on-click">
-            <Plus size={20} /> Nouvelle conversation
+            <Plus size={20} /> New conversation
           </button>
           {convLoading ? (
             <div className="flex flex-col gap-3">{[1,2,3].map(i => <div key={i} className="h-[70px] rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 animate-pulse" />)}</div>
           ) : conversations.length === 0 ? (
             <div className="text-center py-16">
               <MessageSquare size={28} className="text-slate-300 dark:text-[#475569] mx-auto mb-3" />
-              <p className="text-[14px] font-medium text-slate-400 dark:text-[#64748B]">Aucune conversation</p>
+              <p className="text-[14px] font-medium text-slate-400 dark:text-[#64748B]">No conversations</p>
             </div>
           ) : (
             <div className="flex flex-col gap-2 overflow-y-auto hide-scrollbar">
