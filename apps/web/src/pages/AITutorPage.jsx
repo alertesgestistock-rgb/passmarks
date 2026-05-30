@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Send, Image as ImageIcon, FileText, Bot,
-  X, ArrowLeft, Plus, MessageSquare, Pencil, Check,
+  X, ArrowLeft, Plus, MessageSquare, Pencil, Check, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/contexts/UserContext';
@@ -127,6 +127,10 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
     const file = e.target.files?.[0];
     if (!file || !window.pdfjsLib) return;
     e.target.value = '';
+    if (file.size > 15 * 1024 * 1024) {
+      setMessages(prev => [...prev, { role: 'assistant', content: 'PDF trop volumineux (max 15 MB).', isError: true, timestamp: new Date().toISOString() }]);
+      return;
+    }
     const reader = new FileReader();
     reader.onload = async (ev) => {
       const pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(ev.target.result) }).promise;
@@ -371,6 +375,17 @@ export default function AITutorPage({ navigate, viewState }) {
   const [convLoading, setConvLoading] = useState(false);
   const [editingConvId, setEditingConvId] = useState(null);
   const [editingTitle, setEditingTitle] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    try { return localStorage.getItem('tutor_sidebar') !== 'closed'; } catch { return true; }
+  });
+
+  const toggleSidebar = () => {
+    setSidebarOpen(prev => {
+      const next = !prev;
+      try { localStorage.setItem('tutor_sidebar', next ? 'open' : 'closed'); } catch {}
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (user?.id) {
@@ -384,13 +399,22 @@ export default function AITutorPage({ navigate, viewState }) {
 
   const loadConversations = async () => {
     setConvLoading(true);
-    const { data } = await supabase
-      .from('conversations')
-      .select('id, title, updated_at')
-      .eq('user_id', user.id)
-      .order('updated_at', { ascending: false });
-    setConversations(data || []);
-    setConvLoading(false);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 6000);
+    try {
+      const { data, error } = await supabase
+        .from('conversations')
+        .select('id, title, updated_at')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false })
+        .abortSignal(controller.signal);
+      clearTimeout(timer);
+      if (!error) setConversations(data || []);
+    } catch {
+      // show empty list on error or timeout
+    } finally {
+      setConvLoading(false);
+    }
   };
 
   const startRename = (e, conv) => {
@@ -417,12 +441,19 @@ export default function AITutorPage({ navigate, viewState }) {
   // ── Sidebar content (réutilisé mobile + desktop) ──────────
   const sidebarContent = (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Logo + titre */}
-      <div className="flex items-center gap-2 px-4 pt-5 pb-4 shrink-0">
-        <div className="w-[30px] h-[30px] rounded-lg bg-[#22C55E]/10 flex items-center justify-center">
-          <Bot size={15} className="text-[#22C55E]" />
+      {/* Logo + titre + bouton collapse */}
+      <div className="flex items-center gap-2 px-3 pt-4 pb-3 shrink-0">
+        <div className="w-[28px] h-[28px] rounded-lg bg-[#22C55E]/10 flex items-center justify-center shrink-0">
+          <Bot size={14} className="text-[#22C55E]" />
         </div>
-        <span className="text-[14px] font-semibold text-slate-800 dark:text-[#F1F5F9]">AI Tutor</span>
+        <span className="text-[13px] font-semibold text-slate-800 dark:text-[#F1F5F9] flex-1">AI Tutor</span>
+        <button
+          onClick={toggleSidebar}
+          title="Réduire"
+          className="w-[28px] h-[28px] rounded-lg flex items-center justify-center text-slate-400 dark:text-[#64748B] hover:bg-slate-100 dark:hover:bg-[#334155] transition-colors shrink-0"
+        >
+          <PanelLeftClose size={15} />
+        </button>
       </div>
 
       {/* Bouton nouvelle conversation */}
@@ -500,13 +531,24 @@ export default function AITutorPage({ navigate, viewState }) {
 
   return (
     <>
-      {/* ── Sidebar fixe desktop ─────────────────────────────
-          Positionnée exactement après la nav principale.
-          Nav = w-[220px] lg, w-[260px] xl. Header = top-[64px].
-      ────────────────────────────────────────────────────── */}
-      <div className="hidden lg:block fixed top-[64px] bottom-0 left-[220px] xl:left-[260px] w-[260px] bg-white dark:bg-[#1E293B] border-r-2 border-slate-200 dark:border-[#334155] z-40">
+      {/* ── Sidebar fixe desktop ────────────────────────────── */}
+      <div className={cn(
+        'hidden lg:block fixed top-[64px] bottom-0 left-[220px] xl:left-[260px] bg-white dark:bg-[#1E293B] border-r-2 border-slate-200 dark:border-[#334155] z-40 transition-all duration-200',
+        sidebarOpen ? 'w-[260px]' : 'w-0 overflow-hidden border-r-0'
+      )}>
         {sidebarContent}
       </div>
+
+      {/* ── Bouton rouvrir sidebar (quand fermée) ────────────── */}
+      {!sidebarOpen && (
+        <button
+          onClick={toggleSidebar}
+          title="Afficher les conversations"
+          className="hidden lg:flex fixed top-[76px] left-[228px] xl:left-[268px] z-40 w-[32px] h-[32px] items-center justify-center rounded-lg bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] text-slate-500 dark:text-[#94A3B8] hover:text-[#22C55E] shadow-sm transition-colors"
+        >
+          <PanelLeftOpen size={15} />
+        </button>
+      )}
 
       {/* ── Mobile : vue liste (plein écran) ──────────────── */}
       {view === 'list' && (
@@ -557,7 +599,8 @@ export default function AITutorPage({ navigate, viewState }) {
       ────────────────────────────────────────────────────── */}
       <div className={cn(
         'h-[calc(100vh-160px)] md:h-[calc(100vh-168px)] lg:h-[calc(100vh-128px)]',
-        'lg:ml-[228px] overflow-hidden',
+        'overflow-hidden transition-all duration-200',
+        sidebarOpen ? 'lg:ml-[244px]' : 'lg:ml-0',
         view === 'chat' ? 'block' : 'hidden lg:block',
       )}>
         {view === 'chat' || activeConvId !== null ? (

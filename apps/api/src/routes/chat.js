@@ -31,7 +31,7 @@ function toOpenAIMessages(system, messages) {
 }
 
 router.post('/message', async (req, res) => {
-	const apiKey = process.env.OPENROUTER_API_KEY;
+	const apiKey = process.env.OPENROUTER_API_KEY?.trim();
 
 	if (!apiKey) {
 		logger.error('OPENROUTER_API_KEY is not set in environment');
@@ -46,30 +46,36 @@ router.post('/message', async (req, res) => {
 
 	logger.info(`Chat message via OpenRouter, history length: ${messages.length}`);
 
-	const response = await fetch(OPENROUTER_URL, {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-			'Authorization': `Bearer ${apiKey}`,
-			'HTTP-Referer': 'https://passmark.app',
-			'X-Title': 'PassMark AI Tutor',
-		},
-		body: JSON.stringify({
-			model: MODEL,
-			max_tokens: 1500,
-			messages: toOpenAIMessages(system, messages),
-		}),
-	});
+	try {
+		const response = await fetch(OPENROUTER_URL, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${apiKey}`,
+				'HTTP-Referer': 'https://passmark.app',
+				'X-Title': 'PassMark AI Tutor',
+			},
+			body: JSON.stringify({
+				model: MODEL,
+				max_tokens: 1500,
+				messages: toOpenAIMessages(system, messages),
+			}),
+		});
 
-	if (!response.ok) {
-		const err = await response.json().catch(() => ({}));
-		const status = response.status;
-		if (status === 429) return res.status(429).json({ error: 'Rate limit reached. Try again later.' });
-		return res.status(status).json({ error: err.error?.message || 'AI service error' });
+		if (!response.ok) {
+			const err = await response.json().catch(() => ({}));
+			const status = response.status;
+			logger.error(`OpenRouter error ${status}: ${JSON.stringify(err)}`);
+			if (status === 429) return res.status(429).json({ error: 'Rate limit reached. Try again later.' });
+			return res.status(status).json({ error: err.error?.message || 'AI service error' });
+		}
+
+		const data = await response.json();
+		res.json({ content: data.choices[0].message.content });
+	} catch (err) {
+		logger.error(`OpenRouter fetch failed: ${err.message}`);
+		res.status(502).json({ error: 'Could not reach AI service. Please try again.' });
 	}
-
-	const data = await response.json();
-	res.json({ content: data.choices[0].message.content });
 });
 
 export default router;

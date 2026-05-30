@@ -49,7 +49,7 @@ export const UserProvider = ({ children }) => {
       if (!session) return false;
       const [{ data: profile }, { data: wallet }] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', session.user.id).single(),
-        supabase.from('token_wallets').select('balance').eq('user_id', session.user.id).single(),
+        supabase.from('token_wallets').select('balance').eq('user_id', session.user.id).maybeSingle(),
       ]);
       if (cancelled) return false;
       if (profile) {
