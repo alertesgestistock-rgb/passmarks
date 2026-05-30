@@ -4,11 +4,12 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "node --trace-deprecation src/main.js",
-    "start": "node src/main.js",
+    "dev": "node --trace-deprecation --env-file=.env src/main.js",
+    "start": "node --env-file=.env src/main.js",
     "lint": "eslint . --quiet"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.106.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^5.0.1",

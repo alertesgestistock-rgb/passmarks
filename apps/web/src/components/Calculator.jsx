@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import React, { useState, useCallback, useEffect } from 'react';
+import ReactDOM from 'react-dom';
+import { X, Calculator as CalcIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -136,7 +137,7 @@ function CBtn({ label, type = 'digit', wide = false, onClick }) {
 function StandardCalc({ scientific }) {
   const [s, setS] = useState({ display: '0', expr: '', evaled: false });
 
-  const press = (label, type) => setS(prev => {
+  const press = useCallback((label, type) => setS(prev => {
     const { display: d, expr: e, evaled: ev } = prev;
 
     if (type === 'clear')  return { display: '0', expr: '', evaled: false };
@@ -172,7 +173,30 @@ function StandardCalc({ scientific }) {
     const newE  = ev ? '' : e;
     if (label === '.') return { display: base.includes('.') ? base : base + '.', expr: newE, evaled: false };
     return { display: base === '0' ? label : base + label, expr: newE, evaled: false };
-  });
+  }), []);
+
+  // ── Keyboard support ─────────────────────────────────────────────────────
+  useEffect(() => {
+    const handler = (e) => {
+      // Don't intercept when typing in input/textarea
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      if (e.key >= '0' && e.key <= '9')    { press(e.key, 'digit'); return; }
+      if (e.key === '.' || e.key === ',')   { press('.', 'digit'); return; }
+      if (e.key === '+')                    { press('+', 'op'); return; }
+      if (e.key === '-')                    { press('−', 'op'); return; }
+      if (e.key === '*')                    { press('×', 'op'); return; }
+      if (e.key === '/')                    { e.preventDefault(); press('÷', 'op'); return; }
+      if (e.key === 'Enter' || e.key === '=') { e.preventDefault(); press('=', 'equal'); return; }
+      if (e.key === 'Backspace')            { press('⌫', 'back'); return; }
+      if (e.key === 'Delete')               { press('C', 'clear'); return; }
+      if (e.key === '%')                    { press('%', 'pct'); return; }
+      if (e.key === '(' && scientific)      { press('(', 'paren'); return; }
+      if (e.key === ')' && scientific)      { press(')', 'paren'); return; }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [press, scientific]);
 
   return (
     <div>
@@ -519,9 +543,16 @@ const MODES = [
 export default function Calculator({ onClose }) {
   const [mode, setMode] = useState('standard');
 
-  return (
+  // Close on Escape
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  return ReactDOM.createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4 bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center sm:p-4 bg-black/70 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
@@ -540,8 +571,8 @@ export default function Calculator({ onClose }) {
         {/* Header */}
         <div className="flex items-center justify-between px-4 pt-3 pb-2 shrink-0">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#22C55E]/10 flex items-center justify-center text-[16px]">
-              🧮
+            <div className="w-8 h-8 rounded-lg bg-[#22C55E]/10 flex items-center justify-center text-[#22C55E]">
+              <CalcIcon size={16} />
             </div>
             <h2 className="text-white font-bold text-[15px]">Calculatrice</h2>
           </div>
@@ -582,6 +613,7 @@ export default function Calculator({ onClose }) {
           {mode === 'statistics' && <StatisticsCalc />}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

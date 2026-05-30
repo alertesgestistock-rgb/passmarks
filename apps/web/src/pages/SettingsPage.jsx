@@ -245,7 +245,14 @@ export default function SettingsPage({ navigate }) {
             </div>
             <div className="p-4 flex justify-between items-center">
               <span className="text-[13px] font-medium text-slate-800 dark:text-[#F1F5F9]">Powered by</span>
-              <span className="text-[12px] font-semibold text-[#D97757] flex items-center gap-1">Claude <ExternalLink size={12}/></span>
+              <a
+                href="https://wa.me/237694620209?text=Hello%20Sir%2C%20I%20had%20got%20your%20number%20from%20Pass%20Mark%20App"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[12px] font-semibold text-[#25D366] flex items-center gap-1 hover:opacity-80 transition-opacity"
+              >
+                Sylvel <ExternalLink size={12}/>
+              </a>
             </div>
           </div>
         </section>

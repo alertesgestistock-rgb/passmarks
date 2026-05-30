@@ -5,7 +5,7 @@ import { useUser } from '@/contexts/UserContext';
 import { cn } from '@/lib/utils';
 
 const SUBJECTS_LIST = [
-  'Physics', 'Chemistry', 'Biology', 'Mathematics', 'Further Maths', 
+  'Physics', 'Chemistry', 'Biology', 'Mathematics', 'Further Maths',
   'History', 'Geography', 'Economics', 'Literature', 'French', 'CS', 'CRS'
 ];
 
@@ -15,7 +15,7 @@ const YEARS = ['2025', '2026'];
 export default function OnboardingFlow({ initialStep = 0, isEditMode = false, onClose = null }) {
   const { user, initializeNewUser, updateUser } = useUser();
   const [step, setStep] = useState(isEditMode ? 2 : initialStep);
-  
+
   const [name, setName] = useState(user?.name || '');
   const [level, setLevel] = useState(user?.level || 'A Level');
   const [subjects, setSubjects] = useState(user?.subjects || []);
@@ -23,14 +23,14 @@ export default function OnboardingFlow({ initialStep = 0, isEditMode = false, on
   const [examYear, setExamYear] = useState(user?.examYear || '2025');
 
   const toggleSubject = (sub) => {
-    setSubjects(prev => 
+    setSubjects(prev =>
       prev.includes(sub) ? prev.filter(s => s !== sub) : [...prev, sub]
     );
   };
 
   const handleSubmit = () => {
     if (!name.trim() || subjects.length === 0) return;
-    
+
     if (isEditMode) {
       updateUser({ name, level, subjects, examMonth, examYear });
       if (onClose) onClose();
@@ -40,9 +40,9 @@ export default function OnboardingFlow({ initialStep = 0, isEditMode = false, on
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-[#0F172A] flex flex-col items-center justify-center p-6 overflow-hidden">
+    <div className="fixed inset-0 z-[100] bg-slate-100 dark:bg-[#0F172A] flex flex-col items-center justify-center p-6 overflow-hidden">
       <div className="w-full max-w-[400px] flex-1 flex flex-col justify-center relative">
-        
+
         {/* Screen 1: Welcome */}
         {step === 0 && (
           <div className="absolute inset-0 flex flex-col items-center justify-center fade-in">
@@ -52,12 +52,12 @@ export default function OnboardingFlow({ initialStep = 0, isEditMode = false, on
                 <path d="M12 2L22 12L12 22L2 12L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
-            <h1 className="text-[24px] font-medium text-[#F1F5F9] mb-2 text-center">Welcome to PassMark</h1>
-            <p className="text-[16px] text-[#94A3B8] text-center mb-12 text-balance">Your personal GCE AI Tutor. Powered by Claude AI.</p>
-            
+            <h1 className="text-[24px] font-medium text-slate-900 dark:text-[#F1F5F9] mb-2 text-center">Welcome to PassMark</h1>
+            <p className="text-[16px] text-slate-500 dark:text-[#94A3B8] text-center mb-12 text-balance">Your personal GCE AI Tutor. Powered by Claude AI.</p>
+
             <div className="relative w-48 h-48 mb-12">
-              <div className="absolute inset-0 bg-[#1E293B] rounded-3xl border border-[#334155] shadow-xl flex flex-col p-4 gap-3">
-                <div className="w-3/4 h-4 bg-[#334155] rounded-full"></div>
+              <div className="absolute inset-0 bg-white dark:bg-[#1E293B] rounded-3xl border border-slate-200 dark:border-[#334155] shadow-xl flex flex-col p-4 gap-3">
+                <div className="w-3/4 h-4 bg-slate-200 dark:bg-[#334155] rounded-full"></div>
                 <div className="w-full h-12 bg-[#22C55E]/20 rounded-xl border border-[#22C55E]/50 flex items-center px-3 gap-2">
                   <CheckCircle2 size={16} className="text-[#22C55E]" />
                   <div className="w-1/2 h-2 bg-[#22C55E]/50 rounded-full"></div>
@@ -71,11 +71,11 @@ export default function OnboardingFlow({ initialStep = 0, isEditMode = false, on
 
             <div className="flex justify-center gap-2 mb-8">
               <div className="w-2 h-2 rounded-full bg-[#22C55E]"></div>
-              <div className="w-2 h-2 rounded-full bg-[#334155]"></div>
-              <div className="w-2 h-2 rounded-full bg-[#334155]"></div>
+              <div className="w-2 h-2 rounded-full bg-slate-300 dark:bg-[#334155]"></div>
+              <div className="w-2 h-2 rounded-full bg-slate-300 dark:bg-[#334155]"></div>
             </div>
 
-            <button 
+            <button
               onClick={() => setStep(1)}
               className="bg-[#22C55E] text-[#052e16] rounded-[12px] px-[40px] py-[14px] font-medium scale-on-click"
             >
@@ -87,47 +87,47 @@ export default function OnboardingFlow({ initialStep = 0, isEditMode = false, on
         {/* Screen 2: Features */}
         {step === 1 && (
           <div className="absolute inset-0 flex flex-col items-center justify-center fade-in">
-            <h2 className="text-[20px] font-medium text-[#F1F5F9] mb-8 text-center">Everything you need to pass</h2>
-            
+            <h2 className="text-[20px] font-medium text-slate-900 dark:text-[#F1F5F9] mb-8 text-center">Everything you need to pass</h2>
+
             <div className="w-full flex flex-col mb-12">
-              <div className="bg-[#1E293B] rounded-[12px] p-[14px] flex items-center gap-[14px] mb-[10px]">
+              <div className="bg-white dark:bg-[#1E293B] rounded-[12px] p-[14px] flex items-center gap-[14px] mb-[10px] border border-slate-200 dark:border-transparent shadow-sm">
                 <div className="w-[40px] h-[40px] rounded-full bg-[#22C55E]/10 text-[#22C55E] flex items-center justify-center shrink-0">
                   <MessageSquare size={20} />
                 </div>
                 <div>
-                  <h3 className="text-[14px] font-medium text-white mb-0.5">AI Tutor</h3>
-                  <p className="text-[12px] text-[#94A3B8]">Solve any GCE question instantly</p>
+                  <h3 className="text-[14px] font-medium text-slate-900 dark:text-white mb-0.5">AI Tutor</h3>
+                  <p className="text-[12px] text-slate-500 dark:text-[#94A3B8]">Solve any GCE question instantly</p>
                 </div>
               </div>
 
-              <div className="bg-[#1E293B] rounded-[12px] p-[14px] flex items-center gap-[14px] mb-[10px]">
+              <div className="bg-white dark:bg-[#1E293B] rounded-[12px] p-[14px] flex items-center gap-[14px] mb-[10px] border border-slate-200 dark:border-transparent shadow-sm">
                 <div className="w-[40px] h-[40px] rounded-full bg-[#3B82F6]/10 text-[#3B82F6] flex items-center justify-center shrink-0">
                   <FileText size={20} />
                 </div>
                 <div>
-                  <h3 className="text-[14px] font-medium text-white mb-0.5">Past Papers</h3>
-                  <p className="text-[12px] text-[#94A3B8]">All subjects 2015–2024, offline ready</p>
+                  <h3 className="text-[14px] font-medium text-slate-900 dark:text-white mb-0.5">Past Papers</h3>
+                  <p className="text-[12px] text-slate-500 dark:text-[#94A3B8]">All subjects 2015–2024, offline ready</p>
                 </div>
               </div>
 
-              <div className="bg-[#1E293B] rounded-[12px] p-[14px] flex items-center gap-[14px] mb-[10px]">
+              <div className="bg-white dark:bg-[#1E293B] rounded-[12px] p-[14px] flex items-center gap-[14px] mb-[10px] border border-slate-200 dark:border-transparent shadow-sm">
                 <div className="w-[40px] h-[40px] rounded-full bg-[#F97316]/10 text-[#F97316] flex items-center justify-center shrink-0">
                   <List size={20} />
                 </div>
                 <div>
-                  <h3 className="text-[14px] font-medium text-white mb-0.5">Smart Quizzes</h3>
-                  <p className="text-[12px] text-[#94A3B8]">AI-generated MCQs in exam style</p>
+                  <h3 className="text-[14px] font-medium text-slate-900 dark:text-white mb-0.5">Smart Quizzes</h3>
+                  <p className="text-[12px] text-slate-500 dark:text-[#94A3B8]">AI-generated MCQs in exam style</p>
                 </div>
               </div>
             </div>
 
             <div className="flex justify-center gap-2 mb-8">
-              <div className="w-2 h-2 rounded-full bg-[#334155]"></div>
+              <div className="w-2 h-2 rounded-full bg-slate-300 dark:bg-[#334155]"></div>
               <div className="w-2 h-2 rounded-full bg-[#22C55E]"></div>
-              <div className="w-2 h-2 rounded-full bg-[#334155]"></div>
+              <div className="w-2 h-2 rounded-full bg-slate-300 dark:bg-[#334155]"></div>
             </div>
 
-            <button 
+            <button
               onClick={() => setStep(2)}
               className="bg-[#22C55E] text-[#052e16] rounded-[12px] px-[40px] py-[14px] font-medium scale-on-click"
             >
@@ -139,21 +139,32 @@ export default function OnboardingFlow({ initialStep = 0, isEditMode = false, on
         {/* Screen 3: Setup Profile */}
         {step === 2 && (
           <div className="absolute inset-0 flex flex-col justify-center fade-in">
-            <div className="mb-6 text-center">
-              <h2 className="text-[20px] font-medium text-[#F1F5F9]">{isEditMode ? 'Edit Profile' : 'Set up your profile'}</h2>
-              {!isEditMode && <p className="text-[12px] text-[#94A3B8] mt-1">30 seconds. No account needed.</p>}
+            <div className="mb-6 text-center flex items-center justify-center relative">
+              <h2 className="text-[20px] font-medium text-slate-900 dark:text-[#F1F5F9]">
+                {isEditMode ? 'Edit Profile' : 'Set up your profile'}
+              </h2>
+              {isEditMode && onClose && (
+                <button
+                  onClick={onClose}
+                  className="absolute right-0 text-slate-400 dark:text-[#64748B] hover:text-slate-700 dark:hover:text-white text-[20px] leading-none"
+                  aria-label="Fermer"
+                >
+                  ×
+                </button>
+              )}
+              {!isEditMode && <p className="text-[12px] text-slate-500 dark:text-[#94A3B8] mt-1">30 seconds. No account needed.</p>}
             </div>
 
             <div className="flex flex-col gap-[12px] overflow-y-auto hide-scrollbar pb-4">
               {/* Name */}
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] text-[#94A3B8] ml-1">Your name</label>
-                <input 
-                  type="text" 
+                <label className="text-[11px] text-slate-500 dark:text-[#94A3B8] ml-1">Your name</label>
+                <input
+                  type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Collins Obi"
-                  className="bg-[#1E293B] border-[0.5px] border-[#334155] rounded-[10px] p-[12px] text-[14px] text-[#F1F5F9] outline-none focus:border-[#22C55E]"
+                  className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] rounded-[10px] p-[12px] text-[14px] text-slate-900 dark:text-[#F1F5F9] outline-none focus:border-[#22C55E] placeholder:text-slate-400 dark:placeholder:text-[#475569]"
                 />
               </div>
 
@@ -164,8 +175,10 @@ export default function OnboardingFlow({ initialStep = 0, isEditMode = false, on
                     key={lvl}
                     onClick={() => setLevel(lvl)}
                     className={cn(
-                      "flex-1 rounded-[10px] p-[12px] text-[13px] font-medium border-[0.5px] scale-on-click",
-                      level === lvl ? "bg-[#22C55E] border-[#22C55E] text-[#052e16]" : "bg-[#1E293B] border-[#334155] text-[#94A3B8]"
+                      "flex-1 rounded-[10px] p-[12px] text-[13px] font-medium border scale-on-click",
+                      level === lvl
+                        ? "bg-[#22C55E] border-[#22C55E] text-[#052e16]"
+                        : "bg-white dark:bg-[#1E293B] border-slate-200 dark:border-[#334155] text-slate-600 dark:text-[#94A3B8]"
                     )}
                   >
                     {lvl}
@@ -183,7 +196,9 @@ export default function OnboardingFlow({ initialStep = 0, isEditMode = false, on
                       onClick={() => toggleSubject(sub)}
                       className={cn(
                         "rounded-[20px] px-[12px] py-[6px] text-[11px] font-medium border scale-on-click truncate",
-                        isSelected ? "bg-[#14532D] border-[#22C55E] text-[#86EFAC]" : "bg-[#1E293B] border-[#334155] text-[#94A3B8]"
+                        isSelected
+                          ? "bg-green-50 dark:bg-[#14532D] border-[#22C55E] text-green-700 dark:text-[#86EFAC]"
+                          : "bg-white dark:bg-[#1E293B] border-slate-200 dark:border-[#334155] text-slate-600 dark:text-[#94A3B8]"
                       )}
                     >
                       {sub}
@@ -194,24 +209,24 @@ export default function OnboardingFlow({ initialStep = 0, isEditMode = false, on
 
               {/* Exam Date */}
               <div className="flex gap-2 mt-2">
-                <select 
+                <select
                   value={examMonth}
                   onChange={(e) => setExamMonth(e.target.value)}
-                  className="flex-1 bg-[#1E293B] border-[0.5px] border-[#334155] rounded-[8px] p-[10px] text-[14px] text-[#F1F5F9] outline-none focus:border-[#22C55E] appearance-none"
+                  className="flex-1 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] rounded-[8px] p-[10px] text-[14px] text-slate-900 dark:text-[#F1F5F9] outline-none focus:border-[#22C55E] appearance-none"
                 >
                   {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
-                <select 
+                <select
                   value={examYear}
                   onChange={(e) => setExamYear(e.target.value)}
-                  className="flex-1 bg-[#1E293B] border-[0.5px] border-[#334155] rounded-[8px] p-[10px] text-[14px] text-[#F1F5F9] outline-none focus:border-[#22C55E] appearance-none"
+                  className="flex-1 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] rounded-[8px] p-[10px] text-[14px] text-slate-900 dark:text-[#F1F5F9] outline-none focus:border-[#22C55E] appearance-none"
                 >
                   {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
                 </select>
               </div>
             </div>
 
-            <button 
+            <button
               onClick={handleSubmit}
               disabled={!name.trim() || subjects.length === 0}
               className="w-full mt-4 bg-[#22C55E] text-[#052e16] rounded-[12px] p-[14px] text-[14px] font-medium disabled:opacity-50 scale-on-click"

@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Home, BookOpen, Bot, User, Search, Settings, Sun, Moon } from 'lucide-react';
+import { Home, BookOpen, Bot, User, Search, Settings, Sun, Moon, Calculator as CalcIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
 import InstallBanner from './InstallBanner';
@@ -100,9 +100,9 @@ export function TopNav({ setActiveTab }) {
             onClick={() => setShowCalc(v => !v)}
             aria-label="Ouvrir la calculatrice"
             title="Calculatrice"
-            className="w-[36px] h-[36px] rounded-full bg-slate-100 dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 flex items-center justify-center text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-[#334155] transition-colors text-[16px]"
+            className="w-[36px] h-[36px] rounded-full bg-slate-100 dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 flex items-center justify-center text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-[#334155] transition-colors"
           >
-            🧮
+            <CalcIcon size={17} />
           </button>
 
           {/* Theme toggle */}

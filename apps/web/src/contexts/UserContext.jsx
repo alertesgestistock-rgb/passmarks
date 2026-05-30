@@ -13,6 +13,7 @@ const profileToUser = (profile, email) => ({
   examMonth: profile.exam_month,
   examYear: profile.exam_year,
   apiKey: profile.api_key || '',
+  avatarUrl: profile.avatar_url || null,
   stats: profile.stats || { questionsSolved: 0, papersRead: 0, quizzesCompleted: 0, totalScore: 0, bySubject: {} },
   recentActivity: profile.recent_activity || [],
   chatHistory: profile.chat_history || [],
@@ -23,6 +24,7 @@ const userToProfile = (updates) => {
   const map = {
     name: 'name', level: 'level', subjects: 'subjects',
     examMonth: 'exam_month', examYear: 'exam_year', apiKey: 'api_key',
+    avatarUrl: 'avatar_url',
     stats: 'stats', recentActivity: 'recent_activity',
     chatHistory: 'chat_history', quizHistory: 'quiz_history',
   };
@@ -38,23 +40,24 @@ export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(cached || null);
   const [streak, setStreak] = useState(() => cached ? checkAndUpdateStreak() : { current: 0, lastActive: null });
   const [isLoading, setIsLoading] = useState(!cached);
+  const [tokenBalance, setTokenBalance] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
 
     const loadFromSession = async (session) => {
       if (!session) return false;
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
+      const [{ data: profile }, { data: wallet }] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', session.user.id).single(),
+        supabase.from('token_wallets').select('balance').eq('user_id', session.user.id).single(),
+      ]);
       if (cancelled) return false;
       if (profile) {
         const userData = profileToUser(profile, session.user.email);
         setUser(userData);
         saveUserToLocalStorage(userData);
         setStreak(checkAndUpdateStreak());
+        setTokenBalance(wallet?.balance ?? null);
         return true;
       }
       return false;
@@ -80,6 +83,7 @@ export const UserProvider = ({ children }) => {
         clearUserData();
         setUser(null);
         setStreak({ current: 0, lastActive: null });
+        setTokenBalance(null);
       }
     });
 
@@ -157,7 +161,7 @@ export const UserProvider = ({ children }) => {
 
   return (
     <UserContext.Provider value={{
-      user, streak, isLoading,
+      user, streak, isLoading, tokenBalance,
       updateUser, initializeNewUser, addRecentActivity, clearUser,
     }}>
       {children}
