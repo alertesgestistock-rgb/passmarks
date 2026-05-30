@@ -168,10 +168,10 @@ export function MainLayout({ children, activeTab, setActiveTab }) {
   }, [setActiveTab]);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0F172A] flex flex-col">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0F172A] flex flex-col overflow-x-hidden">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       <TopNav setActiveTab={setActiveTab} />
-      <main className="flex-1 mb-[64px] md:mb-[72px] lg:mb-0 lg:ml-[220px] xl:ml-[260px] p-4 lg:p-8 md:max-w-[600px] md:mx-auto lg:mx-0 lg:max-w-[720px] xl:max-w-[860px] w-full slide-transition fade-in">
+      <main className="flex-1 mb-[64px] md:mb-[72px] lg:mb-0 lg:ml-[220px] xl:ml-[260px] p-4 lg:p-8 min-w-0 overflow-hidden slide-transition fade-in">
         {children}
       </main>
       <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
