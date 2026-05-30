@@ -209,13 +209,13 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
     e.target.value = '';
   };
 
-  const renderPageToBase64 = async (page, scale = 1.5) => {
+  const renderPageToBase64 = async (page, scale = 1.0) => {
     const viewport = page.getViewport({ scale });
     const canvas = document.createElement('canvas');
     canvas.width = viewport.width;
     canvas.height = viewport.height;
     await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
     return dataUrl.split(',')[1];
   };
 
@@ -250,9 +250,9 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
         if (extracted) {
           setPendingPdf({ name: file.name, text: extracted, images: null });
         } else {
-          // 2. PDF scanné → convertir les pages en images (max 3)
+          // 2. PDF scanné → convertir les pages en images (max 2)
           const images = [];
-          for (let i = 1; i <= Math.min(pdf.numPages, 3); i++) {
+          for (let i = 1; i <= Math.min(pdf.numPages, 2); i++) {
             const page = await pdf.getPage(i);
             const b64 = await renderPageToBase64(page);
             images.push(b64);
