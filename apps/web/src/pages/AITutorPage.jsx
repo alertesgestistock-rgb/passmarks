@@ -6,7 +6,9 @@ import {
 import { cn } from '@/lib/utils';
 import { useUser } from '@/contexts/UserContext';
 import { supabase } from '@/lib/supabase';
-import { apiServerClient } from '@/lib/apiServerClient';
+import { apiServerClient, InsufficientTokensError } from '@/lib/apiServerClient';
+import InsufficientTokensAlert from '@/components/InsufficientTokensAlert';
+import TokenShopModal from '@/components/TokenShopModal';
 
 const SYSTEM_PROMPT = `You are PassMark AI Tutor, an expert GCE Cameroon exam coach for O Level and A Level students. You help students solve past paper questions step by step. Be concise, clear, and educational.`;
 
@@ -102,7 +104,7 @@ function MarkdownText({ content }) {
 // Chat View
 // ─────────────────────────────────────────────────────────────
 function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, onConversationCreated }) {
-  const { updateUser, addRecentActivity } = useUser();
+  const { updateUser, addRecentActivity, updateTokenBalance } = useUser();
 
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [input, setInput] = useState('');
@@ -112,6 +114,8 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
   const [pdfLoading, setPdfLoading] = useState(false);
   const [conversationId, setConversationId] = useState(initConvId || null);
   const [messages, setMessages] = useState([buildWelcome(user)]);
+  const [noTokens, setNoTokens] = useState(false);
+  const [showTokenShop, setShowTokenShop] = useState(false);
 
   const messagesEndRef = useRef(null);
   const imageInputRef = useRef(null);
@@ -290,7 +294,7 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
     const pdf = pendingPdf;
     const text = pdf?.text ? (rawText ? `${rawText}\n\n[PDF: ${pdf.name}]\n${pdf.text}` : `[PDF: ${pdf.name}]\n${pdf.text}`) : rawText;
     if ((!text && !image && !pdf?.images) || isLoading || isOffline) return;
-
+    setNoTokens(false);
     setInput('');
     setPendingImage(null);
     setPendingPdf(null);
@@ -315,7 +319,8 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
         throw new Error(err.error || 'Erreur de connexion');
       }
 
-      const { content } = await response.json();
+      const { content, balance_after } = await response.json();
+      if (typeof balance_after === 'number') updateTokenBalance(balance_after);
       setMessages(prev => [...prev, { role: 'assistant', content, timestamp: new Date().toISOString() }]);
 
       const convId = await getOrCreateConversation(text, onConversationCreated);
@@ -338,12 +343,17 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
         date: new Date().toISOString(), solved: true,
       });
     } catch (error) {
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: error.message || 'Connection error. Please try again.',
-        isError: true,
-        timestamp: new Date().toISOString(),
-      }]);
+      if (error instanceof InsufficientTokensError) {
+        setNoTokens(true);
+        updateTokenBalance(error.balance);
+      } else {
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: error.message || 'Connection error. Please try again.',
+          isError: true,
+          timestamp: new Date().toISOString(),
+        }]);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -470,6 +480,11 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
         </div>
       )}
 
+      {noTokens && (
+        <InsufficientTokensAlert onBuyTokens={() => setShowTokenShop(true)} />
+      )}
+      {showTokenShop && <TokenShopModal onClose={() => setShowTokenShop(false)} />}
+
       {/* Input Bar */}
       <div className="shrink-0 sticky bottom-0 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 rounded-2xl p-2 flex items-center gap-2">
         <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
@@ -492,7 +507,7 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
         />
         <button
           onClick={() => handleSend()}
-          disabled={(!input.trim() && !pendingImage && !pendingPdf) || isLoading || isOffline || pdfLoading}
+          disabled={(!input.trim() && !pendingImage && !pendingPdf) || isLoading || isOffline || pdfLoading || noTokens}
           className="w-[40px] h-[40px] rounded-xl bg-[#22C55E] flex items-center justify-center shrink-0 disabled:opacity-50 scale-on-click">
           <Send size={18} className="text-[#052e16] ml-0.5" />
         </button>

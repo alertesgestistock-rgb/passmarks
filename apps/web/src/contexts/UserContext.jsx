@@ -12,21 +12,17 @@ const profileToUser = (profile, email) => ({
   subjects: profile.subjects || [],
   examMonth: profile.exam_month,
   examYear: profile.exam_year,
-  apiKey: profile.api_key || '',
   avatarUrl: profile.avatar_url || null,
   stats: profile.stats || { questionsSolved: 0, papersRead: 0, quizzesCompleted: 0, totalScore: 0, bySubject: {} },
   recentActivity: profile.recent_activity || [],
-  chatHistory: profile.chat_history || [],
-  quizHistory: profile.quiz_history || [],
 });
 
 const userToProfile = (updates) => {
   const map = {
     name: 'name', level: 'level', subjects: 'subjects',
-    examMonth: 'exam_month', examYear: 'exam_year', apiKey: 'api_key',
+    examMonth: 'exam_month', examYear: 'exam_year',
     avatarUrl: 'avatar_url',
     stats: 'stats', recentActivity: 'recent_activity',
-    chatHistory: 'chat_history', quizHistory: 'quiz_history',
   };
   const result = {};
   for (const [key, col] of Object.entries(map)) {
@@ -42,22 +38,54 @@ export const UserProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(!cached);
   const [tokenBalance, setTokenBalance] = useState(null);
 
+  const ensureWallet = async (userId) => {
+    const { data: wallet } = await supabase
+      .from('token_wallets')
+      .select('balance')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (wallet) return wallet.balance;
+
+    // Wallet missing (legacy user) — create via RPC signup_bonus
+    await supabase.rpc('credit_tokens', {
+      p_user_id: userId,
+      p_amount: 25,
+      p_purchase_id: null,
+    }).catch(() => null);
+
+    const { data: fresh } = await supabase
+      .from('token_wallets')
+      .select('balance')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    return fresh?.balance ?? 0;
+  };
+
   useEffect(() => {
     let cancelled = false;
 
     const loadFromSession = async (session) => {
       if (!session) return false;
-      const [{ data: profile }, { data: wallet }] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', session.user.id).single(),
-        supabase.from('token_wallets').select('balance').eq('user_id', session.user.id).maybeSingle(),
-      ]);
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+
       if (cancelled) return false;
       if (profile) {
         const userData = profileToUser(profile, session.user.email);
         setUser(userData);
         saveUserToLocalStorage(userData);
         setStreak(checkAndUpdateStreak());
-        setTokenBalance(wallet?.balance ?? null);
+
+        // Load wallet (non-blocking)
+        ensureWallet(session.user.id).then(balance => {
+          if (!cancelled) setTokenBalance(balance);
+        });
+
         return true;
       }
       return false;
@@ -65,10 +93,7 @@ export const UserProvider = ({ children }) => {
 
     const init = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      const loaded = await loadFromSession(session);
-      if (!loaded && !cancelled && !cached) {
-        // No session and no cache — nothing to show
-      }
+      await loadFromSession(session);
       if (!cancelled) setIsLoading(false);
     };
 
@@ -116,11 +141,9 @@ export const UserProvider = ({ children }) => {
       id: session?.user?.id || null,
       email: session?.user?.email || null,
       name, level, subjects, examMonth, examYear,
-      apiKey: '',
+      avatarUrl: null,
       stats: { questionsSolved: 0, papersRead: 0, quizzesCompleted: 0, totalScore: 0, bySubject: {} },
       recentActivity: [],
-      chatHistory: [],
-      quizHistory: [],
     };
     setUser(newUser);
     saveUserToLocalStorage(newUser);
@@ -142,7 +165,6 @@ export const UserProvider = ({ children }) => {
       const newActivity = [{ ...activity, id: Date.now() }, ...(prev.recentActivity || [])].slice(0, 10);
       const newUser = { ...prev, recentActivity: newActivity };
       saveUserToLocalStorage(newUser);
-      // Async Supabase sync (fire-and-forget)
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session) {
           supabase.from('profiles').update({ recent_activity: newActivity }).eq('id', session.user.id);
@@ -150,6 +172,23 @@ export const UserProvider = ({ children }) => {
       });
       return newUser;
     });
+  };
+
+  // Called after API responses include balance_after
+  const updateTokenBalance = (newBalance) => {
+    if (typeof newBalance === 'number') setTokenBalance(newBalance);
+  };
+
+  // Reload balance from DB (e.g. after returning from Chariow payment)
+  const refreshTokenBalance = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const { data: wallet } = await supabase
+      .from('token_wallets')
+      .select('balance')
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+    if (wallet) setTokenBalance(wallet.balance);
   };
 
   const clearUser = async () => {
@@ -163,6 +202,7 @@ export const UserProvider = ({ children }) => {
     <UserContext.Provider value={{
       user, streak, isLoading, tokenBalance,
       updateUser, initializeNewUser, addRecentActivity, clearUser,
+      updateTokenBalance, refreshTokenBalance,
     }}>
       {children}
     </UserContext.Provider>

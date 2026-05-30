@@ -1,5 +1,6 @@
 import express from 'express';
 import logger from '../utils/logger.js';
+import { requireTokens, chatTokenCost, chatActionType } from '../middleware/tokens.js';
 
 const router = express.Router();
 
@@ -30,7 +31,7 @@ function toOpenAIMessages(system, messages) {
 	return result;
 }
 
-router.post('/message', async (req, res) => {
+router.post('/message', requireTokens(chatTokenCost, chatActionType), async (req, res) => {
 	const apiKey = process.env.OPENROUTER_API_KEY?.trim();
 
 	if (!apiKey) {
@@ -71,7 +72,7 @@ router.post('/message', async (req, res) => {
 		}
 
 		const data = await response.json();
-		res.json({ content: data.choices[0].message.content });
+		res.json({ content: data.choices[0].message.content, balance_after: req.balanceAfter });
 	} catch (err) {
 		logger.error(`OpenRouter fetch failed: ${err.message}`);
 		res.status(502).json({ error: 'Could not reach AI service. Please try again.' });

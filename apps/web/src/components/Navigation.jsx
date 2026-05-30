@@ -3,11 +3,16 @@ import React, { useEffect, useState } from 'react';
 import { Home, BookOpen, GraduationCap, User, Search, Settings, Sun, Moon, Calculator as CalcIcon, WifiOff, CalendarDays } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useUser } from '@/contexts/UserContext';
 import InstallBanner from './InstallBanner';
 import NotificationCenter from './NotificationCenter';
 import Calculator from './Calculator';
+import TokenBalance from './TokenBalance';
+import TokenShopModal from './TokenShopModal';
 
 export function Sidebar({ activeTab, setActiveTab }) {
+  const { tokenBalance } = useUser();
+  const [showTokenShop, setShowTokenShop] = useState(false);
   const navItems = [
     { id: "home",     icon: Home,         label: "Home" },
     { id: "papers",   icon: BookOpen,      label: "Past Papers" },
@@ -53,10 +58,18 @@ export function Sidebar({ activeTab, setActiveTab }) {
         })}
       </nav>
 
-      <div className="p-4 shrink-0">
-        <button className="w-full bg-[#F97316] text-white rounded-lg py-[10px] text-[13px] font-medium hover:brightness-110 scale-on-click">
-          Upgrade to Premium
-        </button>
+      <div className="p-4 shrink-0 flex flex-col gap-2">
+        {tokenBalance !== null ? (
+          <TokenBalance balance={tokenBalance} onClick={() => setShowTokenShop(true)} />
+        ) : (
+          <button
+            onClick={() => setShowTokenShop(true)}
+            className="w-full bg-[#F97316] text-white rounded-lg py-[10px] text-[13px] font-medium hover:brightness-110 scale-on-click"
+          >
+            Buy Tokens
+          </button>
+        )}
+        {showTokenShop && <TokenShopModal onClose={() => setShowTokenShop(false)} />}
       </div>
     </div>
   );
@@ -64,7 +77,9 @@ export function Sidebar({ activeTab, setActiveTab }) {
 
 export function TopNav({ setActiveTab }) {
   const { theme, toggleTheme } = useTheme();
-  const [showCalc,  setShowCalc]  = useState(false);
+  const { tokenBalance } = useUser();
+  const [showCalc, setShowCalc] = useState(false);
+  const [showTokenShop, setShowTokenShop] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   useEffect(() => {
@@ -138,7 +153,9 @@ export function TopNav({ setActiveTab }) {
             {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
           </button>
 
+          <TokenBalance balance={tokenBalance} onClick={() => setShowTokenShop(true)} compact />
           <NotificationCenter navigate={setActiveTab} />
+          {showTokenShop && <TokenShopModal onClose={() => setShowTokenShop(false)} />}
 
           <button
             onClick={() => setActiveTab('profile')}

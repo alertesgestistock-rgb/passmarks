@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Check, X, ChevronDown } from 'lucide-react';
+import { Check, X, ChevronDown, Coins, Zap, Star, Trophy, Flame } from 'lucide-react';
 import Header from '@/components/landing/Header';
 import Footer from '@/components/landing/Footer';
 import CardSpotlight from '@/components/ui/CardSpotlight';
 import GlowBackground from '@/components/ui/GlowBackground';
+import { useUser } from '@/contexts/UserContext';
+import apiServerClient from '@/lib/apiServerClient';
 
 const T = {
   bg: '#0F172A', 
@@ -46,12 +48,48 @@ function FaqItem({ question, answer }) {
   );
 }
 
+const TOKEN_PACKS = [
+  { name: 'Starter',   tokens: 50,   price: 1000,  icon: Coins,  color: '#3B82F6', popular: false },
+  { name: 'Standard',  tokens: 200,  price: 3500,  icon: Zap,    color: '#22C55E', popular: true  },
+  { name: 'Intensif',  tokens: 500,  price: 7500,  icon: Star,   color: '#F97316', popular: false },
+  { name: 'Exam Mode', tokens: 1200, price: 15000, icon: Trophy, color: '#A855F7', popular: false },
+];
+
 export default function PricingPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const [billing, setBilling] = useState('monthly');
+  const { user } = useUser();
+  const [buying, setBuying] = useState(null);
+  const lang = i18n.language;
 
   const goAuth = () => navigate('/auth?tab=signup');
+
+  const handleBuyPack = async (pack) => {
+    if (!user) { navigate('/auth?tab=signup'); return; }
+    setBuying(pack.name);
+    try {
+      // Fetch package id from DB by name, then checkout
+      const { supabase } = await import('@/lib/supabase');
+      const { data: pkg } = await supabase
+        .from('token_packages')
+        .select('id')
+        .eq('name', pack.name)
+        .single();
+      if (!pkg) throw new Error('Package not found');
+
+      const data = await apiServerClient.json('/chariow/checkout', {
+        method: 'POST',
+        body: { package_id: pkg.id },
+      });
+      if (data.checkout_url) window.location.href = data.checkout_url;
+    } catch {
+      alert(lang === 'fr'
+        ? 'Erreur lors du paiement. Réessayez.'
+        : 'Payment error. Please try again.');
+    } finally {
+      setBuying(null);
+    }
+  };
 
   const compareRows = [
     ['row_price', 'kawlo_price', 'repet_price', 'free_price', 'std_price'],
@@ -243,98 +281,107 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* ── Real Pricing Grid ── */}
+      {/* ── Token Packs ── */}
       <section className="py-20 px-4 bg-slate-50 dark:bg-[#1E293B]/10 border-t border-slate-200 dark:border-white/5" id="pricing-cards">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto space-y-5 mb-16">
-            <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-500 dark:text-[#94A3B8] text-xs font-semibold uppercase tracking-wider">
-              {t('pricing.plans.label')}
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center max-w-2xl mx-auto space-y-4 mb-14">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#22C55E]/10 border border-[#22C55E]/30 text-[#22C55E] text-xs font-semibold uppercase tracking-wider">
+              <Coins size={12} />
+              {lang === 'fr' ? 'Packs de tokens' : 'Token Packs'}
             </span>
-            <h2 className="text-2xl md:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">{t('pricing.plans.headline')}</h2>
-            
-            {/* Toggle Billing switch */}
-            <div className="inline-flex bg-slate-100 dark:bg-slate-950 p-1.5 rounded-xl border border-slate-200 dark:border-white/5 shadow-inner">
-              {[
-                ['monthly', 'toggle_monthly'], 
-                ['season', 'toggle_season']
-              ].map(([val, lk]) => (
-                <button 
-                  key={val} 
-                  onClick={() => setBilling(val)} 
-                  className={`px-5 py-2 text-xs font-bold rounded-lg transition-all ${
-                    billing === val ? 'bg-white dark:bg-[#1E293B] text-slate-950 dark:text-white shadow-md' : 'text-slate-400 dark:text-[#64748B] hover:text-slate-650 dark:hover:text-[#94A3B8]'
-                  }`}
-                >
-                  {t(`pricing.plans.${lk}`)}
-                </button>
-              ))}
+            <h2 className="text-2xl md:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              {lang === 'fr' ? 'Rechargez quand vous voulez' : 'Top up whenever you need'}
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-[#94A3B8]">
+              {lang === 'fr'
+                ? 'Pas d\'abonnement. Payez uniquement ce que vous utilisez. Les tokens ne expirent pas.'
+                : 'No subscription. Pay only what you use. Tokens never expire.'}
+            </p>
+            <div className="inline-flex items-center gap-2 text-xs text-slate-500 dark:text-[#64748B] bg-slate-100 dark:bg-white/5 px-3 py-1.5 rounded-full border border-slate-200 dark:border-white/10">
+              🎁 {lang === 'fr' ? '25 tokens offerts à l\'inscription' : '25 free tokens on sign up'}
             </div>
           </div>
 
-          {/* Plans Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {plans.map((plan) => (
-              <CardSpotlight 
-                key={plan.id}
-                hoverLift={true}
-                spotlightColor={plan.featured ? "rgba(34,197,94,0.12)" : plan.premium ? "rgba(249,115,22,0.12)" : "rgba(148,163,184,0.08)"}
-                className={`p-6 border flex flex-col justify-between h-full relative bg-white dark:bg-transparent ${
-                  plan.featured ? 'border-2 border-[#22C55E] bg-emerald-50/20 dark:bg-[#14532D]/15 shadow-xl dark:shadow-[#22C55E]/5' : plan.premium ? 'border-[#F97316]/30 bg-orange-50/20 dark:bg-[#431407]/10' : 'border-slate-200 dark:border-white/5'
-                }`}
-              >
-                {/* Visual Badge overlay */}
-                {plan.featured ? (
-                  <div className="absolute top-[-14px] left-1/2 -translate-x-1/2 bg-[#22C55E] text-[#052e16] text-[10px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full shadow-md z-20">
-                    {t(`pricing.plans.${plan.badge}`)}
-                  </div>
-                ) : (
-                  <span className={`inline-block text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full mb-4 w-fit ${plan.badgeCls}`}>
-                    {t(`pricing.plans.${plan.badge}`)}
-                  </span>
-                )}
-                {plan.featured && <div className="h-4" />}
-
-                {/* Price and Note */}
-                <div className="space-y-4">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3.5xl font-black" style={{ color: plan.priceColor }}>{plan.price[billing]} FCFA</span>
-                    {plan.saveKey?.[billing] && <span className="bg-[#14532D]/10 dark:bg-[#14532D] text-emerald-800 dark:text-[#86EFAC] text-[9px] font-black px-2 py-0.5 rounded">{t(`pricing.plans.${plan.saveKey[billing]}`)}</span>}
-                  </div>
-                  <div className="text-xs text-slate-500 dark:text-[#64748B] font-semibold">{t(`pricing.plans.${plan.period[billing]}`)}</div>
-                  <div className="text-xs text-slate-600 dark:text-[#94A3B8] italic leading-normal">{t(`pricing.plans.${plan.note[billing]}`)}</div>
-                  {plan.payment && (
-                    <div className="inline-block bg-[#14532D]/10 dark:bg-[#14532D]/80 text-[#16A34A] dark:text-[#86EFAC] border border-[#22C55E]/20 text-[9px] font-bold px-2 py-1 rounded-md">
-                      {t(`pricing.plans.${plan.payment}`)}
+          {/* Packs Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {TOKEN_PACKS.map((pack) => {
+              const Icon = pack.icon;
+              const isBuying = buying === pack.name;
+              return (
+                <CardSpotlight
+                  key={pack.name}
+                  hoverLift
+                  spotlightColor={`${pack.color}18`}
+                  className={`p-6 border flex flex-col gap-4 relative bg-white dark:bg-transparent ${
+                    pack.popular
+                      ? 'border-2 shadow-xl dark:shadow-[#22C55E]/5'
+                      : 'border-slate-200 dark:border-white/8'
+                  }`}
+                  style={{ borderColor: pack.popular ? pack.color : undefined }}
+                >
+                  {pack.popular && (
+                    <div className="absolute top-[-12px] left-1/2 -translate-x-1/2 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow flex items-center gap-1"
+                      style={{ background: pack.color }}>
+                      <Flame size={10} />
+                      {lang === 'fr' ? 'Populaire' : 'Popular'}
                     </div>
                   )}
+                  {pack.popular && <div className="h-1" />}
 
-                  {/* Bullet features list */}
-                  <ul className="space-y-3 pt-4 border-t border-slate-200 dark:border-white/5">
-                    {plan.features.map(({ k, ok, hi }) => (
-                      <li key={k} className={`flex items-start gap-2.5 text-xs ${ok ? 'text-slate-650 dark:text-[#94A3B8]' : 'text-slate-350 dark:text-[#475569]'}`}>
-                        {ok ? (
-                          <Check size={14} className="shrink-0 mt-0.5" style={{ color: plan.featured ? T.primary : plan.premium ? T.orange : T.muted }} />
-                        ) : (
-                          <X size={14} className="shrink-0 mt-0.5 text-slate-400 dark:text-slate-700" />
-                        )}
-                        <span className={hi && ok ? 'font-bold text-slate-800 dark:text-white' : ''}>{t(`pricing.plans.${k}`)}</span>
-                      </li>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ background: `${pack.color}18` }}>
+                      <Icon size={24} style={{ color: pack.color }} />
+                    </div>
+                    <div>
+                      <div className="font-bold text-slate-900 dark:text-white text-base">{pack.name}</div>
+                      <div className="text-sm font-black" style={{ color: pack.color }}>
+                        {pack.tokens} tokens
+                      </div>
+                    </div>
+                    <div className="ml-auto text-right">
+                      <div className="text-xl font-black text-slate-900 dark:text-white">
+                        {pack.price.toLocaleString()} XAF
+                      </div>
+                      <div className="text-xs text-slate-400 dark:text-[#64748B]">
+                        {Math.round(pack.price / pack.tokens)} XAF/token
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-slate-100 dark:border-white/5 pt-4 space-y-2">
+                    {[
+                      `${pack.tokens} ${lang === 'fr' ? 'messages IA' : 'AI messages'}`,
+                      `${Math.floor(pack.tokens / 4)} ${lang === 'fr' ? 'analyses d\'images' : 'image analyses'}`,
+                      `${Math.floor(pack.tokens / 2)} ${lang === 'fr' ? 'quiz générés' : 'quizzes generated'}`,
+                    ].map(f => (
+                      <div key={f} className="flex items-center gap-2 text-xs text-slate-600 dark:text-[#94A3B8]">
+                        <Check size={13} style={{ color: pack.color }} className="shrink-0" />
+                        {f}
+                      </div>
                     ))}
-                  </ul>
-                </div>
+                  </div>
 
-                <div className="mt-8 space-y-3">
-                  {plan.social && <p className="text-[10px] text-emerald-800 dark:text-[#86EFAC] text-center font-semibold">{t(`pricing.plans.${plan.social}`)}</p>}
-                  {plan.scarcity && <p className="text-[10px] text-orange-800 dark:text-[#FDBA74] text-center font-bold">{t(`pricing.plans.${plan.scarcity}`)}</p>}
-                  
-                  <button onClick={goAuth} className={`w-full py-3 rounded-xl font-bold text-xs active:scale-98 transition-transform border ${plan.btnCls}`}>
-                    {t(`pricing.plans.${plan.btn[billing]}`)}
+                  <button
+                    onClick={() => handleBuyPack(pack)}
+                    disabled={isBuying}
+                    className="w-full py-3 rounded-xl font-bold text-sm transition-all active:scale-98 disabled:opacity-60 mt-auto text-white"
+                    style={{ background: pack.color }}
+                  >
+                    {isBuying
+                      ? (lang === 'fr' ? 'Redirection…' : 'Redirecting…')
+                      : (lang === 'fr' ? 'Acheter ce pack' : 'Buy this pack')}
                   </button>
-                </div>
-              </CardSpotlight>
-            ))}
+                </CardSpotlight>
+              );
+            })}
           </div>
 
+          <p className="text-center text-xs text-slate-400 dark:text-[#64748B] mt-8">
+            {lang === 'fr'
+              ? '🔒 Paiement sécurisé via Chariow · MTN MoMo · Orange Money · Carte bancaire'
+              : '🔒 Secure payment via Chariow · MTN MoMo · Orange Money · Bank card'}
+          </p>
         </div>
       </section>
 

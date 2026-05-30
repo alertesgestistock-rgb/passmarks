@@ -1,12 +1,13 @@
 import express from 'express';
 import logger from '../utils/logger.js';
+import { requireTokens } from '../middleware/tokens.js';
 
 const router = express.Router();
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const MODEL = 'anthropic/claude-sonnet-4-5';
 
-router.post('/generate', async (req, res) => {
+router.post('/generate', requireTokens(2, 'quiz'), async (req, res) => {
 	const apiKey = process.env.OPENROUTER_API_KEY;
 
 	if (!apiKey) {
@@ -69,7 +70,7 @@ router.post('/generate', async (req, res) => {
 		throw new Error('Invalid quiz data structure from API');
 	}
 
-	res.json(parsedData.questions);
+	res.json({ questions: parsedData.questions, balance_after: req.balanceAfter });
 });
 
 export default router;

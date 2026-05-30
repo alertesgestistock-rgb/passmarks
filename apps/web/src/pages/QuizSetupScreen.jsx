@@ -2,40 +2,50 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Sparkles, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import apiServerClient from '@/lib/apiServerClient';
+import apiServerClient, { InsufficientTokensError } from '@/lib/apiServerClient';
+import { useUser } from '@/contexts/UserContext';
+import InsufficientTokensAlert from '@/components/InsufficientTokensAlert';
+import TokenShopModal from '@/components/TokenShopModal';
 
 const SUBJECTS = ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'Economics', 'History', 'Geography', 'French'];
 
 export default function QuizSetupScreen({ navigate, viewState }) {
   const defaultSub = viewState?.defaultSubject || 'Physics';
+  const { updateTokenBalance } = useUser();
 
   const [subject, setSubject] = useState(defaultSub);
   const [level, setLevel] = useState('A Level');
   const [numQuestions, setNumQuestions] = useState(5);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [noTokens, setNoTokens] = useState(false);
+  const [showTokenShop, setShowTokenShop] = useState(false);
 
   const handleGenerate = async () => {
     setIsLoading(true);
     setError(null);
+    setNoTokens(false);
     try {
-      const response = await apiServerClient.fetch('/quiz/generate', {
+      const data = await apiServerClient.json('/quiz/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subject, difficulty: level, count: numQuestions })
+        body: { subject, difficulty: level, count: numQuestions },
       });
 
-      if (!response.ok) throw new Error('Failed to generate quiz. Check API connection.');
+      if (typeof data.balance_after === 'number') updateTokenBalance(data.balance_after);
 
-      const questions = await response.json();
+      const questions = data.questions;
       if (!Array.isArray(questions) || questions.length === 0) {
         throw new Error('Invalid quiz data received.');
       }
 
       navigate('quiz-play', { questions, subject });
     } catch (err) {
-      console.error(err);
-      setError(err.message || 'An error occurred while generating the quiz.');
+      if (err instanceof InsufficientTokensError) {
+        updateTokenBalance(err.balance);
+        setNoTokens(true);
+      } else {
+        setError(err.message || 'An error occurred while generating the quiz.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -59,6 +69,12 @@ export default function QuizSetupScreen({ navigate, viewState }) {
             <AlertCircle size={16} className="shrink-0" /> {error}
           </div>
         )}
+
+        {noTokens && (
+          <InsufficientTokensAlert onBuyTokens={() => setShowTokenShop(true)} />
+        )}
+
+        {showTokenShop && <TokenShopModal onClose={() => setShowTokenShop(false)} />}
 
         {/* Level */}
         <div>
@@ -125,13 +141,13 @@ export default function QuizSetupScreen({ navigate, viewState }) {
 
         <button
           onClick={handleGenerate}
-          disabled={isLoading}
+          disabled={isLoading || noTokens}
           className="w-full mt-4 bg-[#22C55E] text-[#052e16] rounded-xl py-3.5 text-[15px] font-bold flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 shadow-md"
         >
           {isLoading ? (
             <div className="w-5 h-5 border-2 border-[#052e16] border-t-transparent rounded-full animate-spin" />
           ) : (
-            <>Generate Quiz <Sparkles size={18} /></>
+            <>Generate Quiz <Sparkles size={18} /><span className="text-[12px] opacity-70 font-medium ml-1">(2 tokens)</span></>
           )}
         </button>
       </div>
