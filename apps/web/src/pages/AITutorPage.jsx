@@ -41,6 +41,60 @@ function formatRelativeDate(dateStr) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Markdown renderer (léger, sans dépendance)
+// ─────────────────────────────────────────────────────────────
+function MarkdownText({ content }) {
+  const lines = content.split('\n');
+  const elements = [];
+  let i = 0;
+
+  const renderInline = (text) => {
+    const parts = [];
+    const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/g;
+    let last = 0, m;
+    while ((m = regex.exec(text)) !== null) {
+      if (m.index > last) parts.push(text.slice(last, m.index));
+      if (m[2]) parts.push(<strong key={m.index}>{m[2]}</strong>);
+      else if (m[3]) parts.push(<em key={m.index}>{m[3]}</em>);
+      else if (m[4]) parts.push(<code key={m.index} className="bg-slate-200 dark:bg-[#0F172A] px-1 py-0.5 rounded text-[12px] font-mono">{m[4]}</code>);
+      last = m.index + m[0].length;
+    }
+    if (last < text.length) parts.push(text.slice(last));
+    return parts;
+  };
+
+  while (i < lines.length) {
+    const line = lines[i];
+    if (/^#{1,3}\s/.test(line)) {
+      elements.push(<p key={i} className="font-bold text-[15px] mt-2 mb-0.5">{renderInline(line.replace(/^#+\s/, ''))}</p>);
+    } else if (/^[-*]\s/.test(line)) {
+      const items = [];
+      while (i < lines.length && /^[-*]\s/.test(lines[i])) {
+        items.push(<li key={i}>{renderInline(lines[i].replace(/^[-*]\s/, ''))}</li>);
+        i++;
+      }
+      elements.push(<ul key={`ul-${i}`} className="list-disc pl-4 space-y-0.5">{items}</ul>);
+      continue;
+    } else if (/^\d+\.\s/.test(line)) {
+      const items = [];
+      while (i < lines.length && /^\d+\.\s/.test(lines[i])) {
+        items.push(<li key={i}>{renderInline(lines[i].replace(/^\d+\.\s/, ''))}</li>);
+        i++;
+      }
+      elements.push(<ol key={`ol-${i}`} className="list-decimal pl-4 space-y-0.5">{items}</ol>);
+      continue;
+    } else if (line.trim() === '') {
+      elements.push(<div key={i} className="h-2" />);
+    } else {
+      elements.push(<p key={i}>{renderInline(line)}</p>);
+    }
+    i++;
+  }
+
+  return <div className="space-y-0.5 text-[14px] leading-relaxed">{elements}</div>;
+}
+
+// ─────────────────────────────────────────────────────────────
 // Chat View
 // ─────────────────────────────────────────────────────────────
 function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) {
@@ -50,6 +104,8 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [pendingImage, setPendingImage] = useState(null);
+  const [pendingPdf, setPendingPdf] = useState(null); // { name, text }
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [conversationId, setConversationId] = useState(initConvId || null);
   const [messages, setMessages] = useState([buildWelcome(user)]);
 
@@ -123,51 +179,100 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
     e.target.value = '';
   };
 
+  const renderPageToBase64 = async (page, scale = 1.5) => {
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    return dataUrl.split(',')[1];
+  };
+
   const handlePDFSelect = async (e) => {
     const file = e.target.files?.[0];
-    if (!file || !window.pdfjsLib) return;
+    if (!file) return;
     e.target.value = '';
     if (file.size > 15 * 1024 * 1024) {
       setMessages(prev => [...prev, { role: 'assistant', content: 'PDF trop volumineux (max 15 MB).', isError: true, timestamp: new Date().toISOString() }]);
       return;
     }
+    if (!window.pdfjsLib) {
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Lecteur PDF non disponible. Réessaie dans un instant.', isError: true, timestamp: new Date().toISOString() }]);
+      return;
+    }
+    setPdfLoading(true);
+    setPendingPdf(null);
     const reader = new FileReader();
     reader.onload = async (ev) => {
-      const pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(ev.target.result) }).promise;
-      let text = '';
-      for (let i = 1; i <= Math.min(pdf.numPages, 10); i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        text += content.items.map(item => item.str).join(' ') + '\n';
+      try {
+        const pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(ev.target.result) }).promise;
+
+        // 1. Essaie extraction texte
+        let text = '';
+        for (let i = 1; i <= Math.min(pdf.numPages, 10); i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          text += content.items.map(item => item.str).join(' ') + '\n';
+        }
+        const extracted = text.trim().substring(0, 4000);
+
+        if (extracted) {
+          setPendingPdf({ name: file.name, text: extracted, images: null });
+        } else {
+          // 2. PDF scanné → convertir les pages en images (max 3)
+          const images = [];
+          for (let i = 1; i <= Math.min(pdf.numPages, 3); i++) {
+            const page = await pdf.getPage(i);
+            const b64 = await renderPageToBase64(page);
+            images.push(b64);
+          }
+          setPendingPdf({ name: file.name, text: null, images, pageCount: pdf.numPages });
+        }
+      } catch {
+        setMessages(prev => [...prev, { role: 'assistant', content: 'Erreur lors de la lecture du PDF.', isError: true, timestamp: new Date().toISOString() }]);
+      } finally {
+        setPdfLoading(false);
       }
-      const extracted = text.trim().substring(0, 4000);
-      if (extracted) setInput(prev => prev ? `${prev}\n\n[PDF]\n${extracted}` : `[PDF]\n${extracted}`);
     };
     reader.readAsArrayBuffer(file);
   };
 
-  const buildClaudeMessages = (history, newText, image) => {
+  const buildClaudeMessages = (history, newText, image, pdf) => {
     const past = history.filter((_, i) => i !== 0).slice(-18).map(m => ({ role: m.role, content: m.content }));
-    const newContent = image
-      ? [
-          { type: 'image', source: { type: 'base64', media_type: image.mimeType, data: image.base64 } },
-          { type: 'text', text: newText || 'Please analyze this image.' },
-        ]
-      : newText;
+    let newContent;
+    if (pdf?.images) {
+      // PDF scanné : envoyer les pages comme images
+      newContent = [
+        ...pdf.images.map(b64 => ({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } })),
+        { type: 'text', text: newText || `Analyse ce PDF (${pdf.name}) et explique son contenu.` },
+      ];
+    } else if (image) {
+      newContent = [
+        { type: 'image', source: { type: 'base64', media_type: image.mimeType, data: image.base64 } },
+        { type: 'text', text: newText || 'Please analyze this image.' },
+      ];
+    } else {
+      newContent = newText;
+    }
     return [...past, { role: 'user', content: newContent }];
   };
 
   const handleSend = async (textOverride) => {
-    const text = typeof textOverride === 'string' ? textOverride : input.trim();
+    const rawText = typeof textOverride === 'string' ? textOverride : input.trim();
     const image = pendingImage;
-    if ((!text && !image) || isLoading || isOffline) return;
+    const pdf = pendingPdf;
+    const text = pdf?.text ? (rawText ? `${rawText}\n\n[PDF: ${pdf.name}]\n${pdf.text}` : `[PDF: ${pdf.name}]\n${pdf.text}`) : rawText;
+    if ((!text && !image && !pdf?.images) || isLoading || isOffline) return;
 
     setInput('');
     setPendingImage(null);
+    setPendingPdf(null);
     setMessages(prev => [...prev, {
       role: 'user',
-      content: image ? (text || '📷 Image') : text,
+      content: image ? (rawText || '📷 Image') : pdf ? (rawText || `📄 ${pdf.name}`) : rawText,
       imagePreview: image?.preview,
+      pdfName: pdf?.name,
       timestamp: new Date().toISOString(),
     }]);
     setIsLoading(true);
@@ -176,7 +281,7 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
       const response = await apiServerClient.fetch('/chat/message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: buildClaudeMessages(messages, text, image), system: SYSTEM_PROMPT }),
+        body: JSON.stringify({ messages: buildClaudeMessages(messages, text, image, pdf), system: SYSTEM_PROMPT }),
       });
 
       if (!response.ok) {
@@ -254,15 +359,23 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
             {msg.imagePreview && (
               <img src={msg.imagePreview} alt="Attached" className="max-w-[200px] rounded-xl mb-1 border border-slate-200 dark:border-[#334155]" />
             )}
+            {msg.pdfName && (
+              <div className="flex items-center gap-1.5 bg-[#14532D]/80 rounded-lg px-2.5 py-1.5 mb-1">
+                <FileText size={12} className="text-[#86efac] shrink-0" />
+                <span className="text-[11px] text-[#86efac] truncate max-w-[160px]">{msg.pdfName}</span>
+              </div>
+            )}
             <div className={cn(
-              'max-w-[85%] p-4 rounded-2xl text-[14px] leading-relaxed',
+              'max-w-[85%] p-4 rounded-2xl leading-relaxed',
               msg.role === 'user'
-                ? 'bg-[#14532D] text-white rounded-br-sm'
+                ? 'bg-[#14532D] text-white rounded-br-sm text-[14px]'
                 : msg.isError
-                  ? 'bg-red-50 dark:bg-[#450a0a] text-red-600 dark:text-[#EF4444] border border-red-200 dark:border-[#7f1d1d] rounded-bl-sm'
+                  ? 'bg-red-50 dark:bg-[#450a0a] text-red-600 dark:text-[#EF4444] border border-red-200 dark:border-[#7f1d1d] rounded-bl-sm text-[14px]'
                   : 'bg-slate-100 dark:bg-[#1E293B] text-slate-800 dark:text-[#F1F5F9] rounded-bl-sm border border-slate-200 dark:border-[#334155]/50'
             )}>
-              {msg.content}
+              {msg.role === 'assistant' && !msg.isError
+                ? <MarkdownText content={msg.content} />
+                : msg.content}
             </div>
             {msg.timestamp && (
               <span className="text-[10px] text-slate-400 dark:text-[#64748B] px-1">
@@ -298,15 +411,36 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
         <div ref={messagesEndRef} />
       </div>
 
-      {pendingImage && (
-        <div className="shrink-0 mb-2 flex items-center gap-2 px-2">
-          <div className="relative">
-            <img src={pendingImage.preview} alt="Pending" className="h-[60px] w-[60px] object-cover rounded-xl border border-slate-200 dark:border-[#334155]" />
-            <button onClick={() => setPendingImage(null)} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-slate-800 text-white flex items-center justify-center">
-              <X size={10} />
-            </button>
-          </div>
-          <span className="text-[12px] text-slate-500 dark:text-[#64748B]">Image prête à envoyer</span>
+      {(pendingImage || pendingPdf || pdfLoading) && (
+        <div className="shrink-0 mb-2 flex items-center gap-2 px-2 flex-wrap">
+          {pendingImage && (
+            <div className="relative">
+              <img src={pendingImage.preview} alt="Pending" className="h-[56px] w-[56px] object-cover rounded-xl border border-slate-200 dark:border-[#334155]" />
+              <button onClick={() => setPendingImage(null)} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-slate-800 text-white flex items-center justify-center">
+                <X size={10} />
+              </button>
+            </div>
+          )}
+          {pdfLoading && (
+            <div className="flex items-center gap-2 bg-slate-100 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl px-3 py-2">
+              <div className="w-3 h-3 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin" />
+              <span className="text-[12px] text-slate-500 dark:text-[#64748B]">Lecture du PDF…</span>
+            </div>
+          )}
+          {pendingPdf && (
+            <div className="flex items-center gap-2 bg-[#22C55E]/10 border border-[#22C55E]/30 rounded-xl px-3 py-2 max-w-[260px]">
+              <FileText size={14} className="text-[#22C55E] shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] text-[#22C55E] font-medium truncate">{pendingPdf.name}</p>
+                <p className="text-[10px] text-[#22C55E]/70">
+                  {pendingPdf.images ? `📷 ${pendingPdf.images.length} page(s) en image` : '📝 Texte extrait'}
+                </p>
+              </div>
+              <button onClick={() => setPendingPdf(null)} className="shrink-0 text-[#22C55E]/60 hover:text-[#22C55E]">
+                <X size={12} />
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -332,7 +466,7 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
         />
         <button
           onClick={() => handleSend()}
-          disabled={(!input.trim() && !pendingImage) || isLoading || isOffline}
+          disabled={(!input.trim() && !pendingImage && !pendingPdf) || isLoading || isOffline || pdfLoading}
           className="w-[40px] h-[40px] rounded-xl bg-[#22C55E] flex items-center justify-center shrink-0 disabled:opacity-50 scale-on-click">
           <Send size={18} className="text-[#052e16] ml-0.5" />
         </button>
@@ -399,19 +533,15 @@ export default function AITutorPage({ navigate, viewState }) {
 
   const loadConversations = async () => {
     setConvLoading(true);
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 6000);
     try {
       const { data, error } = await supabase
         .from('conversations')
         .select('id, title, updated_at')
         .eq('user_id', user.id)
-        .order('updated_at', { ascending: false })
-        .abortSignal(controller.signal);
-      clearTimeout(timer);
+        .order('updated_at', { ascending: false });
       if (!error) setConversations(data || []);
     } catch {
-      // show empty list on error or timeout
+      // show empty list on error
     } finally {
       setConvLoading(false);
     }
