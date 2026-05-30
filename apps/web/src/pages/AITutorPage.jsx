@@ -490,11 +490,11 @@ export default function AITutorPage({ navigate, viewState }) {
   const pageHeight = 'h-[calc(100vh-140px)] lg:h-[calc(100vh-64px)]';
 
   return (
-    <div className={cn('flex gap-4 overflow-hidden', pageHeight)}>
+    <div className={cn('flex gap-4 overflow-hidden items-stretch', pageHeight)}>
 
       {/* ── Sidebar (desktop toujours visible / mobile: visible si view=list) ── */}
       <div className={cn(
-        'flex-col w-full lg:w-[260px] lg:shrink-0',
+        'flex-col w-full lg:w-[260px] lg:shrink-0 h-full overflow-hidden',
         'bg-white dark:bg-[#1E293B] rounded-2xl p-3 border border-slate-200 dark:border-[#334155]/50 shadow-sm',
         // mobile: visible seulement sur la vue liste
         view === 'list' ? 'flex' : 'hidden lg:flex',
@@ -518,7 +518,7 @@ export default function AITutorPage({ navigate, viewState }) {
 
       {/* ── Zone chat (desktop toujours visible / mobile: visible si view=chat) ── */}
       <div className={cn(
-        'flex-1 min-w-0',
+        'flex-1 min-w-0 h-full overflow-hidden',
         view === 'chat' ? 'flex flex-col' : 'hidden lg:flex lg:flex-col',
       )}>
         {view === 'chat' || activeConvId !== null ? (
