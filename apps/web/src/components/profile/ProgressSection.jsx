@@ -9,7 +9,7 @@ export default function ProgressSection({ subjects, subjectAccuracy }) {
     return (
       <div className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 rounded-2xl p-5 shadow-sm">
         <p className="text-[13px] text-slate-400 dark:text-[#64748B] text-center py-4">
-          Aucune matière ajoutée. Modifiez votre profil pour en ajouter.
+          No subjects added yet. Edit your profile to add subjects.
         </p>
       </div>
     );
@@ -24,7 +24,7 @@ export default function ProgressSection({ subjects, subjectAccuracy }) {
           : 0;
         const label = acc && acc.total > 0
           ? `${pct}% · ${acc.score}/${acc.total} correct`
-          : 'Pas encore de quiz';
+          : 'No quiz yet';
 
         return (
           <div key={sub}>

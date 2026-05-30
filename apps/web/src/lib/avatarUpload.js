@@ -45,14 +45,14 @@ function detectType(buffer) {
  * Returns the public URL with a cache-busting timestamp.
  */
 export async function uploadAvatar(file, userId) {
-  if (!file || !userId) throw new Error('Fichier ou utilisateur manquant.');
+  if (!file || !userId) throw new Error('File or user missing.');
 
   if (file.size > MAX_SIZE) {
-    throw new Error('Photo trop lourde. Maximum 3 Mo.');
+    throw new Error('File too large. Maximum 3 MB.');
   }
 
   if (!ALLOWED_TYPES.includes(file.type)) {
-    throw new Error('Format non supporté. Utilisez JPEG, PNG ou WebP.');
+    throw new Error('Unsupported format. Use JPEG, PNG or WebP.');
   }
 
   // Read first 12 bytes to check magic bytes — never trust declared MIME alone
@@ -60,12 +60,12 @@ export async function uploadAvatar(file, userId) {
   const detectedType = detectType(header);
 
   if (!detectedType) {
-    throw new Error('Fichier invalide ou corrompu (signature inconnue).');
+    throw new Error('Invalid or corrupted file (unknown signature).');
   }
 
   // Declared MIME must match actual bytes
   if (detectedType !== file.type) {
-    throw new Error('Le contenu du fichier ne correspond pas à son extension.');
+    throw new Error('File content does not match its extension.');
   }
 
   const ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[detectedType];
@@ -75,7 +75,7 @@ export async function uploadAvatar(file, userId) {
     .from('avatars')
     .upload(path, file, { upsert: true, contentType: detectedType });
 
-  if (error) throw new Error(`Échec du téléchargement : ${error.message}`);
+  if (error) throw new Error(`Upload failed: ${error.message}`);
 
   const { data } = supabase.storage.from('avatars').getPublicUrl(path);
   return `${data.publicUrl}?t=${Date.now()}`;

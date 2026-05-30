@@ -35,7 +35,7 @@ export default function ProfileCard({ onEdit }) {
       await updateUser({ avatarUrl: url });
     } catch (err) {
       console.error('[Avatar upload]', err);
-      setUploadError(err.message || 'Erreur inconnue.');
+      setUploadError(err.message || 'Unknown error.');
     } finally {
       setUploading(false);
       e.target.value = '';
@@ -54,7 +54,7 @@ export default function ProfileCard({ onEdit }) {
         <button
           onClick={handleLogout}
           disabled={loggingOut}
-          title="Se déconnecter"
+          title="Log out"
           className="bg-slate-100 dark:bg-[#334155] text-slate-500 dark:text-[#94A3B8] hover:text-red-500 dark:hover:text-red-400 rounded-lg px-2.5 py-1.5 flex items-center transition-colors scale-on-click"
         >
           {loggingOut
@@ -70,7 +70,7 @@ export default function ProfileCard({ onEdit }) {
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
           className="relative w-[72px] h-[72px] rounded-full overflow-hidden group focus:outline-none"
-          title="Changer la photo"
+          title="Change photo"
         >
           {user.avatarUrl ? (
             <img
@@ -123,7 +123,7 @@ export default function ProfileCard({ onEdit }) {
               onClick={() => navigate('/pricing')}
               className="text-[#F97316] text-[11px] underline mt-1"
             >
-              Acheter des tokens
+              Buy tokens
             </button>
           </>
         ) : (
