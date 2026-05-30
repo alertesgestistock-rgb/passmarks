@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Home, BookOpen, Bot, User, Search, Settings, Sun, Moon, Calculator as CalcIcon } from 'lucide-react';
+import { Home, BookOpen, Bot, User, Search, Settings, Sun, Moon, Calculator as CalcIcon, WifiOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
 import InstallBanner from './InstallBanner';
@@ -64,6 +64,18 @@ export function Sidebar({ activeTab, setActiveTab }) {
 export function TopNav({ setActiveTab }) {
   const { theme, toggleTheme } = useTheme();
   const [showCalc, setShowCalc] = useState(false);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  useEffect(() => {
+    const goOnline = () => setIsOffline(false);
+    const goOffline = () => setIsOffline(true);
+    window.addEventListener('online', goOnline);
+    window.addEventListener('offline', goOffline);
+    return () => {
+      window.removeEventListener('online', goOnline);
+      window.removeEventListener('offline', goOffline);
+    };
+  }, []);
 
   return (
     <div className="fixed top-0 left-0 right-0 z-40 bg-white dark:bg-[#0F172A] lg:bg-white/90 dark:lg:bg-[#0F172A]/90 lg:backdrop-blur-sm border-b border-slate-200 dark:border-[#334155] lg:border-none">
@@ -95,6 +107,17 @@ export function TopNav({ setActiveTab }) {
 
         {/* Right Actions */}
         <div className="flex items-center gap-2 shrink-0 lg:ml-auto">
+          {/* Offline indicator — visible only when disconnected */}
+          {isOffline && (
+            <div
+              title="No internet connection"
+              className="flex items-center gap-1.5 px-2.5 h-[36px] rounded-full bg-red-100 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-500 text-[12px] font-medium fade-in"
+            >
+              <WifiOff size={15} />
+              <span className="hidden sm:inline">Offline</span>
+            </div>
+          )}
+
           {/* Calculator button */}
           <button
             onClick={() => setShowCalc(v => !v)}
