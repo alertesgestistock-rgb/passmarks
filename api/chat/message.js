@@ -24,7 +24,13 @@ function jsonError(message, status, extra = {}) {
 }
 
 function toOpenAIMessages(system, messages) {
-  const result = [{ role: 'system', content: system }];
+  // cache_control marks the system prompt as cacheable — Anthropic reuses it
+  // across requests instead of reprocessing it (90% cost saving on input tokens,
+  // minimum 1024 tokens required for the cache to engage).
+  const result = [{
+    role: 'system',
+    content: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
+  }];
   for (const msg of messages) {
     if (typeof msg.content === 'string') {
       result.push({ role: msg.role, content: msg.content });
