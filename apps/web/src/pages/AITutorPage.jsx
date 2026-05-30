@@ -41,9 +41,72 @@ function formatRelativeDate(dateStr) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Sidebar — liste des conversations (desktop)
+// ─────────────────────────────────────────────────────────────
+function ConversationsSidebar({ conversations, activeConvId, loading, onNewChat, onSelect }) {
+  return (
+    <div className="flex flex-col h-full">
+      <button
+        onClick={onNewChat}
+        className="flex items-center justify-center gap-2 bg-[#22C55E] hover:bg-[#16a34a] text-white rounded-xl px-3 py-3 text-[13px] font-semibold shrink-0 transition-colors scale-on-click shadow-sm shadow-[#22C55E]/20 mb-3"
+      >
+        <Plus size={16} /> Nouvelle conversation
+      </button>
+
+      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1 hide-scrollbar">
+        {loading ? (
+          [1, 2, 3, 4].map(i => (
+            <div key={i} className="rounded-xl h-[56px] bg-slate-100 dark:bg-[#1E293B] animate-pulse" />
+          ))
+        ) : conversations.length === 0 ? (
+          <div className="text-center py-8 px-2">
+            <MessageSquare size={24} className="text-slate-300 dark:text-[#475569] mx-auto mb-2" />
+            <p className="text-[12px] text-slate-400 dark:text-[#64748B]">Aucune conversation</p>
+          </div>
+        ) : (
+          conversations.map(conv => (
+            <button
+              key={conv.id}
+              onClick={() => onSelect(conv.id)}
+              className={cn(
+                'w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-left transition-all',
+                activeConvId === conv.id
+                  ? 'bg-[#22C55E]/10 border border-[#22C55E]/30'
+                  : 'hover:bg-slate-100 dark:hover:bg-[#1E293B] border border-transparent'
+              )}
+            >
+              <MessageSquare
+                size={15}
+                className={cn(
+                  'shrink-0',
+                  activeConvId === conv.id ? 'text-[#22C55E]' : 'text-slate-400 dark:text-[#64748B]'
+                )}
+              />
+              <div className="flex-1 min-w-0">
+                <p className={cn(
+                  'text-[13px] truncate leading-tight',
+                  activeConvId === conv.id
+                    ? 'text-[#22C55E] font-medium'
+                    : 'text-slate-700 dark:text-[#CBD5E1]'
+                )}>
+                  {conv.title || 'Conversation'}
+                </p>
+                <p className="text-[11px] text-slate-400 dark:text-[#475569] mt-0.5">
+                  {formatRelativeDate(conv.updated_at)}
+                </p>
+              </div>
+            </button>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
 // Chat View
 // ─────────────────────────────────────────────────────────────
-function ChatView({ initConvId, initialMessage, onBack, navigate, user }) {
+function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) {
   const { updateUser, addRecentActivity } = useUser();
 
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -69,7 +132,10 @@ function ChatView({ initConvId, initialMessage, onBack, navigate, user }) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
 
+  // Reload messages when conversation changes
   useEffect(() => {
+    setConversationId(initConvId || null);
+    setMessages([buildWelcome(user)]);
     if (!initConvId) return;
     supabase
       .from('messages')
@@ -141,10 +207,7 @@ function ChatView({ initConvId, initialMessage, onBack, navigate, user }) {
   };
 
   const buildClaudeMessages = (history, newText, image) => {
-    const past = history
-      .filter((_, i) => i !== 0)
-      .slice(-18)
-      .map(m => ({ role: m.role, content: m.content }));
+    const past = history.filter((_, i) => i !== 0).slice(-18).map(m => ({ role: m.role, content: m.content }));
     const newContent = image
       ? [
           { type: 'image', source: { type: 'base64', media_type: image.mimeType, data: image.base64 } },
@@ -161,14 +224,12 @@ function ChatView({ initConvId, initialMessage, onBack, navigate, user }) {
 
     setInput('');
     setPendingImage(null);
-
-    const userMsg = {
+    setMessages(prev => [...prev, {
       role: 'user',
       content: image ? (text || '📷 Image') : text,
       imagePreview: image?.preview,
       timestamp: new Date().toISOString(),
-    };
-    setMessages(prev => [...prev, userMsg]);
+    }]);
     setIsLoading(true);
 
     try {
@@ -222,22 +283,25 @@ function ChatView({ initConvId, initialMessage, onBack, navigate, user }) {
   };
 
   return (
-    <div className="max-w-[680px] mx-auto h-[calc(100vh-140px)] lg:h-[calc(100vh-64px)] flex flex-col relative fade-in overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden">
 
       {isOffline && (
-        <div className="bg-slate-100 dark:bg-[#1E293B] text-[#F97316] border-b-[0.5px] border-[#F97316] p-2 text-center text-[12px] shrink-0">
-          You're offline. AI Tutor needs internet. Past Papers available offline.
+        <div className="bg-slate-100 dark:bg-[#1E293B] text-[#F97316] p-2 text-center text-[12px] shrink-0 rounded-xl mb-2">
+          Hors ligne — le Tutor AI nécessite une connexion internet.
         </div>
       )}
 
       {/* Chat Header */}
       <div className="bg-white dark:bg-[#1E293B] rounded-2xl p-3 mb-4 flex items-center gap-3 shrink-0 shadow-sm border border-slate-200 dark:border-[#334155]/50">
-        <button
-          onClick={onBack}
-          className="w-[36px] h-[36px] rounded-xl flex items-center justify-center text-slate-400 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#334155] transition-colors"
-        >
-          <ArrowLeft size={18} />
-        </button>
+        {/* Back button — mobile only */}
+        {showBackButton && (
+          <button
+            onClick={onBack}
+            className="w-[36px] h-[36px] rounded-xl flex items-center justify-center text-slate-400 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#334155] transition-colors lg:hidden"
+          >
+            <ArrowLeft size={18} />
+          </button>
+        )}
         <div className="w-[36px] h-[36px] rounded-xl bg-[#22C55E]/10 flex items-center justify-center shrink-0">
           <Bot size={18} className="text-[#22C55E]" />
         </div>
@@ -245,14 +309,14 @@ function ChatView({ initConvId, initialMessage, onBack, navigate, user }) {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 min-h-0 overflow-y-auto mb-4 flex flex-col gap-4 pr-2 pb-4 hide-scrollbar">
+      <div className="flex-1 min-h-0 overflow-y-auto mb-4 flex flex-col gap-4 pr-1 pb-4 hide-scrollbar">
         {messages.map((msg, idx) => (
           <div key={idx} className={cn('flex flex-col gap-1 w-full', msg.role === 'user' ? 'items-end' : 'items-start')}>
             {msg.imagePreview && (
               <img src={msg.imagePreview} alt="Attached" className="max-w-[200px] rounded-xl mb-1 border border-slate-200 dark:border-[#334155]" />
             )}
             <div className={cn(
-              'max-w-[85%] md:max-w-[75%] p-4 rounded-2xl text-[14px] leading-relaxed',
+              'max-w-[85%] p-4 rounded-2xl text-[14px] leading-relaxed',
               msg.role === 'user'
                 ? 'bg-[#14532D] text-white rounded-br-sm'
                 : msg.isError
@@ -284,7 +348,7 @@ function ChatView({ initConvId, initialMessage, onBack, navigate, user }) {
         )}
 
         {isLoading && (
-          <div className="flex gap-2 w-full justify-start">
+          <div className="flex w-full justify-start">
             <div className="bg-slate-100 dark:bg-[#1E293B] p-4 rounded-2xl rounded-bl-sm border border-slate-200 dark:border-[#334155]/50 w-[60px] h-[40px] flex items-center justify-center gap-1">
               <span className="w-1.5 h-1.5 bg-[#22C55E] rounded-full animate-pulse" />
               <span className="w-1.5 h-1.5 bg-[#22C55E] rounded-full animate-pulse delay-75" />
@@ -307,19 +371,19 @@ function ChatView({ initConvId, initialMessage, onBack, navigate, user }) {
               <X size={10} />
             </button>
           </div>
-          <span className="text-[12px] text-slate-500 dark:text-[#64748B]">Image ready to send</span>
+          <span className="text-[12px] text-slate-500 dark:text-[#64748B]">Image prête à envoyer</span>
         </div>
       )}
 
       {/* Input Bar */}
-      <div className="shrink-0 sticky bottom-0 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 rounded-2xl p-2 flex items-center gap-2">
+      <div className="shrink-0 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 rounded-2xl p-2 flex items-center gap-2">
         <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
         <input ref={pdfInputRef} type="file" accept=".pdf" className="hidden" onChange={handlePDFSelect} />
 
         <button
           onClick={() => imageInputRef.current?.click()}
           disabled={isOffline}
-          title="Attach image"
+          title="Joindre une image"
           className="w-[40px] h-[40px] rounded-xl flex items-center justify-center text-slate-400 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#334155] transition-colors shrink-0 disabled:opacity-40"
         >
           <ImageIcon size={20} />
@@ -327,7 +391,7 @@ function ChatView({ initConvId, initialMessage, onBack, navigate, user }) {
         <button
           onClick={() => pdfInputRef.current?.click()}
           disabled={isOffline}
-          title="Attach PDF"
+          title="Joindre un PDF"
           className="w-[40px] h-[40px] rounded-xl flex items-center justify-center text-slate-400 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#334155] transition-colors shrink-0 disabled:opacity-40"
         >
           <FileText size={20} />
@@ -338,7 +402,7 @@ function ChatView({ initConvId, initialMessage, onBack, navigate, user }) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask a question..."
+          placeholder="Pose une question..."
           disabled={isLoading || isOffline}
           className="flex-1 bg-transparent border-none outline-none text-[14px] text-slate-900 dark:text-white px-2 placeholder:text-slate-400 dark:placeholder:text-[#64748B] disabled:opacity-50"
         />
@@ -356,12 +420,37 @@ function ChatView({ initConvId, initialMessage, onBack, navigate, user }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Conversations List (default view)
+// Empty state desktop (aucune conversation sélectionnée)
+// ─────────────────────────────────────────────────────────────
+function DesktopEmptyState({ onNewChat }) {
+  return (
+    <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
+      <div className="w-[72px] h-[72px] rounded-2xl bg-[#22C55E]/10 flex items-center justify-center">
+        <Bot size={32} className="text-[#22C55E]" />
+      </div>
+      <div>
+        <p className="text-[16px] font-semibold text-slate-700 dark:text-[#F1F5F9]">AI Tutor PassMark</p>
+        <p className="text-[13px] text-slate-400 dark:text-[#64748B] mt-1 max-w-[240px]">
+          Sélectionne une conversation ou commence-en une nouvelle
+        </p>
+      </div>
+      <button
+        onClick={onNewChat}
+        className="flex items-center gap-2 bg-[#22C55E] text-white rounded-xl px-5 py-2.5 text-[13px] font-semibold scale-on-click"
+      >
+        <Plus size={16} /> Nouvelle conversation
+      </button>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Page principale
 // ─────────────────────────────────────────────────────────────
 export default function AITutorPage({ navigate, viewState }) {
   const { user, isLoading: userLoading } = useUser();
 
-  const [view, setView] = useState('list');
+  const [view, setView] = useState('list');          // mobile: 'list' | 'chat'
   const [activeConvId, setActiveConvId] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [convLoading, setConvLoading] = useState(true);
@@ -388,96 +477,65 @@ export default function AITutorPage({ navigate, viewState }) {
     setConvLoading(false);
   };
 
-  const openConversation = (convId) => { setActiveConvId(convId); setView('chat'); };
   const openNewChat = () => { setActiveConvId(null); setView('chat'); };
-  const handleBack = () => {
-    setView('list');
-    if (user?.id) loadConversations();
-    navigate('tutor', null);
-  };
+  const openConversation = (convId) => { setActiveConvId(convId); setView('chat'); };
+  const handleBack = () => { setView('list'); loadConversations(); navigate('tutor', null); };
+  // Après envoi d'un message, recharger la sidebar pour afficher la nouvelle conv
+  const refreshConversations = () => { if (user?.id) loadConversations(); };
 
   if (userLoading) {
     return <div className="animate-pulse h-full bg-slate-200 dark:bg-[#1E293B] rounded-2xl m-4" />;
   }
 
-  if (view === 'chat') {
-    return (
-      <ChatView
-        initConvId={activeConvId}
-        initialMessage={viewState?.initialMessage}
-        onBack={handleBack}
-        navigate={navigate}
-        user={user}
-      />
-    );
-  }
+  const pageHeight = 'h-[calc(100vh-140px)] lg:h-[calc(100vh-64px)]';
 
   return (
-    <div className="max-w-[680px] mx-auto pb-8 fade-in">
+    <div className={cn('flex gap-4 overflow-hidden', pageHeight)}>
 
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-[44px] h-[44px] rounded-xl bg-[#22C55E]/10 flex items-center justify-center shrink-0">
-          <Bot size={22} className="text-[#22C55E]" />
+      {/* ── Sidebar (desktop toujours visible / mobile: visible si view=list) ── */}
+      <div className={cn(
+        'flex-col w-full lg:w-[260px] lg:shrink-0',
+        'bg-white dark:bg-[#1E293B] rounded-2xl p-3 border border-slate-200 dark:border-[#334155]/50 shadow-sm',
+        // mobile: visible seulement sur la vue liste
+        view === 'list' ? 'flex' : 'hidden lg:flex',
+      )}>
+        {/* Header sidebar */}
+        <div className="flex items-center gap-2 mb-3 shrink-0">
+          <div className="w-[32px] h-[32px] rounded-lg bg-[#22C55E]/10 flex items-center justify-center">
+            <Bot size={16} className="text-[#22C55E]" />
+          </div>
+          <span className="text-[14px] font-semibold text-slate-800 dark:text-[#F1F5F9]">AI Tutor</span>
         </div>
-        <div>
-          <h1 className="text-[20px] font-bold text-slate-900 dark:text-white leading-tight">AI Tutor</h1>
-          <p className="text-[12px] text-slate-400 dark:text-[#64748B]">
-            {conversations.length > 0 ? `${conversations.length} conversation${conversations.length > 1 ? 's' : ''}` : 'Aucune conversation'}
-          </p>
-        </div>
+
+        <ConversationsSidebar
+          conversations={conversations}
+          activeConvId={activeConvId}
+          loading={convLoading}
+          onNewChat={openNewChat}
+          onSelect={openConversation}
+        />
       </div>
 
-      {/* New conversation button */}
-      <button
-        onClick={openNewChat}
-        className="w-full bg-[#22C55E] text-white rounded-2xl p-4 flex items-center justify-center gap-2 font-semibold text-[15px] mb-5 scale-on-click shadow-sm shadow-[#22C55E]/20"
-      >
-        <Plus size={20} />
-        Nouvelle conversation
-      </button>
+      {/* ── Zone chat (desktop toujours visible / mobile: visible si view=chat) ── */}
+      <div className={cn(
+        'flex-1 min-w-0',
+        view === 'chat' ? 'flex flex-col' : 'hidden lg:flex lg:flex-col',
+      )}>
+        {view === 'chat' || activeConvId !== null ? (
+          <ChatView
+            key={activeConvId}
+            initConvId={activeConvId}
+            initialMessage={viewState?.initialMessage}
+            onBack={handleBack}
+            showBackButton={view === 'chat'}
+            user={user}
+            onNewConversation={refreshConversations}
+          />
+        ) : (
+          <DesktopEmptyState onNewChat={openNewChat} />
+        )}
+      </div>
 
-      {/* List */}
-      {convLoading ? (
-        <div className="flex flex-col gap-3">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="bg-white dark:bg-[#1E293B] rounded-2xl p-4 border border-slate-200 dark:border-[#334155]/50 animate-pulse h-[70px]" />
-          ))}
-        </div>
-      ) : conversations.length === 0 ? (
-        <div className="text-center py-16">
-          <div className="w-[64px] h-[64px] rounded-2xl bg-slate-100 dark:bg-[#1E293B] flex items-center justify-center mx-auto mb-4">
-            <MessageSquare size={28} className="text-slate-300 dark:text-[#475569]" />
-          </div>
-          <p className="text-[15px] font-medium text-slate-500 dark:text-[#94A3B8]">Aucune conversation</p>
-          <p className="text-[13px] text-slate-400 dark:text-[#64748B] mt-1">
-            Cliquez sur "Nouvelle conversation" pour commencer
-          </p>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {conversations.map(conv => (
-            <button
-              key={conv.id}
-              onClick={() => openConversation(conv.id)}
-              className="bg-white dark:bg-[#1E293B] rounded-2xl p-4 flex items-center gap-3 text-left border border-slate-200 dark:border-[#334155]/50 hover:border-[#22C55E]/40 hover:shadow-sm transition-all scale-on-click w-full"
-            >
-              <div className="w-[42px] h-[42px] rounded-xl bg-[#22C55E]/10 flex items-center justify-center shrink-0">
-                <MessageSquare size={18} className="text-[#22C55E]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[14px] font-medium text-slate-800 dark:text-[#F1F5F9] truncate">
-                  {conv.title || 'Conversation'}
-                </p>
-                <p className="text-[12px] text-slate-400 dark:text-[#64748B] mt-0.5">
-                  {formatRelativeDate(conv.updated_at)}
-                </p>
-              </div>
-              <ChevronRight size={16} className="text-slate-300 dark:text-[#475569] shrink-0" />
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
