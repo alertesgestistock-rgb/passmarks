@@ -49,7 +49,7 @@ function formatRelativeDate(dateStr) {
 // ─────────────────────────────────────────────────────────────
 // Markdown renderer (léger, sans dépendance)
 // ─────────────────────────────────────────────────────────────
-function MarkdownText({ content }) {
+function MarkdownText({ content, streaming }) {
   const lines = content.split('\n');
   const elements = [];
   let i = 0;
@@ -97,7 +97,12 @@ function MarkdownText({ content }) {
     i++;
   }
 
-  return <div className="space-y-0.5 text-[14px] leading-relaxed">{elements}</div>;
+  return (
+    <div className="space-y-0.5 text-[14px] leading-relaxed">
+      {elements}
+      {streaming && <span className="inline-block w-[2px] h-[14px] bg-slate-500 dark:bg-slate-400 animate-pulse ml-0.5 align-middle rounded-full" />}
+    </div>
+  );
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -316,17 +321,65 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        throw new Error(err.error || 'Erreur de connexion');
+        throw new Error(err.error || 'Connection error');
       }
 
-      const { content, balance_after } = await response.json();
-      if (typeof balance_after === 'number') updateTokenBalance(balance_after);
-      setMessages(prev => [...prev, { role: 'assistant', content, timestamp: new Date().toISOString() }]);
+      // ── Lecture du stream SSE ──────────────────────────────
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let fullContent = '';
+      let streamingStarted = false;
+      const msgTimestamp = new Date().toISOString();
 
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        for (const line of chunk.split('\n')) {
+          const clean = line.trim();
+          if (!clean || clean === 'data: [DONE]') continue;
+          if (!clean.startsWith('data: ')) continue;
+          try {
+            const json = JSON.parse(clean.slice(6));
+            const token = json.choices?.[0]?.delta?.content || '';
+            if (!token) continue;
+            fullContent += token;
+
+            if (!streamingStarted) {
+              streamingStarted = true;
+              setIsLoading(false);
+              setMessages(prev => [...prev, {
+                role: 'assistant',
+                content: fullContent,
+                isStreaming: true,
+                timestamp: msgTimestamp,
+              }]);
+            } else {
+              setMessages(prev => {
+                const updated = [...prev];
+                updated[updated.length - 1] = { ...updated[updated.length - 1], content: fullContent };
+                return updated;
+              });
+            }
+          } catch { /* chunk partiel — ignoré */ }
+        }
+      }
+
+      // Stream terminé — retirer le curseur
+      setMessages(prev => {
+        const updated = [...prev];
+        if (updated[updated.length - 1]?.isStreaming) {
+          updated[updated.length - 1] = { ...updated[updated.length - 1], isStreaming: false };
+        }
+        return updated;
+      });
+
+      // Sauvegarde en DB
       const convId = await getOrCreateConversation(text, onConversationCreated);
-      if (convId) {
+      if (convId && fullContent) {
         await saveMessage(convId, 'user', image ? `[Image] ${text}` : text);
-        await saveMessage(convId, 'assistant', content);
+        await saveMessage(convId, 'assistant', fullContent);
       }
 
       const subject = user?.subjects?.[0] || 'General';
@@ -410,7 +463,7 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
                   : 'bg-slate-100 dark:bg-[#1E293B] text-slate-800 dark:text-[#F1F5F9] rounded-bl-sm border border-slate-200 dark:border-[#334155]/50'
             )}>
               {msg.role === 'assistant' && !msg.isError
-                ? <MarkdownText content={msg.content} />
+                ? <MarkdownText content={msg.content} streaming={msg.isStreaming} />
                 : msg.content}
             </div>
             {msg.timestamp && (

@@ -3,6 +3,26 @@ import { createClient } from '@supabase/supabase-js';
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const MODEL = 'anthropic/claude-sonnet-4-5';
 
+export const config = { runtime: 'edge' };
+
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
+function corsHeaders() {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+}
+
+function jsonError(message, status) {
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: { ...corsHeaders(), 'Content-Type': 'application/json' },
+  });
+}
+
 function toOpenAIMessages(system, messages) {
   const result = [{ role: 'system', content: system }];
   for (const msg of messages) {
@@ -22,61 +42,61 @@ function toOpenAIMessages(system, messages) {
   return result;
 }
 
-const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+export default async function handler(req) {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 200, headers: corsHeaders() });
+  }
+  if (req.method !== 'POST') return jsonError('Method not allowed', 405);
 
-async function requireAuth(req) {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) return null;
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return jsonError('Authentication required', 401);
+  const token = authHeader.slice(7);
+
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-  if (error || !user) return null;
-  return user;
-}
-
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
-  const user = await requireAuth(req);
-  if (!user) return res.status(401).json({ error: 'Authentication required' });
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) return jsonError('Authentication required', 401);
 
   const apiKey = (process.env.OPENROUTER_API_KEY || process.env.VITE_OPENROUTER_API_KEY)?.trim();
-  if (!apiKey) return res.status(500).json({ error: 'Service not configured' });
+  if (!apiKey) return jsonError('Service not configured', 500);
 
-  const { messages, system } = req.body;
+  let body;
+  try { body = await req.json(); } catch { return jsonError('Invalid JSON body', 400); }
+
+  const { messages, system } = body;
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
-    return res.status(400).json({ error: 'messages must be a non-empty array' });
+    return jsonError('messages must be a non-empty array', 400);
   }
 
-  try {
-    const response = await fetch(OPENROUTER_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer': 'https://passmarks.vercel.app',
-        'X-Title': 'PassMark AI Tutor',
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 1500,
-        messages: toOpenAIMessages(system, messages),
-      }),
-    });
+  const upstream = await fetch(OPENROUTER_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+      'HTTP-Referer': 'https://passmarks.vercel.app',
+      'X-Title': 'PassMark AI Tutor',
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: 1500,
+      stream: true,
+      messages: toOpenAIMessages(system, messages),
+    }),
+  });
 
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      if (response.status === 429) return res.status(429).json({ error: 'Rate limit reached. Try again later.' });
-      return res.status(response.status).json({ error: err.error?.message || 'AI service error' });
-    }
-
-    const data = await response.json();
-    return res.status(200).json({ content: data.choices[0].message.content });
-  } catch (err) {
-    return res.status(502).json({ error: 'Could not reach AI service. Please try again.' });
+  if (!upstream.ok) {
+    const err = await upstream.json().catch(() => ({}));
+    if (upstream.status === 429) return jsonError('Rate limit reached. Try again later.', 429);
+    return jsonError(err.error?.message || 'AI service error', upstream.status);
   }
+
+  return new Response(upstream.body, {
+    status: 200,
+    headers: {
+      ...corsHeaders(),
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache, no-transform',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    },
+  });
 }
