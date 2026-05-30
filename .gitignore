@@ -43,3 +43,7 @@ Thumbs.db
 # Cache
 .eslintcache
 .vite/
+
+# MCP / Claude config
+.mcp.json
+skills/
