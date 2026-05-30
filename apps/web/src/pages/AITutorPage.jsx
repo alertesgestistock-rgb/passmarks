@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Send, Image as ImageIcon, FileText, Bot,
-  X, ArrowLeft, Plus, MessageSquare, ChevronRight,
+  X, ArrowLeft, Plus, MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/contexts/UserContext';
@@ -41,69 +41,6 @@ function formatRelativeDate(dateStr) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Sidebar — liste des conversations (desktop)
-// ─────────────────────────────────────────────────────────────
-function ConversationsSidebar({ conversations, activeConvId, loading, onNewChat, onSelect }) {
-  return (
-    <div className="flex flex-col h-full">
-      <button
-        onClick={onNewChat}
-        className="flex items-center justify-center gap-2 bg-[#22C55E] hover:bg-[#16a34a] text-white rounded-xl px-3 py-3 text-[13px] font-semibold shrink-0 transition-colors scale-on-click shadow-sm shadow-[#22C55E]/20 mb-3"
-      >
-        <Plus size={16} /> Nouvelle conversation
-      </button>
-
-      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1 hide-scrollbar">
-        {loading ? (
-          [1, 2, 3, 4].map(i => (
-            <div key={i} className="rounded-xl h-[56px] bg-slate-100 dark:bg-[#1E293B] animate-pulse" />
-          ))
-        ) : conversations.length === 0 ? (
-          <div className="text-center py-8 px-2">
-            <MessageSquare size={24} className="text-slate-300 dark:text-[#475569] mx-auto mb-2" />
-            <p className="text-[12px] text-slate-400 dark:text-[#64748B]">Aucune conversation</p>
-          </div>
-        ) : (
-          conversations.map(conv => (
-            <button
-              key={conv.id}
-              onClick={() => onSelect(conv.id)}
-              className={cn(
-                'w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-left transition-all',
-                activeConvId === conv.id
-                  ? 'bg-[#22C55E]/10 border border-[#22C55E]/30'
-                  : 'hover:bg-slate-100 dark:hover:bg-[#1E293B] border border-transparent'
-              )}
-            >
-              <MessageSquare
-                size={15}
-                className={cn(
-                  'shrink-0',
-                  activeConvId === conv.id ? 'text-[#22C55E]' : 'text-slate-400 dark:text-[#64748B]'
-                )}
-              />
-              <div className="flex-1 min-w-0">
-                <p className={cn(
-                  'text-[13px] truncate leading-tight',
-                  activeConvId === conv.id
-                    ? 'text-[#22C55E] font-medium'
-                    : 'text-slate-700 dark:text-[#CBD5E1]'
-                )}>
-                  {conv.title || 'Conversation'}
-                </p>
-                <p className="text-[11px] text-slate-400 dark:text-[#475569] mt-0.5">
-                  {formatRelativeDate(conv.updated_at)}
-                </p>
-              </div>
-            </button>
-          ))
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
 // Chat View
 // ─────────────────────────────────────────────────────────────
 function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) {
@@ -132,7 +69,6 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
 
-  // Reload messages when conversation changes
   useEffect(() => {
     setConversationId(initConvId || null);
     setMessages([buildWelcome(user)]);
@@ -286,14 +222,13 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
     <div className="flex flex-col h-full overflow-hidden">
 
       {isOffline && (
-        <div className="bg-slate-100 dark:bg-[#1E293B] text-[#F97316] p-2 text-center text-[12px] shrink-0 rounded-xl mb-2">
+        <div className="bg-slate-100 dark:bg-[#1E293B] text-[#F97316] p-2 text-center text-[12px] shrink-0 rounded-xl mb-3">
           Hors ligne — le Tutor AI nécessite une connexion internet.
         </div>
       )}
 
-      {/* Chat Header */}
+      {/* Header */}
       <div className="bg-white dark:bg-[#1E293B] rounded-2xl p-3 mb-4 flex items-center gap-3 shrink-0 shadow-sm border border-slate-200 dark:border-[#334155]/50">
-        {/* Back button — mobile only */}
         {showBackButton && (
           <button
             onClick={onBack}
@@ -359,15 +294,11 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Pending image preview */}
       {pendingImage && (
         <div className="shrink-0 mb-2 flex items-center gap-2 px-2">
           <div className="relative">
             <img src={pendingImage.preview} alt="Pending" className="h-[60px] w-[60px] object-cover rounded-xl border border-slate-200 dark:border-[#334155]" />
-            <button
-              onClick={() => setPendingImage(null)}
-              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-slate-800 text-white flex items-center justify-center"
-            >
+            <button onClick={() => setPendingImage(null)} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-slate-800 text-white flex items-center justify-center">
               <X size={10} />
             </button>
           </div>
@@ -379,39 +310,26 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
       <div className="shrink-0 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 rounded-2xl p-2 flex items-center gap-2">
         <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
         <input ref={pdfInputRef} type="file" accept=".pdf" className="hidden" onChange={handlePDFSelect} />
-
-        <button
-          onClick={() => imageInputRef.current?.click()}
-          disabled={isOffline}
-          title="Joindre une image"
-          className="w-[40px] h-[40px] rounded-xl flex items-center justify-center text-slate-400 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#334155] transition-colors shrink-0 disabled:opacity-40"
-        >
+        <button onClick={() => imageInputRef.current?.click()} disabled={isOffline} title="Joindre une image"
+          className="w-[40px] h-[40px] rounded-xl flex items-center justify-center text-slate-400 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#334155] transition-colors shrink-0 disabled:opacity-40">
           <ImageIcon size={20} />
         </button>
-        <button
-          onClick={() => pdfInputRef.current?.click()}
-          disabled={isOffline}
-          title="Joindre un PDF"
-          className="w-[40px] h-[40px] rounded-xl flex items-center justify-center text-slate-400 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#334155] transition-colors shrink-0 disabled:opacity-40"
-        >
+        <button onClick={() => pdfInputRef.current?.click()} disabled={isOffline} title="Joindre un PDF"
+          className="w-[40px] h-[40px] rounded-xl flex items-center justify-center text-slate-400 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#334155] transition-colors shrink-0 disabled:opacity-40">
           <FileText size={20} />
         </button>
-
         <input
-          type="text"
-          value={input}
+          type="text" value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Pose une question..."
           disabled={isLoading || isOffline}
           className="flex-1 bg-transparent border-none outline-none text-[14px] text-slate-900 dark:text-white px-2 placeholder:text-slate-400 dark:placeholder:text-[#64748B] disabled:opacity-50"
         />
-
         <button
           onClick={() => handleSend()}
           disabled={(!input.trim() && !pendingImage) || isLoading || isOffline}
-          className="w-[40px] h-[40px] rounded-xl bg-[#22C55E] flex items-center justify-center shrink-0 disabled:opacity-50 scale-on-click"
-        >
+          className="w-[40px] h-[40px] rounded-xl bg-[#22C55E] flex items-center justify-center shrink-0 disabled:opacity-50 scale-on-click">
           <Send size={18} className="text-[#052e16] ml-0.5" />
         </button>
       </div>
@@ -420,7 +338,7 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton }) 
 }
 
 // ─────────────────────────────────────────────────────────────
-// Empty state desktop (aucune conversation sélectionnée)
+// Empty state desktop
 // ─────────────────────────────────────────────────────────────
 function DesktopEmptyState({ onNewChat }) {
   return (
@@ -434,10 +352,7 @@ function DesktopEmptyState({ onNewChat }) {
           Sélectionne une conversation ou commence-en une nouvelle
         </p>
       </div>
-      <button
-        onClick={onNewChat}
-        className="flex items-center gap-2 bg-[#22C55E] text-white rounded-xl px-5 py-2.5 text-[13px] font-semibold scale-on-click"
-      >
+      <button onClick={onNewChat} className="flex items-center gap-2 bg-[#22C55E] text-white rounded-xl px-5 py-2.5 text-[13px] font-semibold scale-on-click">
         <Plus size={16} /> Nouvelle conversation
       </button>
     </div>
@@ -450,7 +365,7 @@ function DesktopEmptyState({ onNewChat }) {
 export default function AITutorPage({ navigate, viewState }) {
   const { user, isLoading: userLoading } = useUser();
 
-  const [view, setView] = useState('list');          // mobile: 'list' | 'chat'
+  const [view, setView] = useState('list');
   const [activeConvId, setActiveConvId] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [convLoading, setConvLoading] = useState(true);
@@ -460,10 +375,7 @@ export default function AITutorPage({ navigate, viewState }) {
   }, [user?.id]);
 
   useEffect(() => {
-    if (viewState?.initialMessage) {
-      setActiveConvId(null);
-      setView('chat');
-    }
+    if (viewState?.initialMessage) { setActiveConvId(null); setView('chat'); }
   }, [viewState]);
 
   const loadConversations = async () => {
@@ -480,46 +392,134 @@ export default function AITutorPage({ navigate, viewState }) {
   const openNewChat = () => { setActiveConvId(null); setView('chat'); };
   const openConversation = (convId) => { setActiveConvId(convId); setView('chat'); };
   const handleBack = () => { setView('list'); loadConversations(); navigate('tutor', null); };
-  // Après envoi d'un message, recharger la sidebar pour afficher la nouvelle conv
-  const refreshConversations = () => { if (user?.id) loadConversations(); };
 
-  if (userLoading) {
-    return <div className="animate-pulse h-full bg-slate-200 dark:bg-[#1E293B] rounded-2xl m-4" />;
-  }
+  if (userLoading) return <div className="animate-pulse h-full bg-slate-200 dark:bg-[#1E293B] rounded-2xl m-4" />;
 
-  const pageHeight = 'h-[calc(100vh-140px)] lg:h-[calc(100vh-64px)]';
-
-  return (
-    <div className={cn('flex gap-4 overflow-hidden items-stretch', pageHeight)}>
-
-      {/* ── Sidebar (desktop toujours visible / mobile: visible si view=list) ── */}
-      <div className={cn(
-        'flex-col w-full lg:w-[260px] lg:shrink-0 h-full overflow-hidden',
-        'bg-white dark:bg-[#1E293B] rounded-2xl p-3 border border-slate-200 dark:border-[#334155]/50 shadow-sm',
-        // mobile: visible seulement sur la vue liste
-        view === 'list' ? 'flex' : 'hidden lg:flex',
-      )}>
-        {/* Header sidebar */}
-        <div className="flex items-center gap-2 mb-3 shrink-0">
-          <div className="w-[32px] h-[32px] rounded-lg bg-[#22C55E]/10 flex items-center justify-center">
-            <Bot size={16} className="text-[#22C55E]" />
-          </div>
-          <span className="text-[14px] font-semibold text-slate-800 dark:text-[#F1F5F9]">AI Tutor</span>
+  // ── Sidebar content (réutilisé mobile + desktop) ──────────
+  const sidebarContent = (
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Logo + titre */}
+      <div className="flex items-center gap-2 px-4 pt-5 pb-4 shrink-0">
+        <div className="w-[30px] h-[30px] rounded-lg bg-[#22C55E]/10 flex items-center justify-center">
+          <Bot size={15} className="text-[#22C55E]" />
         </div>
-
-        <ConversationsSidebar
-          conversations={conversations}
-          activeConvId={activeConvId}
-          loading={convLoading}
-          onNewChat={openNewChat}
-          onSelect={openConversation}
-        />
+        <span className="text-[14px] font-semibold text-slate-800 dark:text-[#F1F5F9]">AI Tutor</span>
       </div>
 
-      {/* ── Zone chat (desktop toujours visible / mobile: visible si view=chat) ── */}
+      {/* Bouton nouvelle conversation */}
+      <div className="px-3 mb-3 shrink-0">
+        <button
+          onClick={openNewChat}
+          className="w-full flex items-center justify-center gap-2 bg-[#22C55E] hover:bg-[#16a34a] text-white rounded-xl px-3 py-2.5 text-[13px] font-semibold transition-colors scale-on-click"
+        >
+          <Plus size={15} /> Nouvelle conversation
+        </button>
+      </div>
+
+      {/* Séparateur */}
+      <div className="border-t border-slate-100 dark:border-[#334155] mx-3 mb-3 shrink-0" />
+
+      {/* Liste conversations */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-2 pb-4 hide-scrollbar flex flex-col gap-0.5">
+        {convLoading ? (
+          [1, 2, 3, 4].map(i => <div key={i} className="h-[54px] rounded-xl bg-slate-100 dark:bg-[#1E293B] animate-pulse mb-1" />)
+        ) : conversations.length === 0 ? (
+          <div className="text-center py-8 px-3">
+            <MessageSquare size={22} className="text-slate-300 dark:text-[#475569] mx-auto mb-2" />
+            <p className="text-[12px] text-slate-400 dark:text-[#64748B]">Aucune conversation</p>
+          </div>
+        ) : (
+          conversations.map(conv => (
+            <button
+              key={conv.id}
+              onClick={() => openConversation(conv.id)}
+              className={cn(
+                'w-full flex items-start gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all',
+                activeConvId === conv.id
+                  ? 'bg-[#22C55E]/10 text-[#22C55E]'
+                  : 'hover:bg-slate-100 dark:hover:bg-[#1E293B] text-slate-600 dark:text-[#94A3B8]'
+              )}
+            >
+              <MessageSquare size={14} className="shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className={cn('text-[13px] truncate leading-tight font-medium',
+                  activeConvId === conv.id ? 'text-[#22C55E]' : 'text-slate-700 dark:text-[#CBD5E1]'
+                )}>
+                  {conv.title || 'Conversation'}
+                </p>
+                <p className="text-[11px] text-slate-400 dark:text-[#475569] mt-0.5">
+                  {formatRelativeDate(conv.updated_at)}
+                </p>
+              </div>
+            </button>
+          ))
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {/* ── Sidebar fixe desktop ─────────────────────────────
+          Positionnée exactement après la nav principale.
+          Nav = w-[220px] lg, w-[260px] xl. Header = top-[64px].
+      ────────────────────────────────────────────────────── */}
+      <div className="hidden lg:block fixed top-[64px] bottom-0 left-[220px] xl:left-[260px] w-[260px] bg-white dark:bg-[#1E293B] border-r-2 border-slate-200 dark:border-[#334155] z-40">
+        {sidebarContent}
+      </div>
+
+      {/* ── Mobile : vue liste (plein écran) ──────────────── */}
+      {view === 'list' && (
+        <div className="lg:hidden h-[calc(100vh-128px)] md:h-[calc(100vh-136px)] overflow-hidden">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-[44px] h-[44px] rounded-xl bg-[#22C55E]/10 flex items-center justify-center shrink-0">
+              <Bot size={22} className="text-[#22C55E]" />
+            </div>
+            <div>
+              <h1 className="text-[20px] font-bold text-slate-900 dark:text-white leading-tight">AI Tutor</h1>
+              <p className="text-[12px] text-slate-400 dark:text-[#64748B]">
+                {conversations.length > 0 ? `${conversations.length} conversation${conversations.length > 1 ? 's' : ''}` : 'Aucune conversation'}
+              </p>
+            </div>
+          </div>
+          <button onClick={openNewChat} className="w-full bg-[#22C55E] text-white rounded-2xl p-4 flex items-center justify-center gap-2 font-semibold text-[15px] mb-4 scale-on-click">
+            <Plus size={20} /> Nouvelle conversation
+          </button>
+          {convLoading ? (
+            <div className="flex flex-col gap-3">{[1,2,3].map(i => <div key={i} className="h-[70px] rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 animate-pulse" />)}</div>
+          ) : conversations.length === 0 ? (
+            <div className="text-center py-16">
+              <MessageSquare size={28} className="text-slate-300 dark:text-[#475569] mx-auto mb-3" />
+              <p className="text-[14px] font-medium text-slate-400 dark:text-[#64748B]">Aucune conversation</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2 overflow-y-auto hide-scrollbar">
+              {conversations.map(conv => (
+                <button key={conv.id} onClick={() => openConversation(conv.id)}
+                  className="bg-white dark:bg-[#1E293B] rounded-2xl p-4 flex items-center gap-3 text-left border border-slate-200 dark:border-[#334155]/50 hover:border-[#22C55E]/40 transition-all scale-on-click w-full">
+                  <div className="w-[40px] h-[40px] rounded-xl bg-[#22C55E]/10 flex items-center justify-center shrink-0">
+                    <MessageSquare size={17} className="text-[#22C55E]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[14px] font-medium text-slate-800 dark:text-[#F1F5F9] truncate">{conv.title || 'Conversation'}</p>
+                    <p className="text-[12px] text-slate-400 dark:text-[#64748B] mt-0.5">{formatRelativeDate(conv.updated_at)}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Zone chat ─────────────────────────────────────────
+          Desktop : toujours visible, décalée de 260px (sidebar).
+          Mobile  : visible seulement en mode 'chat'.
+      ────────────────────────────────────────────────────── */}
       <div className={cn(
-        'flex-1 min-w-0 h-full overflow-hidden',
-        view === 'chat' ? 'flex flex-col' : 'hidden lg:flex lg:flex-col',
+        'h-[calc(100vh-128px)] md:h-[calc(100vh-136px)] lg:h-[calc(100vh-64px)]',
+        // Desktop: compense le padding main (p-8=32px) + largeur sidebar (260px) → 260-32=228px extra
+        'lg:ml-[228px]',
+        view === 'chat' ? 'block' : 'hidden lg:block',
       )}>
         {view === 'chat' || activeConvId !== null ? (
           <ChatView
@@ -529,13 +529,11 @@ export default function AITutorPage({ navigate, viewState }) {
             onBack={handleBack}
             showBackButton={view === 'chat'}
             user={user}
-            onNewConversation={refreshConversations}
           />
         ) : (
           <DesktopEmptyState onNewChat={openNewChat} />
         )}
       </div>
-
-    </div>
+    </>
   );
 }
