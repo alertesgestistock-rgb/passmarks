@@ -1,12 +1,9 @@
-import { createClient } from '@supabase/supabase-js';
+import { verifyToken } from '../lib/auth.js';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const MODEL = 'anthropic/claude-sonnet-4-5';
 
 export const config = { runtime: 'edge' };
-
-const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
 function corsHeaders() {
   return {
@@ -48,13 +45,11 @@ export default async function handler(req) {
   }
   if (req.method !== 'POST') return jsonError('Method not allowed', 405);
 
-  const authHeader = req.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) return jsonError('Authentication required', 401);
-  const token = authHeader.slice(7);
-
-  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-  if (authError || !user) return jsonError('Authentication required', 401);
+  try {
+    await verifyToken(req.headers.get('Authorization'));
+  } catch {
+    return jsonError('Authentication required', 401);
+  }
 
   const apiKey = (process.env.OPENROUTER_API_KEY || process.env.VITE_OPENROUTER_API_KEY)?.trim();
   if (!apiKey) return jsonError('Service not configured', 500);

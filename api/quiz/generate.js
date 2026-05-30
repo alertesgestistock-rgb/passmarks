@@ -1,19 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
+import { verifyToken } from '../lib/auth.js';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const MODEL = 'anthropic/claude-sonnet-4-5';
-
-const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-
-async function requireAuth(req) {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) return null;
-  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-  if (error || !user) return null;
-  return user;
-}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -22,8 +10,11 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const user = await requireAuth(req);
-  if (!user) return res.status(401).json({ error: 'Authentication required' });
+  try {
+    await verifyToken(req.headers.authorization);
+  } catch {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
 
   const apiKey = (process.env.OPENROUTER_API_KEY || process.env.VITE_OPENROUTER_API_KEY)?.trim();
   if (!apiKey) return res.status(500).json({ error: 'Service not configured' });
@@ -60,7 +51,7 @@ export default async function handler(req, res) {
     const parsed = JSON.parse(data.choices[0].message.content);
     if (!parsed.questions || !Array.isArray(parsed.questions)) throw new Error('Invalid structure');
     return res.status(200).json(parsed.questions);
-  } catch (err) {
+  } catch {
     return res.status(502).json({ error: 'Could not generate quiz. Please try again.' });
   }
 }
