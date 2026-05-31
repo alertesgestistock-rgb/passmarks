@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { createClient } from '@supabase/supabase-js';
-import crypto from 'crypto';
 import logger from '../utils/logger.js';
 import { requireAuth } from '../middleware/auth.js';
 
@@ -11,24 +10,32 @@ const supabaseAdmin = createClient(
 	process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY,
 );
 
-// Map package name → Chariow product ID (set in env)
-const CHARIOW_PRODUCT_IDS = {
-	'Starter':   process.env.CHARIOW_PRODUCT_STARTER,
-	'Standard':  process.env.CHARIOW_PRODUCT_STANDARD,
-	'Intensif':  process.env.CHARIOW_PRODUCT_INTENSIF,
-	'Exam Mode': process.env.CHARIOW_PRODUCT_EXAM_MODE,
+// Direct Chariow product page URLs — no API key required
+const CHARIOW_PRODUCT_URLS = {
+	'Mini':      'https://qtygsppu.mychariow.shop/prd_gtb491ym',
+	'Starter':   'https://qtygsppu.mychariow.shop/prd_bshwvbhv',
+	'Standard':  'https://qtygsppu.mychariow.shop/prd_ms38i0pm',
+	'Intensif':  'https://qtygsppu.mychariow.shop/prd_if0k9j9i',
+	'Exam Mode': 'https://qtygsppu.mychariow.shop/prd_iqi1c2o5',
+};
+
+// Chariow product ID → package name (used in webhook)
+const PRODUCT_ID_TO_PACKAGE = {
+	'prd_gtb491ym': 'Mini',
+	'prd_bshwvbhv': 'Starter',
+	'prd_ms38i0pm': 'Standard',
+	'prd_if0k9j9i': 'Intensif',
+	'prd_iqi1c2o5': 'Exam Mode',
 };
 
 // POST /chariow/checkout
 // Body: { package_id }
-// Returns: { checkout_url }
+// Returns: { checkout_url } — frontend redirects the user there
 router.post('/checkout', requireAuth, async (req, res) => {
 	const { package_id } = req.body;
 	const userId = req.user.id;
 
-	if (!package_id) {
-		return res.status(400).json({ error: 'package_id is required' });
-	}
+	if (!package_id) return res.status(400).json({ error: 'package_id is required' });
 
 	const { data: pkg, error: pkgError } = await supabaseAdmin
 		.from('token_packages')
@@ -37,144 +44,118 @@ router.post('/checkout', requireAuth, async (req, res) => {
 		.eq('is_active', true)
 		.single();
 
-	if (pkgError || !pkg) {
-		return res.status(404).json({ error: 'Package not found' });
-	}
+	if (pkgError || !pkg) return res.status(404).json({ error: 'Package not found' });
 
-	const productId = CHARIOW_PRODUCT_IDS[pkg.name];
-	if (!productId) {
-		logger.error(`No Chariow product ID configured for package: ${pkg.name}`);
+	const checkoutUrl = CHARIOW_PRODUCT_URLS[pkg.name];
+	if (!checkoutUrl) {
+		logger.error(`No Chariow URL configured for package: ${pkg.name}`);
 		return res.status(503).json({ error: 'Payment not configured for this package' });
 	}
 
-	const apiKey = process.env.CHARIOW_API_KEY;
-	if (!apiKey) {
-		return res.status(503).json({ error: 'Payment service not configured' });
-	}
+	// Record a pending purchase so we have a trace
+	await supabaseAdmin.from('token_purchases').insert({
+		user_id: userId,
+		package_id: pkg.id,
+		tokens_granted: pkg.tokens,
+		amount_paid: pkg.price_xaf,
+		payment_method: 'chariow',
+		status: 'pending',
+	});
 
-	try {
-		// Get user email for pre-filling checkout
-		const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(userId);
-
-		const chariowRes = await fetch('https://api.chariow.com/v1/checkout/sessions', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${apiKey}`,
-			},
-			body: JSON.stringify({
-				product_id: productId,
-				customer_email: user?.email,
-				metadata: { user_id: userId, package_id },
-			}),
-		});
-
-		if (!chariowRes.ok) {
-			const err = await chariowRes.json().catch(() => ({}));
-			logger.error(`Chariow checkout error: ${JSON.stringify(err)}`);
-			return res.status(502).json({ error: 'Could not create payment session' });
-		}
-
-		const { id: checkoutId, url: checkoutUrl } = await chariowRes.json();
-
-		// Record pending purchase
-		await supabaseAdmin.from('token_purchases').insert({
-			user_id: userId,
-			package_id: pkg.id,
-			tokens_granted: pkg.tokens,
-			amount_paid: pkg.price_xaf,
-			payment_method: 'chariow',
-			chariow_checkout_id: checkoutId,
-			status: 'pending',
-		});
-
-		res.json({ checkout_url: checkoutUrl });
-	} catch (err) {
-		logger.error(`Chariow checkout failed: ${err.message}`);
-		res.status(502).json({ error: 'Payment service unavailable' });
-	}
+	res.json({ checkout_url: checkoutUrl });
 });
 
-// POST /chariow/webhook
-// Called by Chariow when a sale completes
+// POST /chariow/webhook?secret=CHARIOW_WEBHOOK_SECRET
+// Chariow calls this (Pulse) when a sale is completed
+// Security: secret token in query parameter
 router.post('/webhook', async (req, res) => {
 	const secret = process.env.CHARIOW_WEBHOOK_SECRET;
 
-	// Verify HMAC signature if secret is configured
-	if (secret) {
-		const signature = req.headers['x-chariow-signature'] ?? req.headers['x-signature'];
-		if (!signature) {
-			return res.status(401).json({ error: 'Missing signature' });
-		}
-		const rawBody = JSON.stringify(req.body);
-		const expected = crypto
-			.createHmac('sha256', secret)
-			.update(rawBody)
-			.digest('hex');
-		if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
-			logger.error('Chariow webhook signature mismatch');
-			return res.status(401).json({ error: 'Invalid signature' });
-		}
+	if (secret && req.query.secret !== secret) {
+		logger.error('Chariow webhook: invalid secret');
+		return res.status(401).json({ error: 'Unauthorized' });
 	}
 
 	const event = req.body;
-	logger.info(`Chariow webhook event: ${event.event ?? event.type}`);
+	logger.info(`Chariow pulse: ${JSON.stringify(event).slice(0, 300)}`);
 
-	// Handle sale completed (Chariow uses 'sale.completed' or 'payment.success')
-	const isSaleComplete = ['sale.completed', 'payment.success', 'sale.created'].includes(
-		event.event ?? event.type
-	);
+	// Extract fields — Chariow pulse format is flexible
+	const saleId    = event.id ?? event.sale_id ?? event.data?.id;
+	const buyerEmail = event.customer_email ?? event.buyer_email ?? event.email
+		?? event.data?.customer?.email ?? event.data?.email;
+	const productId = event.product_id ?? event.data?.product_id ?? event.data?.product?.id;
 
-	if (!isSaleComplete) {
+	if (!saleId || !buyerEmail || !productId) {
+		logger.warn('Chariow webhook: missing fields — logged for inspection', event);
 		return res.status(200).json({ received: true });
 	}
 
-	const checkoutId = event.data?.checkout_id ?? event.checkout_id ?? event.data?.id;
-	const saleId = event.data?.id ?? event.id;
-
-	if (!checkoutId) {
-		logger.error('Chariow webhook: missing checkout_id', event);
-		return res.status(200).json({ received: true });
-	}
-
-	const { data: purchase, error } = await supabaseAdmin
+	// Idempotency: skip already-processed sales
+	const { data: existing } = await supabaseAdmin
 		.from('token_purchases')
-		.select('*')
-		.eq('chariow_checkout_id', checkoutId)
+		.select('id, status')
+		.eq('chariow_sale_id', String(saleId))
 		.maybeSingle();
 
-	if (error || !purchase) {
-		logger.error(`Chariow webhook: purchase not found for checkout ${checkoutId}`);
+	if (existing?.status === 'confirmed') {
 		return res.status(200).json({ received: true });
 	}
 
-	// Idempotency — already confirmed
-	if (purchase.status === 'confirmed') {
+	// Find package from product ID
+	const packageName = PRODUCT_ID_TO_PACKAGE[productId];
+	if (!packageName) {
+		logger.error(`Chariow webhook: unknown product ID ${productId}`);
+		return res.status(200).json({ received: true });
+	}
+
+	const { data: pkg } = await supabaseAdmin
+		.from('token_packages')
+		.select('*')
+		.eq('name', packageName)
+		.single();
+
+	if (!pkg) {
+		logger.error(`Chariow webhook: DB package not found for ${packageName}`);
+		return res.status(200).json({ received: true });
+	}
+
+	// Find PassMark user by buyer email
+	const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
+	const user = users?.find(u => u.email?.toLowerCase() === buyerEmail.toLowerCase());
+
+	if (!user) {
+		logger.error(`Chariow webhook: no PassMark account for email ${buyerEmail}`);
 		return res.status(200).json({ received: true });
 	}
 
 	try {
-		// Mark purchase confirmed
-		await supabaseAdmin
+		// Insert confirmed purchase (upsert to avoid duplicates on retry)
+		const { data: purchase } = await supabaseAdmin
 			.from('token_purchases')
-			.update({
-				status: 'confirmed',
+			.upsert({
+				user_id: user.id,
+				package_id: pkg.id,
+				tokens_granted: pkg.tokens,
+				amount_paid: pkg.price_xaf,
+				payment_method: 'chariow',
 				chariow_sale_id: String(saleId),
+				status: 'confirmed',
 				confirmed_at: new Date().toISOString(),
-			})
-			.eq('id', purchase.id);
+			}, { onConflict: 'chariow_sale_id' })
+			.select()
+			.single();
 
 		// Credit tokens atomically
 		await supabaseAdmin.rpc('credit_tokens', {
-			p_user_id: purchase.user_id,
-			p_amount: purchase.tokens_granted,
+			p_user_id: user.id,
+			p_amount:  pkg.tokens,
 			p_purchase_id: purchase.id,
 		});
 
-		logger.info(`Tokens credited: ${purchase.tokens_granted} → user ${purchase.user_id}`);
+		logger.info(`✓ ${pkg.tokens} tokens credited to ${buyerEmail} (${packageName})`);
 		res.status(200).json({ received: true });
 	} catch (err) {
-		logger.error(`Chariow webhook processing failed: ${err.message}`);
+		logger.error(`Chariow webhook failed: ${err.message}`);
 		res.status(500).json({ error: 'Webhook processing failed' });
 	}
 });
