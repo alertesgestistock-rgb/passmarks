@@ -3,6 +3,7 @@ import { useUser } from '@/contexts/UserContext';
 import { supabase } from '@/lib/supabase';
 import OnboardingFlow from '@/components/OnboardingFlow';
 import ProfileCard from '@/components/profile/ProfileCard';
+import PhoneSection from '@/components/profile/PhoneSection';
 import StatsGrid from '@/components/profile/StatsGrid';
 import ProgressSection from '@/components/profile/ProgressSection';
 import ExamCountdown from '@/components/profile/ExamCountdown';
@@ -55,6 +56,8 @@ export default function ProfilePage() {
       )}
 
       <ProfileCard onEdit={() => setIsEditing(true)} />
+
+      <PhoneSection />
 
       <ExamCountdown examMonth={user.examMonth} examYear={user.examYear} />
 

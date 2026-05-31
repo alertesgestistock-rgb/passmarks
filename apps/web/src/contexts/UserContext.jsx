@@ -13,6 +13,8 @@ const profileToUser = (profile, email) => ({
   examMonth: profile.exam_month,
   examYear: profile.exam_year,
   avatarUrl: profile.avatar_url || null,
+  phone: profile.phone || null,
+  phoneCountry: profile.phone_country || '237',
   stats: profile.stats || { questionsSolved: 0, papersRead: 0, quizzesCompleted: 0, totalScore: 0, bySubject: {} },
   recentActivity: profile.recent_activity || [],
 });
@@ -22,6 +24,7 @@ const userToProfile = (updates) => {
     name: 'name', level: 'level', subjects: 'subjects',
     examMonth: 'exam_month', examYear: 'exam_year',
     avatarUrl: 'avatar_url',
+    phone: 'phone', phoneCountry: 'phone_country',
     stats: 'stats', recentActivity: 'recent_activity',
   };
   const result = {};
