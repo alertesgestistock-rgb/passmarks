@@ -311,19 +311,27 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
     }]);
     setIsLoading(true);
 
+    // Abort après 55 secondes — évite les dots infinis si l'API ne répond pas
+    const abortCtrl = new AbortController();
+    const abortTimer = setTimeout(() => abortCtrl.abort(), 55000);
+
     try {
       const response = await apiServerClient.fetch('/chat/message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: buildClaudeMessages(messages, text, image, pdf) }),
+        signal: abortCtrl.signal,
       });
+
+      clearTimeout(abortTimer);
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        if (response.status === 402) {
-          throw new InsufficientTokensError(err.balance ?? 0);
-        }
-        throw new Error(err.error || 'Connection error');
+        if (response.status === 402) throw new InsufficientTokensError(err.balance ?? 0);
+        if (response.status === 401) throw new Error('Session expired. Please refresh the page.');
+        if (response.status === 429) throw new Error('Too many requests. Please wait a moment and try again.');
+        if (response.status >= 500) throw new Error('Server error. Please try again in a few seconds.');
+        throw new Error(err.error || 'Connection error. Please try again.');
       }
 
       // Solde après déduction transmis dans le header de réponse
@@ -337,49 +345,68 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
       let streamingStarted = false;
       const msgTimestamp = new Date().toISOString();
 
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
+      try {
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
 
-        const chunk = decoder.decode(value, { stream: true });
-        for (const line of chunk.split('\n')) {
-          const clean = line.trim();
-          if (!clean || clean === 'data: [DONE]') continue;
-          if (!clean.startsWith('data: ')) continue;
-          try {
-            const json = JSON.parse(clean.slice(6));
-            const token = json.choices?.[0]?.delta?.content || '';
-            if (!token) continue;
-            fullContent += token;
+          const chunk = decoder.decode(value, { stream: true });
+          for (const line of chunk.split('\n')) {
+            const clean = line.trim();
+            if (!clean || clean === 'data: [DONE]') continue;
+            if (!clean.startsWith('data: ')) continue;
+            try {
+              const json = JSON.parse(clean.slice(6));
+              const token = json.choices?.[0]?.delta?.content || '';
+              if (!token) continue;
+              fullContent += token;
 
-            if (!streamingStarted) {
-              streamingStarted = true;
-              setIsLoading(false);
-              setMessages(prev => [...prev, {
-                role: 'assistant',
-                content: fullContent,
-                isStreaming: true,
-                timestamp: msgTimestamp,
-              }]);
+              if (!streamingStarted) {
+                streamingStarted = true;
+                setIsLoading(false);
+                setMessages(prev => [...prev, {
+                  role: 'assistant',
+                  content: fullContent,
+                  isStreaming: true,
+                  timestamp: msgTimestamp,
+                }]);
+              } else {
+                setMessages(prev => {
+                  const updated = [...prev];
+                  updated[updated.length - 1] = { ...updated[updated.length - 1], content: fullContent };
+                  return updated;
+                });
+              }
+            } catch { /* chunk partiel — ignoré */ }
+          }
+        }
+
+        // Stream terminé — retirer le curseur
+        setMessages(prev => {
+          const updated = [...prev];
+          if (updated[updated.length - 1]?.isStreaming) {
+            updated[updated.length - 1] = { ...updated[updated.length - 1], isStreaming: false };
+          }
+          return updated;
+        });
+
+      } catch (streamErr) {
+        // Nettoyer le message partiel si le stream échoue en cours de route
+        setMessages(prev => {
+          const updated = [...prev];
+          if (updated[updated.length - 1]?.isStreaming) {
+            if (fullContent.length > 0) {
+              // Garder le contenu partiel mais retirer le curseur
+              updated[updated.length - 1] = { ...updated[updated.length - 1], isStreaming: false };
             } else {
-              setMessages(prev => {
-                const updated = [...prev];
-                updated[updated.length - 1] = { ...updated[updated.length - 1], content: fullContent };
-                return updated;
-              });
+              // Aucun contenu reçu — supprimer le message vide
+              updated.pop();
             }
-          } catch { /* chunk partiel — ignoré */ }
-        }
+          }
+          return updated;
+        });
+        throw streamErr;
       }
-
-      // Stream terminé — retirer le curseur
-      setMessages(prev => {
-        const updated = [...prev];
-        if (updated[updated.length - 1]?.isStreaming) {
-          updated[updated.length - 1] = { ...updated[updated.length - 1], isStreaming: false };
-        }
-        return updated;
-      });
 
       // Sauvegarde en DB
       const convId = await getOrCreateConversation(text, onConversationCreated);
@@ -402,13 +429,17 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
         date: new Date().toISOString(), solved: true,
       });
     } catch (error) {
+      clearTimeout(abortTimer);
       if (error instanceof InsufficientTokensError) {
         setNoTokens(true);
         updateTokenBalance(error.balance);
       } else {
+        const msg = error.name === 'AbortError'
+          ? 'Request timed out (55s). The AI may be overloaded — please try again.'
+          : (error.message || 'Connection error. Please try again.');
         setMessages(prev => [...prev, {
           role: 'assistant',
-          content: error.message || 'Connection error. Please try again.',
+          content: msg,
           isError: true,
           timestamp: new Date().toISOString(),
         }]);
