@@ -47,3 +47,6 @@ Thumbs.db
 # MCP / Claude config
 .mcp.json
 skills/
+
+# Supabase CLI binary (local, non versionné)
+apps/web/supabase/.temp/

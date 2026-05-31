@@ -8,7 +8,8 @@
     "build": "node tools/generate-llms.js || true && vite build --outDir ../../dist/apps/web",
     "start": "vite preview --outDir ../../dist/apps/web --host :: --port 3000",
     "lint": "eslint . --quiet",
-    "lint:warn": "eslint ."
+    "lint:warn": "eslint .",
+    "supabase": "supabase\\.temp\\supabase.exe"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
