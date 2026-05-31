@@ -356,10 +356,6 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
         throw new Error(err.error || 'Connection error. Please try again.');
       }
 
-      // Solde après déduction transmis dans le header de réponse
-      const balanceHeader = response.headers.get('X-Balance-After');
-      if (balanceHeader !== null) updateTokenBalance(Number(balanceHeader));
-
       // ── Lecture du stream SSE ──────────────────────────────
       const reader = response.body.getReader();
       const decoder = new TextDecoder('utf-8');
@@ -379,6 +375,8 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
             if (!clean.startsWith('data: ')) continue;
             try {
               const json = JSON.parse(clean.slice(6));
+              // Événement de solde envoyé après déduction réussie
+              if (typeof json.b === 'number') { updateTokenBalance(json.b); continue; }
               const token = json.choices?.[0]?.delta?.content || '';
               if (!token) continue;
               fullContent += token;

@@ -92,6 +92,18 @@ function detectCost(messages) {
   return { cost: 1, actionType: 'message' };
 }
 
+// Vérifie le solde sans débiter — si l'IA échoue, l'élève ne perd rien
+async function checkBalance(userId, cost) {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/token_wallets?user_id=eq.${encodeURIComponent(userId)}&select=balance`,
+    { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+  );
+  const wallets = await res.json().catch(() => []);
+  const balance = wallets[0]?.balance ?? 0;
+  return { sufficient: balance >= cost, balance };
+}
+
+// Débite après succès du stream — jamais appelé si l'IA échoue
 async function deductTokens(userId, cost, actionType) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/deduct_tokens`, {
     method: 'POST',
@@ -102,18 +114,7 @@ async function deductTokens(userId, cost, actionType) {
     },
     body: JSON.stringify({ p_user_id: userId, p_cost: cost, p_action: actionType }),
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    if (err?.message === 'insufficient_tokens') {
-      const walletRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/token_wallets?user_id=eq.${encodeURIComponent(userId)}&select=balance`,
-        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
-      );
-      const wallets = await walletRes.json().catch(() => []);
-      return { ok: false, balance: wallets[0]?.balance ?? 0 };
-    }
-    throw new Error('Token system error');
-  }
+  if (!res.ok) return { ok: false };
   const balanceAfter = await res.json();
   return { ok: true, balanceAfter };
 }
@@ -139,17 +140,12 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'messages must be a non-empty array' });
   }
 
-  // Atomic token deduction via FOR UPDATE stored procedure
+  // Étape 1 : vérifier le solde SANS débiter
+  // Si l'IA échoue ensuite, l'élève ne perd aucun token
   const { cost, actionType } = detectCost(messages);
-  let balanceAfter;
-  try {
-    const result = await deductTokens(user.id, cost, actionType);
-    if (!result.ok) {
-      return res.status(402).json({ error: 'insufficient_tokens', balance: result.balance });
-    }
-    balanceAfter = result.balanceAfter;
-  } catch {
-    return res.status(500).json({ error: 'Token system error' });
+  const { sufficient, balance } = await checkBalance(user.id, cost);
+  if (!sufficient) {
+    return res.status(402).json({ error: 'insufficient_tokens', balance });
   }
 
   const upstream = await fetch(OPENROUTER_URL, {
@@ -169,18 +165,24 @@ export default async function handler(req, res) {
   });
 
   if (!upstream.ok) {
+    // L'IA a refusé — aucun token débité
     const err = await upstream.json().catch(() => ({}));
     if (upstream.status === 429) return res.status(429).json({ error: 'Rate limit reached. Try again later.' });
     return res.status(upstream.status).json({ error: err.error?.message || 'AI service error' });
   }
 
-  // Stream response back — Node.js Runtime, respects maxDuration: 60 in vercel.json
+  // Étape 2 : démarrer le stream
   res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
   res.setHeader('Cache-Control', 'no-cache, no-transform');
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('X-Accel-Buffering', 'no');
-  res.setHeader('X-Balance-After', String(balanceAfter));
   res.flushHeaders();
+
+  // Heartbeat toutes les 15s — empêche les réseaux mobiles (MTN/Orange)
+  // de couper la connexion inactive pendant que l'IA génère
+  const heartbeat = setInterval(() => {
+    try { res.write(': keep-alive\n\n'); } catch {}
+  }, 15000);
 
   const reader = upstream.body.getReader();
   try {
@@ -189,7 +191,17 @@ export default async function handler(req, res) {
       if (done) break;
       res.write(value);
     }
+
+    // Étape 3 : stream terminé avec succès → débiter maintenant
+    const deductResult = await deductTokens(user.id, cost, actionType);
+    if (deductResult.ok) {
+      // Envoyer le nouveau solde au client via un dernier événement SSE
+      res.write(`data: ${JSON.stringify({ b: deductResult.balanceAfter })}\n\n`);
+    }
+  } catch {
+    // Stream interrompu — tokens NON débités, l'élève garde son solde
   } finally {
+    clearInterval(heartbeat);
     res.end();
   }
 }
