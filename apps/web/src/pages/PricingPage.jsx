@@ -51,8 +51,8 @@ function FaqItem({ question, answer }) {
 const TOKEN_PACKS = [
   { name: 'Starter',   tokens: 50,   price: 1000,  icon: Coins,  color: '#3B82F6', popular: false },
   { name: 'Standard',  tokens: 200,  price: 3500,  icon: Zap,    color: '#22C55E', popular: true  },
-  { name: 'Intensif',  tokens: 500,  price: 7500,  icon: Star,   color: '#F97316', popular: false },
-  { name: 'Exam Mode', tokens: 1200, price: 15000, icon: Trophy, color: '#A855F7', popular: false },
+  { name: 'Intensif',  tokens: 500,  price: 8000,  icon: Star,   color: '#F97316', popular: false },
+  { name: 'Exam Mode', tokens: 1200, price: 18000, icon: Trophy, color: '#A855F7', popular: false },
 ];
 
 export default function PricingPage() {
