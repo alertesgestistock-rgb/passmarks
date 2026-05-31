@@ -213,14 +213,15 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
     e.target.value = '';
   };
 
-  const renderPageToBase64 = async (page, scale = 1.0) => {
-    const viewport = page.getViewport({ scale });
+  const renderPageToBase64 = async (page) => {
+    // scale 1.0 = résolution native, lisible par l'IA
+    // quality 0.5 = ~60-100KB/page → 4 pages ≈ 300KB, bien sous la limite 4.5MB Vercel
+    const viewport = page.getViewport({ scale: 1.0 });
     const canvas = document.createElement('canvas');
     canvas.width = viewport.width;
     canvas.height = viewport.height;
     await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-    return dataUrl.split(',')[1];
+    return canvas.toDataURL('image/jpeg', 0.5).split(',')[1];
   };
 
   const handlePDFSelect = async (e) => {
@@ -241,27 +242,39 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
     reader.onload = async (ev) => {
       try {
         const pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(ev.target.result) }).promise;
+        const totalPages = pdf.numPages;
 
-        // 1. Essaie extraction texte
+        // ── Chemin 1 : PDF numérique (texte sélectionnable) ──────────────
+        // Extrait TOUTES les pages, limite à 30 000 caractères
+        // (~8 000 mots = un paper complet de 12 questions)
         let text = '';
-        for (let i = 1; i <= Math.min(pdf.numPages, 10); i++) {
+        for (let i = 1; i <= totalPages; i++) {
           const page = await pdf.getPage(i);
           const content = await page.getTextContent();
           text += content.items.map(item => item.str).join(' ') + '\n';
         }
-        const extracted = text.trim().substring(0, 6000);
+        const extracted = text.trim().substring(0, 30000);
 
-        if (extracted) {
-          setPendingPdf({ name: file.name, text: extracted, images: null, pageCount: pdf.numPages });
+        if (extracted.length > 50) {
+          const truncated = text.trim().length > 30000;
+          setPendingPdf({
+            name: file.name,
+            text: extracted,
+            images: null,
+            pageCount: totalPages,
+            truncated,
+          });
         } else {
-          // 2. PDF scanné → convertir la première page en image pour la vision IA
+          // ── Chemin 2 : PDF scanné (images) ────────────────────────────
+          // Rend jusqu'à 4 pages en JPEG (~300KB total, sous la limite Vercel)
+          const maxPages = Math.min(totalPages, 4);
           const images = [];
-          for (let i = 1; i <= Math.min(pdf.numPages, 1); i++) {
+          for (let i = 1; i <= maxPages; i++) {
             const page = await pdf.getPage(i);
             const b64 = await renderPageToBase64(page);
             images.push(b64);
           }
-          setPendingPdf({ name: file.name, text: null, images, pageCount: pdf.numPages });
+          setPendingPdf({ name: file.name, text: null, images, pageCount: totalPages });
         }
       } catch {
         setMessages(prev => [...prev, { role: 'assistant', content: 'Error reading PDF. Please try again.', isError: true, timestamp: new Date().toISOString() }]);
@@ -296,7 +309,10 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
     const rawText = typeof textOverride === 'string' ? textOverride : input.trim();
     const image = pendingImage;
     const pdf = pendingPdf;
-    const text = pdf?.text ? (rawText ? `${rawText}\n\n[PDF: ${pdf.name}]\n${pdf.text}` : `[PDF: ${pdf.name}]\n${pdf.text}`) : rawText;
+    const pdfHeader = pdf?.text
+      ? `[PDF: ${pdf.name} — ${pdf.pageCount} page(s)${pdf.truncated ? ', text truncated at 30 000 chars' : ', complete'}]\n`
+      : null;
+    const text = pdf?.text ? (rawText ? `${rawText}\n\n${pdfHeader}${pdf.text}` : `${pdfHeader}${pdf.text}`) : rawText;
     if ((!text && !image && !pdf?.images) || isLoading || isOffline) return;
     setNoTokens(false);
     setInput('');
@@ -560,8 +576,10 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
                 <p className="text-[12px] text-[#22C55E] font-medium truncate">{pendingPdf.name}</p>
                 <p className="text-[10px] text-[#22C55E]/70">
                   {pendingPdf.images
-                    ? `Scanned — page 1 sent as image`
-                    : `Text extracted · ${pendingPdf.pageCount ?? '?'} page(s)`}
+                    ? `${pendingPdf.images.length}/${pendingPdf.pageCount} page(s) sent as image`
+                    : pendingPdf.truncated
+                      ? `⚠ Text truncated — ${pendingPdf.pageCount} page(s)`
+                      : `All ${pendingPdf.pageCount} page(s) extracted`}
                 </p>
               </div>
               <button onClick={() => setPendingPdf(null)} className="shrink-0 text-[#22C55E]/60 hover:text-[#22C55E]">
