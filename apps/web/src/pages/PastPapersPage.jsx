@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, ChevronRight, ArrowLeft, FileText, Lock, Sparkles, ExternalLink } from 'lucide-react';
+import { Search, ChevronRight, ArrowLeft, FileText, Lock, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
+import { useUser } from '@/contexts/UserContext';
 
 const SOURCES = [
   { key: 'GCE_BOARD',  label: 'GCE Board' },
@@ -21,6 +22,7 @@ const SOURCES = [
 const CATEGORY_FILTERS = ['Sciences', 'Arts', 'Commercial', 'Languages'];
 
 export default function PastPapersPage({ navigate }) {
+  const { user } = useUser();
   const [view, setView]                       = useState('list');
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [subjects, setSubjects]               = useState([]);
@@ -30,6 +32,8 @@ export default function PastPapersPage({ navigate }) {
   const [search, setSearch]                   = useState('');
   const [activeCategories, setActiveCategories] = useState([]);
   const [selectedPaper, setSelectedPaper]     = useState(null); // { url, year, paper_number }
+  const [signedUrl, setSignedUrl]             = useState(null);
+  const [pdfLoading, setPdfLoading]           = useState(false);
   const [loadingSubjects, setLoadingSubjects] = useState(true);
   const [loadingPapers, setLoadingPapers]     = useState(false);
   const [error, setError]                     = useState(null);
@@ -140,6 +144,23 @@ export default function PastPapersPage({ navigate }) {
       .sort((a, b) => a.subject.localeCompare(b.subject));
   }, [subjects, search, activeCategories, selectedLevel]);
 
+  // Generate signed URL (expires 30 min) when reader opens
+  useEffect(() => {
+    if (!selectedPaper?.url || view !== 'reader') return;
+    setSignedUrl(null);
+    setPdfLoading(true);
+
+    const path = selectedPaper.url.split('/object/public/past-papers/')[1];
+    if (!path) { setPdfLoading(false); return; }
+
+    supabase.storage.from('past-papers').createSignedUrl(path, 1800)
+      .then(({ data, error }) => {
+        if (!error && data?.signedUrl) setSignedUrl(data.signedUrl);
+        setPdfLoading(false);
+      })
+      .catch(() => setPdfLoading(false));
+  }, [selectedPaper, view]);
+
   const handleOpenSubject = (sub) => {
     setSelectedSubject(sub);
     setSelectedSource('GCE_BOARD');
@@ -149,9 +170,10 @@ export default function PastPapersPage({ navigate }) {
 
   // ─── READER VIEW ───────────────────────────────────────────────────────────
   if (view === 'reader' && selectedPaper && selectedSubject) {
-    const levelLabel = selectedSubject.level === 'A_Level' ? 'A Level' : 'O Level';
+    const levelLabel  = selectedSubject.level === 'A_Level' ? 'A Level' : 'O Level';
     const sourceLabel = SOURCES.find(s => s.key === selectedSource)?.label || selectedSource;
-    const aiMessage = `I'm studying the GCE ${levelLabel} ${selectedSubject.subject} Paper ${selectedPaper.paper_number} from ${selectedPaper.year} (${sourceLabel}). Help me understand and solve questions from this paper.`;
+    const aiMessage   = `I'm studying GCE ${levelLabel} ${selectedSubject.subject} Paper ${selectedPaper.paper_number} ${selectedPaper.year} (${sourceLabel}). Help me understand and solve questions from this paper.`;
+    const watermark   = user?.email || user?.name || 'PassMark';
 
     return (
       <div className="fade-in flex flex-col" style={{ height: 'calc(100vh - 140px)' }}>
@@ -171,32 +193,71 @@ export default function PastPapersPage({ navigate }) {
               {levelLabel} · {selectedSubject.subject_code} · {sourceLabel}
             </p>
           </div>
-          <div className="flex gap-2 shrink-0">
-            <button
-              onClick={() => window.open(selectedPaper.url, '_blank')}
-              className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-[#1E293B] flex items-center justify-center hover:bg-slate-200 dark:hover:bg-[#334155] transition-colors"
-              title="Open in new tab"
-            >
-              <ExternalLink size={15} className="text-slate-500 dark:text-[#94A3B8]" />
-            </button>
-            <button
-              onClick={() => navigate('tutor', { initialMessage: aiMessage })}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#3B82F6] text-white text-[12px] font-medium hover:bg-[#2563EB] transition-colors"
-            >
-              <Sparkles size={13} />
-              Ask AI
-            </button>
-          </div>
+          <button
+            onClick={() => navigate('tutor', { initialMessage: aiMessage })}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#3B82F6] text-white text-[12px] font-medium hover:bg-[#2563EB] transition-colors shrink-0"
+          >
+            <Sparkles size={13} />
+            Ask AI
+          </button>
         </div>
 
-        {/* PDF iframe */}
-        <div className="flex-1 rounded-2xl overflow-hidden border border-slate-200 dark:border-[#334155]/50 bg-slate-50 dark:bg-[#0F172A]">
-          <iframe
-            src={selectedPaper.url}
-            title={`${selectedSubject.subject} Paper ${selectedPaper.paper_number} ${selectedPaper.year}`}
-            className="w-full h-full"
-            style={{ border: 'none' }}
-          />
+        {/* PDF viewer with protections */}
+        <div
+          className="flex-1 rounded-2xl overflow-hidden border border-slate-200 dark:border-[#334155]/50 bg-slate-100 dark:bg-[#0F172A] relative"
+          onContextMenu={e => e.preventDefault()}
+        >
+          {pdfLoading && (
+            <div className="absolute inset-0 flex items-center justify-center z-10">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-8 h-8 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin" />
+                <span className="text-[12px] text-slate-400 dark:text-[#64748B]">Loading paper...</span>
+              </div>
+            </div>
+          )}
+
+          {/* Watermark overlay — user email repeated diagonally */}
+          {signedUrl && (
+            <div
+              className="absolute inset-0 z-10 overflow-hidden select-none"
+              style={{ pointerEvents: 'none' }}
+            >
+              {Array.from({ length: 24 }).map((_, i) => (
+                <div
+                  key={i}
+                  style={{
+                    position: 'absolute',
+                    top: `${(i * 13) % 110 - 10}%`,
+                    left: `${(i * 17) % 110 - 10}%`,
+                    transform: 'rotate(-30deg)',
+                    color: 'rgba(100,116,139,0.13)',
+                    fontSize: '13px',
+                    whiteSpace: 'nowrap',
+                    fontFamily: 'system-ui, sans-serif',
+                    fontWeight: 500,
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  PassMark · {watermark}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* iframe — signed URL + toolbar hidden */}
+          {signedUrl ? (
+            <iframe
+              src={`${signedUrl}#toolbar=0&navpanes=0`}
+              title={`${selectedSubject.subject} P${selectedPaper.paper_number} ${selectedPaper.year}`}
+              className="w-full h-full"
+              style={{ border: 'none' }}
+              sandbox="allow-same-origin allow-scripts"
+            />
+          ) : !pdfLoading && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <p className="text-[13px] text-slate-400 dark:text-[#64748B]">Unable to load paper. Try again.</p>
+            </div>
+          )}
         </div>
       </div>
     );
