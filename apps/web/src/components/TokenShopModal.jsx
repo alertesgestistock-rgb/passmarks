@@ -8,25 +8,34 @@ import { useTranslation } from 'react-i18next';
 const PACK_ICONS = [Coins, Zap, Star, Trophy];
 const PACK_COLORS = ['#3B82F6', '#22C55E', '#F97316', '#A855F7'];
 
+// Cache module-level : fetch une seule fois par session
+let _cachedPackages = null;
+async function getPackages() {
+  if (_cachedPackages) return _cachedPackages;
+  const { data } = await supabase
+    .from('token_packages')
+    .select('*')
+    .eq('is_active', true)
+    .order('tokens', { ascending: true });
+  _cachedPackages = data || [];
+  return _cachedPackages;
+}
+
 export default function TokenShopModal({ onClose }) {
   const { tokenBalance, refreshTokenBalance } = useUser();
   const { i18n } = useTranslation();
   const lang = i18n.language;
 
-  const [packages, setPackages] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [packages, setPackages] = useState(_cachedPackages || []);
+  const [loading, setLoading] = useState(!_cachedPackages);
   const [buying, setBuying] = useState(null);
 
   useEffect(() => {
-    supabase
-      .from('token_packages')
-      .select('*')
-      .eq('is_active', true)
-      .order('tokens', { ascending: true })
-      .then(({ data }) => {
-        setPackages(data || []);
-        setLoading(false);
-      });
+    if (_cachedPackages) return;
+    getPackages().then(data => {
+      setPackages(data);
+      setLoading(false);
+    });
   }, []);
 
   const handleBuy = async (pkg) => {
