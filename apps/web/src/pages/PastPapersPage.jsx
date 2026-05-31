@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, ChevronRight, ArrowLeft, FileText, Lock } from 'lucide-react';
+import { Search, ChevronRight, ArrowLeft, FileText, Lock, Sparkles, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 
@@ -20,7 +20,7 @@ const SOURCES = [
 
 const CATEGORY_FILTERS = ['Sciences', 'Arts', 'Commercial', 'Languages'];
 
-export default function PastPapersPage() {
+export default function PastPapersPage({ navigate }) {
   const [view, setView]                       = useState('list');
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [subjects, setSubjects]               = useState([]);
@@ -29,6 +29,7 @@ export default function PastPapersPage() {
   const [selectedLevel, setSelectedLevel]     = useState('A_Level');
   const [search, setSearch]                   = useState('');
   const [activeCategories, setActiveCategories] = useState([]);
+  const [selectedPaper, setSelectedPaper]     = useState(null); // { url, year, paper_number }
   const [loadingSubjects, setLoadingSubjects] = useState(true);
   const [loadingPapers, setLoadingPapers]     = useState(false);
   const [error, setError]                     = useState(null);
@@ -146,6 +147,61 @@ export default function PastPapersPage() {
     setView('detail');
   };
 
+  // ─── READER VIEW ───────────────────────────────────────────────────────────
+  if (view === 'reader' && selectedPaper && selectedSubject) {
+    const levelLabel = selectedSubject.level === 'A_Level' ? 'A Level' : 'O Level';
+    const sourceLabel = SOURCES.find(s => s.key === selectedSource)?.label || selectedSource;
+    const aiMessage = `I'm studying the GCE ${levelLabel} ${selectedSubject.subject} Paper ${selectedPaper.paper_number} from ${selectedPaper.year} (${sourceLabel}). Help me understand and solve questions from this paper.`;
+
+    return (
+      <div className="fade-in flex flex-col" style={{ height: 'calc(100vh - 140px)' }}>
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-3 shrink-0">
+          <button
+            onClick={() => setView('detail')}
+            className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-[#1E293B] flex items-center justify-center hover:bg-slate-200 dark:hover:bg-[#334155] transition-colors shrink-0"
+          >
+            <ArrowLeft size={16} className="text-slate-500 dark:text-[#94A3B8]" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-[14px] font-medium text-slate-900 dark:text-[#F1F5F9] truncate">
+              {selectedSubject.subject} · Paper {selectedPaper.paper_number} · {selectedPaper.year}
+            </h2>
+            <p className="text-[11px] text-slate-400 dark:text-[#64748B]">
+              {levelLabel} · {selectedSubject.subject_code} · {sourceLabel}
+            </p>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <button
+              onClick={() => window.open(selectedPaper.url, '_blank')}
+              className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-[#1E293B] flex items-center justify-center hover:bg-slate-200 dark:hover:bg-[#334155] transition-colors"
+              title="Open in new tab"
+            >
+              <ExternalLink size={15} className="text-slate-500 dark:text-[#94A3B8]" />
+            </button>
+            <button
+              onClick={() => navigate('tutor', { initialMessage: aiMessage })}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#3B82F6] text-white text-[12px] font-medium hover:bg-[#2563EB] transition-colors"
+            >
+              <Sparkles size={13} />
+              Ask AI
+            </button>
+          </div>
+        </div>
+
+        {/* PDF iframe */}
+        <div className="flex-1 rounded-2xl overflow-hidden border border-slate-200 dark:border-[#334155]/50 bg-slate-50 dark:bg-[#0F172A]">
+          <iframe
+            src={selectedPaper.url}
+            title={`${selectedSubject.subject} Paper ${selectedPaper.paper_number} ${selectedPaper.year}`}
+            className="w-full h-full"
+            style={{ border: 'none' }}
+          />
+        </div>
+      </div>
+    );
+  }
+
   // ─── DETAIL VIEW ───────────────────────────────────────────────────────────
   if (view === 'detail' && selectedSubject) {
     const paperCols = Array.from({ length: maxPaper }, (_, i) => i + 1);
@@ -231,7 +287,7 @@ export default function PastPapersPage() {
                       <div key={pn} className="flex justify-center">
                         {url ? (
                           <button
-                            onClick={() => window.open(url, '_blank')}
+                            onClick={() => { setSelectedPaper({ url, year, paper_number: pn }); setView('reader'); }}
                             className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-green-100 dark:bg-[#14532D] text-green-700 dark:text-[#22C55E] text-[11px] font-medium hover:bg-green-200 dark:hover:bg-[#166534] transition-colors"
                           >
                             <FileText size={11} />
