@@ -216,6 +216,42 @@ export function BottomNav({ activeTab, setActiveTab }) {
   );
 }
 
+function DailyBonusToast() {
+  const { dailyBonus, dismissDailyBonus } = useUser();
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (dailyBonus > 0) {
+      const show = setTimeout(() => setVisible(true), 800);
+      const hide = setTimeout(() => { setVisible(false); setTimeout(dismissDailyBonus, 400); }, 4000);
+      return () => { clearTimeout(show); clearTimeout(hide); };
+    }
+  }, [dailyBonus]);
+
+  if (!dailyBonus) return null;
+
+  return (
+    <div
+      onClick={() => { setVisible(false); setTimeout(dismissDailyBonus, 400); }}
+      style={{
+        position: 'fixed', bottom: 80, left: '50%',
+        transform: `translateX(-50%) translateY(${visible ? 0 : 20}px)`,
+        opacity: visible ? 1 : 0,
+        transition: 'opacity 0.3s ease, transform 0.3s ease',
+        background: '#22C55E', color: '#052e16',
+        borderRadius: 12, padding: '10px 18px',
+        fontWeight: 700, fontSize: 14,
+        boxShadow: '0 4px 20px rgba(34,197,94,0.4)',
+        zIndex: 9999, cursor: 'pointer', userSelect: 'none',
+        display: 'flex', alignItems: 'center', gap: 8,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      🎁 +{dailyBonus} tokens gratuits aujourd'hui !
+    </div>
+  );
+}
+
 export function MainLayout({ children, activeTab, setActiveTab }) {
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -241,6 +277,7 @@ export function MainLayout({ children, activeTab, setActiveTab }) {
         {children}
       </main>
       <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
+      <DailyBonusToast />
     </div>
   );
 }

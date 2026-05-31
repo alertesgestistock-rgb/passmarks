@@ -37,6 +37,7 @@ export const UserProvider = ({ children }) => {
   const [streak, setStreak] = useState(() => cached ? checkAndUpdateStreak() : { current: 0, lastActive: null });
   const [isLoading, setIsLoading] = useState(!cached);
   const [tokenBalance, setTokenBalance] = useState(null);
+  const [dailyBonus, setDailyBonus] = useState(0);
 
   const ensureWallet = async (userId) => {
     // Wallet is created automatically by the handle_new_profile_wallet DB trigger.
@@ -67,9 +68,17 @@ export const UserProvider = ({ children }) => {
         saveUserToLocalStorage(userData);
         setStreak(checkAndUpdateStreak());
 
-        // Load wallet (non-blocking)
-        ensureWallet(session.user.id).then(balance => {
-          if (!cancelled) setTokenBalance(balance);
+        // Load wallet then claim daily bonus (non-blocking)
+        ensureWallet(session.user.id).then(async (balance) => {
+          if (cancelled) return;
+          setTokenBalance(balance);
+          try {
+            const { data } = await supabase.rpc('claim_daily_tokens', { p_user_id: session.user.id });
+            if (!cancelled && data?.tokens_added > 0) {
+              setTokenBalance(data.balance);
+              setDailyBonus(data.tokens_added);
+            }
+          } catch (_) { /* silent — daily bonus failure must never block the app */ }
         });
 
         return true;
@@ -95,6 +104,7 @@ export const UserProvider = ({ children }) => {
         setUser(null);
         setStreak({ current: 0, lastActive: null });
         setTokenBalance(null);
+        setDailyBonus(0);
       }
     });
 
@@ -186,9 +196,10 @@ export const UserProvider = ({ children }) => {
 
   return (
     <UserContext.Provider value={{
-      user, streak, isLoading, tokenBalance,
+      user, streak, isLoading, tokenBalance, dailyBonus,
       updateUser, initializeNewUser, addRecentActivity, clearUser,
       updateTokenBalance, refreshTokenBalance,
+      dismissDailyBonus: () => setDailyBonus(0),
     }}>
       {children}
     </UserContext.Provider>
