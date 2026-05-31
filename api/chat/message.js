@@ -162,7 +162,7 @@ export default async function handler(req, res) {
     },
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: 1500,
+      max_tokens: 4000,
       stream: true,
       messages: toOpenAIMessages(messages),
     }),
