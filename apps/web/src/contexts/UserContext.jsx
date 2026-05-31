@@ -39,28 +39,14 @@ export const UserProvider = ({ children }) => {
   const [tokenBalance, setTokenBalance] = useState(null);
 
   const ensureWallet = async (userId) => {
+    // Wallet is created automatically by the handle_new_profile_wallet DB trigger.
+    // We only read here — never write from the browser (security: prevents F12 abuse).
     const { data: wallet } = await supabase
       .from('token_wallets')
       .select('balance')
       .eq('user_id', userId)
       .maybeSingle();
-
-    if (wallet) return wallet.balance;
-
-    // Wallet missing (legacy user) — create via RPC signup_bonus
-    await supabase.rpc('credit_tokens', {
-      p_user_id: userId,
-      p_amount: 25,
-      p_purchase_id: null,
-    }).catch(() => null);
-
-    const { data: fresh } = await supabase
-      .from('token_wallets')
-      .select('balance')
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    return fresh?.balance ?? 0;
+    return wallet?.balance ?? 0;
   };
 
   useEffect(() => {
