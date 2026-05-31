@@ -38,7 +38,7 @@ export default function PastPapersPage({ navigate }) {
   useEffect(() => {
     let cancelled = false;
 
-    const CACHE_KEY = 'passmark_gce_subjects';
+    const CACHE_KEY = 'passmark_gce_subjects_v2';
 
     // 1. Afficher le cache immédiatement si disponible
     try {
