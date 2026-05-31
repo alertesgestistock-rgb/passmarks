@@ -5,28 +5,18 @@ const MODEL = 'anthropic/claude-sonnet-4-5';
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
-export const config = { runtime: 'edge' };
+// Node.js Runtime — respects maxDuration: 60 in vercel.json.
+// Edge Runtime caps at 30s on Hobby and ignores maxDuration, which caused
+// timeouts on PDF analysis and long reasoning responses.
 
-function corsHeaders() {
-  return {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Expose-Headers': 'X-Balance-After',
-  };
-}
-
-function jsonError(message, status, extra = {}) {
-  return new Response(JSON.stringify({ error: message, ...extra }), {
-    status,
-    headers: { ...corsHeaders(), 'Content-Type': 'application/json' },
-  });
+function setCors(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Expose-Headers', 'X-Balance-After');
 }
 
 function toOpenAIMessages(system, messages) {
-  // cache_control marks the system prompt as cacheable — Anthropic reuses it
-  // across requests instead of reprocessing it (90% cost saving on input tokens,
-  // minimum 1024 tokens required for the cache to engage).
   const result = [{
     role: 'system',
     content: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
@@ -52,10 +42,7 @@ function detectCost(messages) {
   const lastUser = [...messages].reverse().find(m => m.role === 'user');
   const hasVision = Array.isArray(lastUser?.content) &&
     lastUser.content.some(p => p.type === 'image' || p.type === 'image_url');
-  return {
-    cost: hasVision ? 4 : 1,
-    actionType: hasVision ? 'image' : 'message',
-  };
+  return { cost: hasVision ? 4 : 1, actionType: hasVision ? 'image' : 'message' };
 }
 
 async function deductTokens(userId, cost, actionType) {
@@ -68,11 +55,9 @@ async function deductTokens(userId, cost, actionType) {
     },
     body: JSON.stringify({ p_user_id: userId, p_cost: cost, p_action: actionType }),
   });
-
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     if (err?.message === 'insufficient_tokens') {
-      // Fetch current balance to return to the frontend
       const walletRes = await fetch(
         `${SUPABASE_URL}/rest/v1/token_wallets?user_id=eq.${encodeURIComponent(userId)}&select=balance`,
         { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
@@ -82,47 +67,42 @@ async function deductTokens(userId, cost, actionType) {
     }
     throw new Error('Token system error');
   }
-
   const balanceAfter = await res.json();
   return { ok: true, balanceAfter };
 }
 
-export default async function handler(req) {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 200, headers: corsHeaders() });
-  }
-  if (req.method !== 'POST') return jsonError('Method not allowed', 405);
+export default async function handler(req, res) {
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  // Auth — local JWT verification (<1ms, no network roundtrip)
+  // Auth — local JWT verification via JWKS (<1ms, no network roundtrip)
   let userId;
   try {
-    ({ userId } = await verifyToken(req.headers.get('Authorization')));
+    ({ userId } = await verifyToken(req.headers.authorization));
   } catch {
-    return jsonError('Authentication required', 401);
+    return res.status(401).json({ error: 'Authentication required' });
   }
 
   const apiKey = (process.env.OPENROUTER_API_KEY || process.env.VITE_OPENROUTER_API_KEY)?.trim();
-  if (!apiKey) return jsonError('Service not configured', 500);
+  if (!apiKey) return res.status(500).json({ error: 'Service not configured' });
 
-  let body;
-  try { body = await req.json(); } catch { return jsonError('Invalid JSON body', 400); }
-
-  const { messages, system } = body;
+  const { messages, system } = req.body;
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
-    return jsonError('messages must be a non-empty array', 400);
+    return res.status(400).json({ error: 'messages must be a non-empty array' });
   }
 
-  // Token deduction — atomic via FOR UPDATE stored procedure
+  // Atomic token deduction via FOR UPDATE stored procedure
   const { cost, actionType } = detectCost(messages);
   let balanceAfter;
   try {
     const result = await deductTokens(userId, cost, actionType);
     if (!result.ok) {
-      return jsonError('insufficient_tokens', 402, { balance: result.balance });
+      return res.status(402).json({ error: 'insufficient_tokens', balance: result.balance });
     }
     balanceAfter = result.balanceAfter;
   } catch {
-    return jsonError('Token system error', 500);
+    return res.status(500).json({ error: 'Token system error' });
   }
 
   const upstream = await fetch(OPENROUTER_URL, {
@@ -143,19 +123,26 @@ export default async function handler(req) {
 
   if (!upstream.ok) {
     const err = await upstream.json().catch(() => ({}));
-    if (upstream.status === 429) return jsonError('Rate limit reached. Try again later.', 429);
-    return jsonError(err.error?.message || 'AI service error', upstream.status);
+    if (upstream.status === 429) return res.status(429).json({ error: 'Rate limit reached. Try again later.' });
+    return res.status(upstream.status).json({ error: err.error?.message || 'AI service error' });
   }
 
-  return new Response(upstream.body, {
-    status: 200,
-    headers: {
-      ...corsHeaders(),
-      'Content-Type': 'text/event-stream; charset=utf-8',
-      'Cache-Control': 'no-cache, no-transform',
-      'Connection': 'keep-alive',
-      'X-Accel-Buffering': 'no',
-      'X-Balance-After': String(balanceAfter),
-    },
-  });
+  // Stream the response back — Node.js res.write() pipes chunks as they arrive
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.setHeader('X-Balance-After', String(balanceAfter));
+  res.flushHeaders();
+
+  const reader = upstream.body.getReader();
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      res.write(value);
+    }
+  } finally {
+    res.end();
+  }
 }

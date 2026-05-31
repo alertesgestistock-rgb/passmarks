@@ -290,14 +290,14 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
           const content = await page.getTextContent();
           text += content.items.map(item => item.str).join(' ') + '\n';
         }
-        const extracted = text.trim().substring(0, 4000);
+        const extracted = text.trim().substring(0, 6000);
 
         if (extracted) {
-          setPendingPdf({ name: file.name, text: extracted, images: null });
+          setPendingPdf({ name: file.name, text: extracted, images: null, pageCount: pdf.numPages });
         } else {
-          // 2. PDF scanné → convertir les pages en images (max 2)
+          // 2. PDF scanné → convertir la première page en image pour la vision IA
           const images = [];
-          for (let i = 1; i <= Math.min(pdf.numPages, 2); i++) {
+          for (let i = 1; i <= Math.min(pdf.numPages, 1); i++) {
             const page = await pdf.getPage(i);
             const b64 = await renderPageToBase64(page);
             images.push(b64);
@@ -569,7 +569,9 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
               <div className="flex-1 min-w-0">
                 <p className="text-[12px] text-[#22C55E] font-medium truncate">{pendingPdf.name}</p>
                 <p className="text-[10px] text-[#22C55E]/70">
-                  {pendingPdf.images ? `📷 ${pendingPdf.images.length} page(s) as image` : '📝 Text extracted'}
+                  {pendingPdf.images
+                    ? `Scanned — page 1 sent as image`
+                    : `Text extracted · ${pendingPdf.pageCount ?? '?'} page(s)`}
                 </p>
               </div>
               <button onClick={() => setPendingPdf(null)} className="shrink-0 text-[#22C55E]/60 hover:text-[#22C55E]">
