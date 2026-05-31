@@ -1,13 +1,9 @@
-import { verifyToken } from '../lib/auth.js';
+import { createClient } from '@supabase/supabase-js';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const MODEL = 'anthropic/claude-sonnet-4-5';
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-
-// Node.js Runtime — respects maxDuration: 60 in vercel.json.
-// Edge Runtime caps at 30s on Hobby and ignores maxDuration, which caused
-// timeouts on PDF analysis and long reasoning responses.
 
 function setCors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -76,13 +72,13 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  // Auth — local JWT verification via JWKS (<1ms, no network roundtrip)
-  let userId;
-  try {
-    ({ userId } = await verifyToken(req.headers.authorization));
-  } catch {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
+  // Auth
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'Authentication required' });
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) return res.status(401).json({ error: 'Authentication required' });
 
   const apiKey = (process.env.OPENROUTER_API_KEY || process.env.VITE_OPENROUTER_API_KEY)?.trim();
   if (!apiKey) return res.status(500).json({ error: 'Service not configured' });
@@ -96,7 +92,7 @@ export default async function handler(req, res) {
   const { cost, actionType } = detectCost(messages);
   let balanceAfter;
   try {
-    const result = await deductTokens(userId, cost, actionType);
+    const result = await deductTokens(user.id, cost, actionType);
     if (!result.ok) {
       return res.status(402).json({ error: 'insufficient_tokens', balance: result.balance });
     }
@@ -127,7 +123,7 @@ export default async function handler(req, res) {
     return res.status(upstream.status).json({ error: err.error?.message || 'AI service error' });
   }
 
-  // Stream the response back — Node.js res.write() pipes chunks as they arrive
+  // Stream response back — Node.js Runtime, respects maxDuration: 60 in vercel.json
   res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
   res.setHeader('Cache-Control', 'no-cache, no-transform');
   res.setHeader('Connection', 'keep-alive');
