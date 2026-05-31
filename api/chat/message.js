@@ -78,9 +78,18 @@ function toOpenAIMessages(messages) {
 
 function detectCost(messages) {
   const lastUser = [...messages].reverse().find(m => m.role === 'user');
+
+  // Vision request (scanned PDF pages or image)
   const hasVision = Array.isArray(lastUser?.content) &&
     lastUser.content.some(p => p.type === 'image' || p.type === 'image_url');
-  return { cost: hasVision ? 4 : 1, actionType: hasVision ? 'image' : 'message' };
+  if (hasVision) return { cost: 4, actionType: 'image' };
+
+  // Text PDF — detected by the [PDF: ...] header we inject client-side.
+  // A 30k-char PDF costs ~30 XAF in API calls; charge 4 tokens to stay profitable.
+  const textContent = typeof lastUser?.content === 'string' ? lastUser.content : '';
+  if (textContent.startsWith('[PDF:')) return { cost: 4, actionType: 'pdf' };
+
+  return { cost: 1, actionType: 'message' };
 }
 
 async function deductTokens(userId, cost, actionType) {
