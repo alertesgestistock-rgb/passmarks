@@ -75,9 +75,16 @@ export function Sidebar({ activeTab, setActiveTab }) {
   );
 }
 
+function getInitials(name) {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  return name.substring(0, 2).toUpperCase();
+}
+
 export function TopNav({ setActiveTab }) {
   const { theme, toggleTheme } = useTheme();
-  const { tokenBalance } = useUser();
+  const { user, tokenBalance } = useUser();
   const [showCalc, setShowCalc] = useState(false);
   const [showTokenShop, setShowTokenShop] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -159,9 +166,13 @@ export function TopNav({ setActiveTab }) {
 
           <button
             onClick={() => setActiveTab('profile')}
-            className="w-[36px] h-[36px] rounded-full bg-gradient-to-br from-[#22C55E] to-[#16A34A] flex items-center justify-center text-white text-[14px] font-bold shadow-md hover:brightness-110 scale-on-click"
+            className="w-[36px] h-[36px] rounded-full overflow-hidden bg-gradient-to-br from-[#22C55E] to-[#16A34A] flex items-center justify-center text-white text-[14px] font-bold shadow-md hover:brightness-110 scale-on-click shrink-0"
           >
-            CO
+            {user?.avatarUrl ? (
+              <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+            ) : (
+              getInitials(user?.name)
+            )}
           </button>
         </div>
       </div>
