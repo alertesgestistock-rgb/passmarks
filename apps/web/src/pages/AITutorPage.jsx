@@ -244,9 +244,19 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
         const pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(ev.target.result) }).promise;
         const totalPages = pdf.numPages;
 
+        // ── Limite stricte : 10 pages maximum ────────────────────────────
+        if (totalPages > 10) {
+          setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: `This PDF has ${totalPages} pages — too long to analyze completely.\n\nPassMark can only solve PDFs of **10 pages or less** (GCE past papers are usually 2–6 pages).\n\n**What to do:**\n- If you want help with specific questions, take a **screenshot** of those pages and send it as an image 📷\n- Or upload only the relevant section of your PDF`,
+            isError: false,
+            timestamp: new Date().toISOString(),
+          }]);
+          setPdfLoading(false);
+          return;
+        }
+
         // ── Chemin 1 : PDF numérique (texte sélectionnable) ──────────────
-        // Extrait TOUTES les pages, limite à 30 000 caractères
-        // (~8 000 mots = un paper complet de 12 questions)
         let text = '';
         for (let i = 1; i <= totalPages; i++) {
           const page = await pdf.getPage(i);
@@ -256,20 +266,16 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
         const extracted = text.trim().substring(0, 30000);
 
         if (extracted.length > 50) {
-          const truncated = text.trim().length > 30000;
           setPendingPdf({
             name: file.name,
             text: extracted,
             images: null,
             pageCount: totalPages,
-            truncated,
           });
         } else {
           // ── Chemin 2 : PDF scanné (images) ────────────────────────────
-          // Rend jusqu'à 4 pages en JPEG (~300KB total, sous la limite Vercel)
-          const maxPages = Math.min(totalPages, 4);
           const images = [];
-          for (let i = 1; i <= maxPages; i++) {
+          for (let i = 1; i <= Math.min(totalPages, 4); i++) {
             const page = await pdf.getPage(i);
             const b64 = await renderPageToBase64(page);
             images.push(b64);
@@ -576,10 +582,8 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
                 <p className="text-[12px] text-[#22C55E] font-medium truncate">{pendingPdf.name}</p>
                 <p className="text-[10px] text-[#22C55E]/70">
                   {pendingPdf.images
-                    ? `${pendingPdf.images.length}/${pendingPdf.pageCount} page(s) sent as image`
-                    : pendingPdf.truncated
-                      ? `⚠ Text truncated — ${pendingPdf.pageCount} page(s)`
-                      : `All ${pendingPdf.pageCount} page(s) extracted`}
+                    ? `${pendingPdf.images.length}/${pendingPdf.pageCount} page(s) · scanned`
+                    : `${pendingPdf.pageCount} page(s) · text extracted`}
                 </p>
               </div>
               <button onClick={() => setPendingPdf(null)} className="shrink-0 text-[#22C55E]/60 hover:text-[#22C55E]">
