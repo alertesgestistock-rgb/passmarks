@@ -104,16 +104,16 @@ const SCI_ROWS = [
 
 function CBtn({ label, type = 'digit', wide = false, onClick }) {
   const styles = {
-    digit:  'bg-[#1E293B] text-white text-[18px]',
-    op:     'bg-[#22C55E]/20 text-[#4ADE80] text-[18px] font-bold',
-    equal:  'bg-[#22C55E] text-[#052e16] text-[20px] font-bold',
-    clear:  'bg-[#EF4444]/20 text-[#F87171] text-[14px] font-bold',
-    back:   'bg-[#334155] text-[#94A3B8] text-[15px]',
-    pct:    'bg-[#334155] text-[#94A3B8] text-[15px]',
-    sign:   'bg-[#334155] text-[#94A3B8] text-[15px]',
-    fn:     'bg-[#3B82F6]/15 text-[#93C5FD] text-[11px] font-semibold',
-    const:  'bg-[#A855F7]/15 text-[#C4B5FD] text-[13px] font-semibold',
-    paren:  'bg-[#475569]/40 text-[#94A3B8] text-[15px]',
+    digit: 'bg-slate-100 dark:bg-[#1E293B] text-slate-800 dark:text-white text-[18px]',
+    op:    'bg-[#22C55E]/20 text-[#22C55E] dark:text-[#4ADE80] text-[18px] font-bold',
+    equal: 'bg-[#22C55E] text-[#052e16] text-[20px] font-bold',
+    clear: 'bg-red-100 dark:bg-[#EF4444]/20 text-red-500 dark:text-[#F87171] text-[14px] font-bold',
+    back:  'bg-slate-200 dark:bg-[#334155] text-slate-500 dark:text-[#94A3B8] text-[15px]',
+    pct:   'bg-slate-200 dark:bg-[#334155] text-slate-500 dark:text-[#94A3B8] text-[15px]',
+    sign:  'bg-slate-200 dark:bg-[#334155] text-slate-500 dark:text-[#94A3B8] text-[15px]',
+    fn:    'bg-blue-50 dark:bg-[#3B82F6]/15 text-blue-500 dark:text-[#93C5FD] text-[11px] font-semibold',
+    const: 'bg-purple-50 dark:bg-[#A855F7]/15 text-purple-500 dark:text-[#C4B5FD] text-[13px] font-semibold',
+    paren: 'bg-slate-200/60 dark:bg-[#475569]/40 text-slate-500 dark:text-[#94A3B8] text-[15px]',
   };
   return (
     <button
@@ -168,31 +168,27 @@ function StandardCalc({ scientific }) {
     }
     if (type === 'paren') return { ...prev, expr: e + label };
 
-    // digit or dot
     const base = ev ? '0' : d;
     const newE  = ev ? '' : e;
     if (label === '.') return { display: base.includes('.') ? base : base + '.', expr: newE, evaled: false };
     return { display: base === '0' ? label : base + label, expr: newE, evaled: false };
   }), []);
 
-  // ── Keyboard support ─────────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e) => {
-      // Don't intercept when typing in input/textarea
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-
-      if (e.key >= '0' && e.key <= '9')    { press(e.key, 'digit'); return; }
-      if (e.key === '.' || e.key === ',')   { press('.', 'digit'); return; }
-      if (e.key === '+')                    { press('+', 'op'); return; }
-      if (e.key === '-')                    { press('−', 'op'); return; }
-      if (e.key === '*')                    { press('×', 'op'); return; }
-      if (e.key === '/')                    { e.preventDefault(); press('÷', 'op'); return; }
+      if (e.key >= '0' && e.key <= '9')      { press(e.key, 'digit'); return; }
+      if (e.key === '.' || e.key === ',')    { press('.', 'digit'); return; }
+      if (e.key === '+')                     { press('+', 'op'); return; }
+      if (e.key === '-')                     { press('−', 'op'); return; }
+      if (e.key === '*')                     { press('×', 'op'); return; }
+      if (e.key === '/')                     { e.preventDefault(); press('÷', 'op'); return; }
       if (e.key === 'Enter' || e.key === '=') { e.preventDefault(); press('=', 'equal'); return; }
-      if (e.key === 'Backspace')            { press('⌫', 'back'); return; }
-      if (e.key === 'Delete')               { press('C', 'clear'); return; }
-      if (e.key === '%')                    { press('%', 'pct'); return; }
-      if (e.key === '(' && scientific)      { press('(', 'paren'); return; }
-      if (e.key === ')' && scientific)      { press(')', 'paren'); return; }
+      if (e.key === 'Backspace')             { press('⌫', 'back'); return; }
+      if (e.key === 'Delete')                { press('C', 'clear'); return; }
+      if (e.key === '%')                     { press('%', 'pct'); return; }
+      if (e.key === '(' && scientific)       { press('(', 'paren'); return; }
+      if (e.key === ')' && scientific)       { press(')', 'paren'); return; }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -201,10 +197,10 @@ function StandardCalc({ scientific }) {
   return (
     <div>
       {/* Display */}
-      <div className="bg-[#0F172A] rounded-xl p-4 mb-3 text-right select-text cursor-text">
-        <div className="text-[11px] text-slate-500 min-h-[16px] truncate font-mono">{s.expr || '\u00A0'}</div>
+      <div className="bg-slate-100 dark:bg-[#0F172A] rounded-xl p-4 mb-3 text-right select-text cursor-text">
+        <div className="text-[11px] text-slate-400 dark:text-slate-500 min-h-[16px] truncate font-mono">{s.expr || ' '}</div>
         <div className={cn(
-          'text-white font-mono font-bold mt-1 truncate transition-all',
+          'text-slate-900 dark:text-white font-mono font-bold mt-1 truncate transition-all',
           s.display.length > 14 ? 'text-[18px]' :
           s.display.length > 10 ? 'text-[24px]' :
           s.display.length > 7  ? 'text-[28px]' : 'text-[36px]'
@@ -241,16 +237,16 @@ function StandardCalc({ scientific }) {
 function InputField({ label, value, onChange, suffix }) {
   return (
     <div>
-      <label className="text-[11px] text-slate-400 mb-1 block">{label}</label>
-      <div className="flex items-center bg-[#0F172A] rounded-lg px-3 h-10 border border-[#1E293B] focus-within:border-[#22C55E] transition-colors gap-2">
+      <label className="text-[11px] text-slate-500 dark:text-slate-400 mb-1 block">{label}</label>
+      <div className="flex items-center bg-slate-100 dark:bg-[#0F172A] rounded-lg px-3 h-10 border border-slate-200 dark:border-[#1E293B] focus-within:border-[#22C55E] transition-colors gap-2">
         <input
           type="number"
           value={value}
           onChange={e => onChange(e.target.value)}
-          className="flex-1 bg-transparent text-white text-[14px] outline-none placeholder:text-slate-600"
+          className="flex-1 bg-transparent text-slate-900 dark:text-white text-[14px] outline-none placeholder:text-slate-400 dark:placeholder:text-slate-600"
           placeholder="0"
         />
-        {suffix && <span className="text-slate-500 text-[12px] shrink-0">{suffix}</span>}
+        {suffix && <span className="text-slate-400 dark:text-slate-500 text-[12px] shrink-0">{suffix}</span>}
       </div>
     </div>
   );
@@ -258,9 +254,14 @@ function InputField({ label, value, onChange, suffix }) {
 
 function ResultRow({ label, value, highlight }) {
   return (
-    <div className={cn('rounded-lg p-2.5', highlight ? 'bg-[#22C55E]/15 border border-[#22C55E]/30' : 'bg-[#0F172A]')}>
-      <div className="text-[10px] text-slate-500">{label}</div>
-      <div className={cn('text-[15px] font-bold font-mono mt-0.5', highlight ? 'text-[#4ADE80]' : 'text-white')}>{value}</div>
+    <div className={cn(
+      'rounded-lg p-2.5',
+      highlight
+        ? 'bg-[#22C55E]/15 border border-[#22C55E]/30'
+        : 'bg-slate-100 dark:bg-[#0F172A]'
+    )}>
+      <div className="text-[10px] text-slate-400 dark:text-slate-500">{label}</div>
+      <div className={cn('text-[15px] font-bold font-mono mt-0.5', highlight ? 'text-[#22C55E]' : 'text-slate-900 dark:text-white')}>{value}</div>
     </div>
   );
 }
@@ -273,6 +274,27 @@ function ActionBtn({ label, onClick }) {
     >
       {label}
     </button>
+  );
+}
+
+function SubTabBar({ tabs, active, onChange }) {
+  return (
+    <div className="flex gap-1 p-1 bg-slate-100 dark:bg-[#0F172A] rounded-xl mb-4">
+      {tabs.map(t => (
+        <button
+          key={t.id ?? t.val}
+          onClick={() => onChange(t.id ?? t.val)}
+          className={cn(
+            'flex-1 h-8 rounded-lg text-[11px] font-medium transition-all whitespace-nowrap',
+            (active === (t.id ?? t.val))
+              ? 'bg-[#22C55E] text-[#052e16]'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+          )}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -392,23 +414,14 @@ function TVASection() {
 
   return (
     <div className="space-y-3">
-      <div className="flex gap-1 p-1 bg-[#0F172A] rounded-xl">
-        {[{ label: 'Montant HT', val: true }, { label: 'Montant TTC', val: false }].map(o => (
-          <button
-            key={String(o.val)}
-            onClick={() => setIsHT(o.val)}
-            className={cn(
-              'flex-1 h-8 rounded-lg text-[12px] font-medium transition-all',
-              isHT === o.val ? 'bg-[#22C55E] text-[#052e16]' : 'text-slate-400 hover:text-slate-200'
-            )}
-          >
-            {o.label}
-          </button>
-        ))}
-      </div>
+      <SubTabBar
+        tabs={[{ id: true, label: 'Montant HT' }, { id: false, label: 'Montant TTC' }]}
+        active={isHT}
+        onChange={v => setIsHT(v === true || v === 'true')}
+      />
       <InputField label={isHT ? 'Montant HT' : 'Montant TTC'} value={amount} onChange={setAmount} suffix="FCFA" />
       <InputField label="Taux TVA" value={tvaRate} onChange={setTvaRate} suffix="%" />
-      <p className="text-[10px] text-slate-600">💡 TVA par défaut : Cameroun 19.25%</p>
+      <p className="text-[10px] text-slate-400 dark:text-slate-600">💡 TVA par défaut : Cameroun 19.25%</p>
       <ActionBtn label="Calculer" onClick={calc} />
       {res && (
         <div className="space-y-1.5">
@@ -433,20 +446,7 @@ function FinancialCalc() {
 
   return (
     <div>
-      <div className="flex gap-1 p-1 bg-[#0F172A] rounded-xl mb-4">
-        {tabs.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={cn(
-              'flex-1 h-8 rounded-lg text-[11px] font-medium transition-all whitespace-nowrap',
-              tab === t.id ? 'bg-[#22C55E] text-[#052e16]' : 'text-slate-400 hover:text-slate-200'
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <SubTabBar tabs={tabs} active={tab} onChange={setTab} />
       {tab === 'pct'      && <PctSection />}
       {tab === 'margin'   && <MarginSection />}
       {tab === 'interest' && <InterestSection />}
@@ -492,7 +492,7 @@ function StatisticsCalc() {
   return (
     <div className="space-y-3">
       <div>
-        <label className="text-[11px] text-slate-400 mb-1.5 block">
+        <label className="text-[11px] text-slate-500 dark:text-slate-400 mb-1.5 block">
           Données (virgule, espace ou point-virgule)
         </label>
         <textarea
@@ -500,10 +500,10 @@ function StatisticsCalc() {
           onChange={e => setInput(e.target.value)}
           placeholder="Ex: 12, 15, 18, 22, 9, 31..."
           rows={3}
-          className="w-full bg-[#0F172A] text-white text-[14px] rounded-xl p-3 outline-none border border-[#1E293B] focus:border-[#22C55E] resize-none placeholder:text-slate-600 font-mono transition-colors"
+          className="w-full bg-slate-100 dark:bg-[#0F172A] text-slate-900 dark:text-white text-[14px] rounded-xl p-3 outline-none border border-slate-200 dark:border-[#1E293B] focus:border-[#22C55E] resize-none placeholder:text-slate-400 dark:placeholder:text-slate-600 font-mono transition-colors"
         />
       </div>
-      {error && <p className="text-[12px] text-[#F87171]">{error}</p>}
+      {error && <p className="text-[12px] text-red-500 dark:text-[#F87171]">{error}</p>}
       <button
         onClick={calculate}
         className="w-full h-10 bg-[#22C55E] text-[#052e16] rounded-xl font-bold text-[14px] hover:brightness-110 active:scale-95 transition-all"
@@ -512,14 +512,14 @@ function StatisticsCalc() {
       </button>
       {stats && (
         <div className="space-y-2">
-          <p className="text-[11px] text-slate-500">
+          <p className="text-[11px] text-slate-400 dark:text-slate-500">
             {stats.n} valeur{stats.n > 1 ? 's' : ''} analysée{stats.n > 1 ? 's' : ''}
           </p>
           <div className="grid grid-cols-2 gap-1.5">
             {ITEMS.map(({ label, value }) => (
-              <div key={label} className="bg-[#0F172A] rounded-lg p-2.5">
-                <div className="text-[10px] text-slate-500">{label}</div>
-                <div className="text-[14px] font-bold text-white font-mono">{value}</div>
+              <div key={label} className="bg-slate-100 dark:bg-[#0F172A] rounded-lg p-2.5">
+                <div className="text-[10px] text-slate-400 dark:text-slate-500">{label}</div>
+                <div className="text-[14px] font-bold text-slate-900 dark:text-white font-mono">{value}</div>
               </div>
             ))}
           </div>
@@ -543,7 +543,6 @@ const MODES = [
 export default function Calculator({ onClose }) {
   const [mode, setMode] = useState('standard');
 
-  // Close on Escape
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handler);
@@ -557,7 +556,8 @@ export default function Calculator({ onClose }) {
     >
       <div
         className={cn(
-          'bg-[#1E293B] border border-[#334155]/80 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full',
+          'bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/80',
+          'rounded-t-2xl sm:rounded-2xl shadow-2xl w-full',
           'max-h-[92vh] flex flex-col overflow-hidden',
           mode === 'scientific' ? 'sm:max-w-[460px]' : 'sm:max-w-[380px]'
         )}
@@ -565,7 +565,7 @@ export default function Calculator({ onClose }) {
       >
         {/* Handle bar (mobile) */}
         <div className="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
-          <div className="w-10 h-1 rounded-full bg-[#334155]" />
+          <div className="w-10 h-1 rounded-full bg-slate-200 dark:bg-[#334155]" />
         </div>
 
         {/* Header */}
@@ -574,11 +574,11 @@ export default function Calculator({ onClose }) {
             <div className="w-8 h-8 rounded-lg bg-[#22C55E]/10 flex items-center justify-center text-[#22C55E]">
               <CalcIcon size={16} />
             </div>
-            <h2 className="text-white font-bold text-[15px]">Calculatrice</h2>
+            <h2 className="text-slate-900 dark:text-white font-bold text-[15px]">Calculatrice</h2>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-[#0F172A] transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#0F172A] transition-colors"
           >
             <X size={16} />
           </button>
@@ -594,7 +594,7 @@ export default function Calculator({ onClose }) {
                 'whitespace-nowrap px-3 py-1.5 rounded-full text-[12px] font-medium transition-all shrink-0',
                 mode === m.id
                   ? 'bg-[#22C55E] text-[#052e16] shadow-sm'
-                  : 'bg-[#0F172A] text-slate-400 hover:text-white'
+                  : 'bg-slate-100 dark:bg-[#0F172A] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               )}
             >
               {m.label}
@@ -603,7 +603,7 @@ export default function Calculator({ onClose }) {
         </div>
 
         {/* Divider */}
-        <div className="h-px bg-[#334155]/50 mx-4 mb-3 shrink-0" />
+        <div className="h-px bg-slate-200 dark:bg-[#334155]/50 mx-4 mb-3 shrink-0" />
 
         {/* Content */}
         <div className="px-4 pb-5 overflow-y-auto">
