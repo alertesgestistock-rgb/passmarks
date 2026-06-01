@@ -156,10 +156,15 @@ export default function PastPapersPage({ navigate }) {
 
     supabase.storage.from('past-papers').createSignedUrl(path, 1800)
       .then(({ data, error }) => {
-        if (!error && data?.signedUrl) setSignedUrl(data.signedUrl);
+        // Use signed URL if available, otherwise fall back to public URL
+        setSignedUrl((!error && data?.signedUrl) ? data.signedUrl : selectedPaper.url);
         setPdfLoading(false);
       })
-      .catch(() => setPdfLoading(false));
+      .catch(() => {
+        // Fall back to public URL on any error (e.g. expired session)
+        setSignedUrl(selectedPaper.url);
+        setPdfLoading(false);
+      });
   }, [selectedPaper, view]);
 
   const handleOpenSubject = (sub) => {
