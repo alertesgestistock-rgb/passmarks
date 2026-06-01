@@ -55,6 +55,7 @@ export const UserProvider = ({ children }) => {
 
   useEffect(() => {
     let cancelled = false;
+    let initialized = false; // évite le double appel init() + SIGNED_IN
 
     const loadFromSession = async (session) => {
       if (!session) return false;
@@ -92,6 +93,7 @@ export const UserProvider = ({ children }) => {
     const init = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       await loadFromSession(session);
+      initialized = true;
       if (!cancelled) setIsLoading(false);
     };
 
@@ -99,7 +101,8 @@ export const UserProvider = ({ children }) => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN') {
-        await loadFromSession(session);
+        // Ignorer le SIGNED_IN qui suit immédiatement init() — même session
+        if (initialized) await loadFromSession(session);
         setIsLoading(false);
       }
       if (event === 'SIGNED_OUT') {
