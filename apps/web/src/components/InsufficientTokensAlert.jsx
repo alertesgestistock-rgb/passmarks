@@ -1,11 +1,7 @@
 import React from 'react';
 import { Coins, ShoppingCart } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 
 export default function InsufficientTokensAlert({ onBuyTokens }) {
-  const { i18n } = useTranslation();
-  const fr = i18n.language === 'fr';
-
   return (
     <div style={{
       margin: '8px 0',
@@ -28,12 +24,10 @@ export default function InsufficientTokensAlert({ onBuyTokens }) {
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: '#F1F5F9' }}>
-          {fr ? 'Tokens insuffisants' : 'Not enough tokens'}
+          Not enough tokens
         </div>
         <div style={{ fontSize: 12, color: '#94A3B8', marginTop: 2 }}>
-          {fr
-            ? 'Rechargez pour continuer à utiliser le tuteur IA.'
-            : 'Top up to keep using the AI tutor.'}
+          Top up to keep using the AI tutor.
         </div>
       </div>
 
@@ -49,7 +43,7 @@ export default function InsufficientTokensAlert({ onBuyTokens }) {
         }}
       >
         <ShoppingCart size={13} />
-        {fr ? 'Acheter' : 'Buy tokens'}
+        Buy tokens
       </button>
     </div>
   );

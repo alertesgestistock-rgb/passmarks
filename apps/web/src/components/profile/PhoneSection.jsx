@@ -68,7 +68,7 @@ export default function PhoneSection() {
         setClaimed(true);
       }
     } catch (err) {
-      setError('Une erreur est survenue. Réessayez.');
+      setError('Something went wrong. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -83,20 +83,20 @@ export default function PhoneSection() {
         </div>
         <div>
           <div className="text-[14px] font-semibold text-slate-900 dark:text-white">
-            Numéro de téléphone
+            Phone number
           </div>
           {!claimed && (
             <div className="flex items-center gap-1 mt-0.5">
               <Gift size={11} className="text-[#F97316]" />
               <span className="text-[11px] text-[#F97316] font-medium">
-                Ajoutez votre numéro → recevez 25 tokens offerts
+                Add your number → get 25 free tokens
               </span>
             </div>
           )}
           {claimed && (
             <div className="text-[11px] text-[#22C55E] font-medium mt-0.5">
-              ✓ Numéro enregistré
-            </div>
+              ✓ Number saved
+</div>
           )}
         </div>
       </div>
@@ -160,10 +160,10 @@ export default function PhoneSection() {
             : 'text-[#F97316]'
         }`}>
           {phone.length === 0
-            ? `${selectedCountry.digits} chiffres sans indicateur`
+            ? `${selectedCountry.digits} digits without country code`
             : isValidFormat
-            ? '✓ Format correct'
-            : `${phone.length}/${selectedCountry.digits} chiffres`}
+            ? '✓ Correct format'
+            : `${phone.length}/${selectedCountry.digits} digits`}
         </span>
       </div>
 
@@ -180,8 +180,8 @@ export default function PhoneSection() {
         {saving
           ? <Loader2 size={16} className="animate-spin" />
           : claimed
-          ? '✓ Numéro enregistré'
-          : <><Gift size={15} /> Valider et recevoir 25 tokens</>}
+          ? '✓ Number saved'
+          : <><Gift size={15} /> Confirm and get 25 free tokens</>}
       </button>
     </div>
   );
