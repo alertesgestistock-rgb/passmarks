@@ -1,0 +1,128 @@
+
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import * as pdfjsLib from 'pdfjs-dist';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).href;
+
+export default function PDFViewer({ url, watermark }) {
+  const containerRef = useRef(null);
+  const pdfRef       = useRef(null);
+  const renderRef    = useRef(null); // cancel flag
+  const [numPages, setNumPages] = useState(0);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState(null);
+
+  // Render all pages on canvas with watermark
+  const renderAll = useCallback(async (pdf) => {
+    if (!containerRef.current) return;
+    const container = containerRef.current;
+    container.innerHTML = '';
+
+    const containerWidth = container.clientWidth || 340;
+    const cancelled = { value: false };
+    renderRef.current = cancelled;
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      if (cancelled.value) break;
+
+      const page     = await pdf.getPage(i);
+      const baseView = page.getViewport({ scale: 1 });
+      const scale    = containerWidth / baseView.width;
+      const viewport = page.getViewport({ scale });
+
+      // Canvas
+      const canvas    = document.createElement('canvas');
+      canvas.width    = viewport.width;
+      canvas.height   = viewport.height;
+      canvas.style.cssText = 'width:100%;display:block;margin-bottom:6px;border-radius:6px;background:#fff';
+
+      container.appendChild(canvas);
+
+      const ctx = canvas.getContext('2d');
+
+      // Render PDF page
+      await page.render({ canvasContext: ctx, viewport }).promise;
+
+      if (cancelled.value) break;
+
+      // Draw watermark grid on top
+      if (watermark) {
+        ctx.save();
+        ctx.globalAlpha = 0.11;
+        ctx.fillStyle   = '#334155';
+        const fontSize  = Math.max(11, viewport.width * 0.022);
+        ctx.font        = `500 ${fontSize}px system-ui, sans-serif`;
+        const text      = `PassMark · ${watermark}`;
+        const cols      = 4;
+        const rows      = 6;
+        const spacingX  = viewport.width  / cols;
+        const spacingY  = viewport.height / rows;
+
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            ctx.save();
+            ctx.translate(spacingX * c + spacingX / 2, spacingY * r + spacingY / 2);
+            ctx.rotate(-Math.PI / 7);
+            ctx.fillText(text, -ctx.measureText(text).width / 2, 0);
+            ctx.restore();
+          }
+        }
+        ctx.restore();
+      }
+    }
+  }, [watermark]);
+
+  // Load PDF when url changes
+  useEffect(() => {
+    if (!url) return;
+    if (renderRef.current) renderRef.current.value = true;
+
+    setLoading(true);
+    setError(null);
+    setNumPages(0);
+
+    const task = pdfjsLib.getDocument({ url, withCredentials: false });
+
+    task.promise
+      .then(pdf => {
+        pdfRef.current = pdf;
+        setNumPages(pdf.numPages);
+        setLoading(false);
+        renderAll(pdf);
+      })
+      .catch(err => {
+        setError(err.message || 'Failed to load PDF');
+        setLoading(false);
+      });
+
+    return () => {
+      task.destroy?.();
+      if (renderRef.current) renderRef.current.value = true;
+    };
+  }, [url, renderAll]);
+
+  if (loading) return (
+    <div className="flex-1 flex flex-col items-center justify-center gap-3">
+      <div className="w-8 h-8 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin" />
+      <span className="text-[12px] text-slate-400 dark:text-[#64748B]">Loading paper...</span>
+    </div>
+  );
+
+  if (error) return (
+    <div className="flex-1 flex items-center justify-center">
+      <p className="text-[13px] text-red-400">Unable to load paper. Try again.</p>
+    </div>
+  );
+
+  return (
+    <div
+      ref={containerRef}
+      className="flex-1 overflow-y-auto overflow-x-hidden p-2"
+      style={{ WebkitOverflowScrolling: 'touch' }}
+      onContextMenu={e => e.preventDefault()}
+    />
+  );
+}

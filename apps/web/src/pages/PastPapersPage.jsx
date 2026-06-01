@@ -4,6 +4,7 @@ import { Search, ChevronRight, ArrowLeft, FileText, Lock, Sparkles } from 'lucid
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { useUser } from '@/contexts/UserContext';
+import PDFViewer from '@/components/PDFViewer';
 
 const SOURCES = [
   { key: 'GCE_BOARD',  label: 'GCE Board' },
@@ -205,58 +206,17 @@ export default function PastPapersPage({ navigate }) {
           </button>
         </div>
 
-        {/* PDF viewer with protections */}
-        <div
-          className="flex-1 rounded-2xl overflow-hidden border border-slate-200 dark:border-[#334155]/50 bg-slate-100 dark:bg-[#0F172A] relative"
-          onContextMenu={e => e.preventDefault()}
-        >
-          {pdfLoading && (
-            <div className="absolute inset-0 flex items-center justify-center z-10">
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-8 h-8 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin" />
-                <span className="text-[12px] text-slate-400 dark:text-[#64748B]">Loading paper...</span>
-              </div>
+        {/* PDF viewer — PDF.js canvas rendering */}
+        <div className="flex-1 rounded-2xl overflow-hidden border border-slate-200 dark:border-[#334155]/50 bg-slate-100 dark:bg-[#0F172A] flex flex-col">
+          {pdfLoading ? (
+            <div className="flex-1 flex flex-col items-center justify-center gap-3">
+              <div className="w-8 h-8 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin" />
+              <span className="text-[12px] text-slate-400 dark:text-[#64748B]">Loading paper...</span>
             </div>
-          )}
-
-          {/* Watermark overlay — user email repeated diagonally */}
-          {signedUrl && (
-            <div
-              className="absolute inset-0 z-10 overflow-hidden select-none"
-              style={{ pointerEvents: 'none' }}
-            >
-              {Array.from({ length: 24 }).map((_, i) => (
-                <div
-                  key={i}
-                  style={{
-                    position: 'absolute',
-                    top: `${(i * 13) % 110 - 10}%`,
-                    left: `${(i * 17) % 110 - 10}%`,
-                    transform: 'rotate(-30deg)',
-                    color: 'rgba(100,116,139,0.13)',
-                    fontSize: '13px',
-                    whiteSpace: 'nowrap',
-                    fontFamily: 'system-ui, sans-serif',
-                    fontWeight: 500,
-                    letterSpacing: '0.05em',
-                  }}
-                >
-                  PassMark · {watermark}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* iframe — signed URL + toolbar hidden */}
-          {signedUrl ? (
-            <iframe
-              src={`${signedUrl}#toolbar=0&navpanes=0&view=FitH`}
-              title={`${selectedSubject.subject} P${selectedPaper.paper_number} ${selectedPaper.year}`}
-              className="w-full h-full"
-              style={{ border: 'none', display: 'block' }}
-            />
-          ) : !pdfLoading && (
-            <div className="absolute inset-0 flex items-center justify-center">
+          ) : signedUrl ? (
+            <PDFViewer url={signedUrl} watermark={watermark} />
+          ) : (
+            <div className="flex-1 flex items-center justify-center">
               <p className="text-[13px] text-slate-400 dark:text-[#64748B]">Unable to load paper. Try again.</p>
             </div>
           )}
