@@ -6,7 +6,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useUser } from '@/contexts/UserContext';
 import { supabase } from '@/lib/supabase';
-import { apiServerClient, InsufficientTokensError } from '@/lib/apiServerClient';
+import { InsufficientTokensError } from '@/lib/apiServerClient';
 import InsufficientTokensAlert from '@/components/InsufficientTokensAlert';
 import TokenShopModal from '@/components/TokenShopModal';
 
@@ -333,14 +333,19 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
     }]);
     setIsLoading(true);
 
-    // Abort après 55 secondes — évite les dots infinis si l'API ne répond pas
+    // Abort après 140 secondes — EF Supabase supporte jusqu'à 150s
     const abortCtrl = new AbortController();
-    const abortTimer = setTimeout(() => abortCtrl.abort(), 55000);
+    const abortTimer = setTimeout(() => abortCtrl.abort(), 140000);
 
     try {
-      const response = await apiServerClient.fetch('/chat/message', {
+      const { data: { session } } = await supabase.auth.getSession();
+      const chatUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
+      const response = await fetch(chatUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({ messages: buildClaudeMessages(messages, text, image, pdf) }),
         signal: abortCtrl.signal,
       });
