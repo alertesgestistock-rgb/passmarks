@@ -109,7 +109,7 @@ function MarkdownText({ content, streaming }) {
 // ─────────────────────────────────────────────────────────────
 // Chat View
 // ─────────────────────────────────────────────────────────────
-function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, onConversationCreated }) {
+function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, onBack, user, showBackButton, onConversationCreated }) {
   const { updateUser, addRecentActivity, updateTokenBalance } = useUser();
 
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -169,7 +169,51 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
   }, [initConvId]);
 
   useEffect(() => {
-    if (initialMessage) handleSend(initialMessage);
+    if (initialMessage && !initialPdfUrl) handleSend(initialMessage);
+  }, []);
+
+  // Charge automatiquement un PDF depuis une URL (bouton "Ask AI" des Past Papers)
+  useEffect(() => {
+    if (!initialPdfUrl || !initialPdfName) return;
+    if (!window.pdfjsLib) return;
+
+    setPdfLoading(true);
+    (async () => {
+      try {
+        const res = await fetch(initialPdfUrl);
+        const buffer = await res.arrayBuffer();
+        const pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise;
+        const totalPages = pdf.numPages;
+
+        // Extraire le texte (PDF numérique)
+        let text = '';
+        for (let i = 1; i <= totalPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          text += content.items.map(item => item.str).join(' ') + '\n';
+        }
+        const extracted = text.trim().substring(0, 30000);
+
+        if (extracted.length > 50) {
+          setPendingPdf({ name: initialPdfName, text: extracted, images: null, pageCount: totalPages });
+        } else {
+          // PDF scanné → rendre en images
+          const images = [];
+          for (let i = 1; i <= Math.min(totalPages, 4); i++) {
+            const page = await pdf.getPage(i);
+            const b64 = await renderPageToBase64(page);
+            images.push(b64);
+          }
+          setPendingPdf({ name: initialPdfName, text: null, images, pageCount: totalPages });
+        }
+        // Auto-envoyer le message initial avec le PDF pré-chargé
+        if (initialMessage) handleSend(initialMessage);
+      } catch {
+        setMessages(prev => [...prev, { role: 'assistant', content: 'Could not load the paper. Please try again.', isError: true, timestamp: new Date().toISOString() }]);
+      } finally {
+        setPdfLoading(false);
+      }
+    })();
   }, []);
 
   const getOrCreateConversation = async (firstText, onCreated) => {
@@ -705,7 +749,7 @@ export default function AITutorPage({ navigate, viewState }) {
   }, [user?.id]);
 
   useEffect(() => {
-    if (viewState?.initialMessage) { setActiveConvId(null); setView('chat'); }
+    if (viewState?.initialMessage || viewState?.initialPdfUrl) { setActiveConvId(null); setView('chat'); }
   }, [viewState]);
 
   const CONV_CACHE_KEY = `pm_convs_${user?.id}`;
@@ -933,6 +977,8 @@ export default function AITutorPage({ navigate, viewState }) {
             key={activeConvId}
             initConvId={activeConvId}
             initialMessage={viewState?.initialMessage}
+            initialPdfUrl={viewState?.initialPdfUrl}
+            initialPdfName={viewState?.initialPdfName}
             onBack={handleBack}
             showBackButton={view === 'chat'}
             user={user}
