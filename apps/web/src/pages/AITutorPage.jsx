@@ -11,6 +11,7 @@ import { InsufficientTokensError } from '@/lib/apiServerClient';
 import InsufficientTokensAlert from '@/components/InsufficientTokensAlert';
 import TokenShopModal from '@/components/TokenShopModal';
 import { downloadMessageAsPDF } from '@/lib/generatePDF';
+import pdfjsLib from '@/lib/pdfjs';
 
 
 const SUGGESTED_QUESTIONS = {
@@ -175,14 +176,12 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
   // Charge automatiquement un PDF depuis une URL (bouton "Ask AI" des Past Papers)
   useEffect(() => {
     if (!initialPdfUrl || !initialPdfName) return;
-    if (!window.pdfjsLib) return;
-
     setPdfLoading(true);
     (async () => {
       try {
         const res = await fetch(initialPdfUrl);
         const buffer = await res.arrayBuffer();
-        const pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise;
+        const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise;
         const totalPages = pdf.numPages;
 
         // Extraire le texte (PDF numérique)
@@ -278,16 +277,12 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
       setMessages(prev => [...prev, { role: 'assistant', content: 'PDF too large (max 15 MB).', isError: true, timestamp: new Date().toISOString() }]);
       return;
     }
-    if (!window.pdfjsLib) {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'PDF reader not available. Please try again in a moment.', isError: true, timestamp: new Date().toISOString() }]);
-      return;
-    }
     setPdfLoading(true);
     setPendingPdf(null);
     const reader = new FileReader();
     reader.onload = async (ev) => {
       try {
-        const pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(ev.target.result) }).promise;
+        const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(ev.target.result) }).promise;
         const totalPages = pdf.numPages;
 
         // ── Limite stricte : 10 pages maximum ────────────────────────────

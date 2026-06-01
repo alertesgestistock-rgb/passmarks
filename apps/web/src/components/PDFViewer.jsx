@@ -1,11 +1,6 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import * as pdfjsLib from 'pdfjs-dist';
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).href;
+import pdfjsLib from '@/lib/pdfjs';
 
 export default function PDFViewer({ url, watermark }) {
   const containerRef = useRef(null);
