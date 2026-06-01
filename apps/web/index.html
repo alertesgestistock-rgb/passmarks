@@ -115,6 +115,16 @@
     <h3>You've used all 10 free questions today 🏆</h3>
     <p>Upgrade to Standard and get unlimited AI help — for less than 2 moto-taxi rides per month.</p>
     <div class="countdown" id="upgrade-countdown">Resets in: --:--:--</div>
+
+    <!-- Phone bonus section — only shown if user hasn't claimed it yet -->
+    <div id="phone-bonus-section" style="display:none; margin: 14px 0; padding: 12px 14px; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); border-radius: 12px; text-align:left;">
+      <div style="font-size:13px; font-weight:700; color:#22C55E; margin-bottom:4px;">🎁 Obtenez 25 tokens gratuits !</div>
+      <div style="font-size:12px; color:#94A3B8; margin-bottom:10px; line-height:1.5;">Ajoutez votre numéro WhatsApp dans votre profil et recevez instantanément 25 tokens offerts — une seule fois.</div>
+      <button onclick="goToProfileForPhone()" style="width:100%; background:#22C55E; color:#052e16; border:none; border-radius:8px; padding:9px 14px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit;">
+        Ajouter mon numéro → recevoir 25 tokens
+      </button>
+    </div>
+
     <button class="btn-upgrade" onclick="window.location.href='/pricing.html'">Upgrade — 1 500 FCFA →</button>
     <button class="btn-close" onclick="closeUpgradeModal()">Continue tomorrow</button>
   </div>
@@ -125,6 +135,24 @@
       document.getElementById('upgrade-modal-overlay').style.display = 'block';
       document.getElementById('upgrade-modal').style.display = 'block';
       startCountdown();
+      // Show phone bonus section only if user hasn't claimed it yet
+      try {
+        const stored = localStorage.getItem('passmark_user');
+        if (stored) {
+          const user = JSON.parse(stored);
+          const hasPhone = user.phone && user.phone.length > 0;
+          if (!hasPhone) {
+            document.getElementById('phone-bonus-section').style.display = 'block';
+          }
+        }
+      } catch(e) {}
+    };
+
+    window.goToProfileForPhone = function() {
+      window.closeUpgradeModal();
+      if (window.passmarkNavigate) {
+        window.passmarkNavigate('profile');
+      }
     };
 
     window.closeUpgradeModal = function() {

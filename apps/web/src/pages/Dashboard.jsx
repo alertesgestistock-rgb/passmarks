@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/Navigation';
 import HomePage from './HomePage';
 import PastPapersPage from './PastPapersPage';
@@ -17,6 +17,12 @@ export default function Dashboard() {
   const navigate = (path, state = null) => {
     setView({ path, state });
   };
+
+  // Expose navigate globally so the HTML upgrade modal can redirect to profile
+  useEffect(() => {
+    window.passmarkNavigate = navigate;
+    return () => { delete window.passmarkNavigate; };
+  }, []);
 
   const renderView = () => {
     switch (view.path) {
