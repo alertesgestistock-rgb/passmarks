@@ -195,21 +195,31 @@ export default async function handler(req, res) {
   }, 15000);
 
   const reader = upstream.body.getReader();
+  let deductPromise = null;
   try {
     while (true) {
       const { value, done } = await reader.read();
       if (done) break;
+
+      // Débiter dès le 1er chunk reçu — l'IA a commencé, on est facturé
+      // Fire-and-forget pour ne pas bloquer le stream
+      if (deductPromise === null) {
+        deductPromise = deductTokens(user.id, cost, actionType);
+      }
+
       res.write(value);
     }
 
-    // Étape 3 : stream terminé avec succès → débiter maintenant
-    const deductResult = await deductTokens(user.id, cost, actionType);
-    if (deductResult.ok) {
-      // Envoyer le nouveau solde au client via un dernier événement SSE
-      res.write(`data: ${JSON.stringify({ b: deductResult.balanceAfter })}\n\n`);
+    // Attendre la déduction et envoyer le nouveau solde
+    if (deductPromise) {
+      const deductResult = await deductPromise;
+      if (deductResult.ok) {
+        res.write(`data: ${JSON.stringify({ b: deductResult.balanceAfter })}\n\n`);
+      }
     }
   } catch {
-    // Stream interrompu — tokens NON débités, l'élève garde son solde
+    // Stream interrompu — si la déduction était lancée elle continue en arrière-plan
+    // L'élève est facturé si l'IA avait commencé à répondre (contenu reçu)
   } finally {
     clearInterval(heartbeat);
     res.end();

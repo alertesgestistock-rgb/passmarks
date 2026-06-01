@@ -134,28 +134,36 @@ serve(async (req: Request) => {
       }, 15000);
 
       const reader = upstream.body!.getReader();
+      let deductPromise: Promise<{ data: unknown; error: unknown }> | null = null;
       try {
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
+
+          // Débiter dès le 1er chunk — l'IA a commencé, on est facturé
+          if (deductPromise === null) {
+            deductPromise = supabase.rpc('deduct_tokens', {
+              p_user_id: user.id,
+              p_cost: cost,
+              p_action: actionType,
+            });
+          }
+
           controller.enqueue(value);
         }
 
-        // ✅ Stream terminé avec succès → débiter les tokens maintenant
-        const { data: newBalance, error: deductError } = await supabase.rpc('deduct_tokens', {
-          p_user_id: user.id,
-          p_cost: cost,
-          p_action: actionType,
-        });
-
-        if (!deductError && typeof newBalance === 'number') {
-          // Envoyer le nouveau solde au client via un événement SSE final
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ b: newBalance })}\n\n`),
-          );
+        // Attendre la déduction et envoyer le nouveau solde
+        if (deductPromise) {
+          const { data: newBalance, error: deductError } = await deductPromise;
+          if (!deductError && typeof newBalance === 'number') {
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ b: newBalance })}\n\n`),
+            );
+          }
         }
       } catch {
-        // ❌ Stream interrompu — tokens NON débités, l'élève ne perd rien
+        // Stream interrompu — si la déduction était lancée, elle continue en arrière-plan
+        // L'élève est facturé si l'IA avait commencé à répondre
       } finally {
         clearInterval(heartbeat);
         controller.close();
