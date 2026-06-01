@@ -98,15 +98,25 @@ function toOpenAIMessages(messages) {
 function detectCost(messages) {
   const lastUser = [...messages].reverse().find(m => m.role === 'user');
 
-  // Vision request (scanned PDF pages or image)
+  // Vision request (scanned PDF pages or image in last message)
   const hasVision = Array.isArray(lastUser?.content) &&
     lastUser.content.some(p => p.type === 'image' || p.type === 'image_url');
   if (hasVision) return { cost: 4, actionType: 'image' };
 
-  // Text PDF — detected by the [PDF: ...] header we inject client-side.
-  // A 30k-char PDF costs ~30 XAF in API calls; charge 4 tokens to stay profitable.
+  // PDF in last message — charge 4 tokens (heavy input context)
   const textContent = typeof lastUser?.content === 'string' ? lastUser.content : '';
   if (textContent.startsWith('[PDF:')) return { cost: 4, actionType: 'pdf' };
+
+  // Follow-up in a conversation that already contains a PDF or image —
+  // the full PDF is retransmitted to OpenRouter each time, so API cost is
+  // much higher than a plain text message. Charge 2 tokens to cover it.
+  const hasPdfContext = messages.some(m => {
+    if (m.role !== 'user') return false;
+    if (typeof m.content === 'string' && m.content.startsWith('[PDF:')) return true;
+    if (Array.isArray(m.content) && m.content.some(p => p.type === 'image' || p.type === 'image_url')) return true;
+    return false;
+  });
+  if (hasPdfContext) return { cost: 2, actionType: 'message_with_context' };
 
   return { cost: 1, actionType: 'message' };
 }

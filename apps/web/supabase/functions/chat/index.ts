@@ -17,12 +17,27 @@ function jsonError(corsHeaders: Record<string, string>, message: string, status:
 
 function detectCost(messages: unknown[]): { cost: number; actionType: string } {
   const lastUser = [...messages].reverse().find((m: any) => m.role === 'user') as any;
+
+  // Vision in last message
   const hasVision =
     Array.isArray(lastUser?.content) &&
     lastUser.content.some((p: any) => p.type === 'image' || p.type === 'image_url');
   if (hasVision) return { cost: 4, actionType: 'image' };
+
+  // PDF in last message
   const text = typeof lastUser?.content === 'string' ? lastUser.content : '';
   if (text.startsWith('[PDF:')) return { cost: 4, actionType: 'pdf' };
+
+  // Follow-up in a conversation with PDF/image context — full PDF is retransmitted
+  // to OpenRouter each time, so API cost is higher than a plain text message.
+  const hasPdfContext = (messages as any[]).some((m: any) => {
+    if (m.role !== 'user') return false;
+    if (typeof m.content === 'string' && m.content.startsWith('[PDF:')) return true;
+    if (Array.isArray(m.content) && m.content.some((p: any) => p.type === 'image' || p.type === 'image_url')) return true;
+    return false;
+  });
+  if (hasPdfContext) return { cost: 2, actionType: 'message_with_context' };
+
   return { cost: 1, actionType: 'message' };
 }
 
