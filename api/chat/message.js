@@ -94,13 +94,20 @@ function detectCost(messages) {
 
 // Vérifie le solde sans débiter — si l'IA échoue, l'élève ne perd rien
 async function checkBalance(userId, cost) {
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/token_wallets?user_id=eq.${encodeURIComponent(userId)}&select=balance`,
-    { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
-  );
+  let res;
+  try {
+    res = await fetch(
+      `${SUPABASE_URL}/rest/v1/token_wallets?user_id=eq.${encodeURIComponent(userId)}&select=balance`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+    );
+  } catch {
+    // Supabase injoignable (ERR_CONNECTION_CLOSED, réseau instable)
+    // On retourne unreachable pour ne pas afficher "solde insuffisant" à tort
+    return { sufficient: false, balance: null, unreachable: true };
+  }
   const wallets = await res.json().catch(() => []);
   const balance = wallets[0]?.balance ?? 0;
-  return { sufficient: balance >= cost, balance };
+  return { sufficient: balance >= cost, balance, unreachable: false };
 }
 
 // Débite après succès du stream — jamais appelé si l'IA échoue
@@ -143,7 +150,10 @@ export default async function handler(req, res) {
   // Étape 1 : vérifier le solde SANS débiter
   // Si l'IA échoue ensuite, l'élève ne perd aucun token
   const { cost, actionType } = detectCost(messages);
-  const { sufficient, balance } = await checkBalance(user.id, cost);
+  const { sufficient, balance, unreachable } = await checkBalance(user.id, cost);
+  if (unreachable) {
+    return res.status(503).json({ error: 'Service temporarily unavailable. Please try again.' });
+  }
   if (!sufficient) {
     return res.status(402).json({ error: 'insufficient_tokens', balance });
   }
