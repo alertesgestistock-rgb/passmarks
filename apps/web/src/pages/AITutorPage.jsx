@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Send, Image as ImageIcon, FileText, GraduationCap,
   X, ArrowLeft, Plus, MessageSquare, Pencil, Check, PanelLeftClose, PanelLeftOpen,
+  Download,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/contexts/UserContext';
@@ -9,6 +10,7 @@ import { supabase } from '@/lib/supabase';
 import { InsufficientTokensError } from '@/lib/apiServerClient';
 import InsufficientTokensAlert from '@/components/InsufficientTokensAlert';
 import TokenShopModal from '@/components/TokenShopModal';
+import { downloadMessageAsPDF } from '@/lib/generatePDF';
 
 
 const SUGGESTED_QUESTIONS = {
@@ -516,23 +518,40 @@ function ChatView({ initConvId, initialMessage, onBack, user, showBackButton, on
                 <span className="text-[11px] text-[#86efac] truncate max-w-[160px]">{msg.pdfName}</span>
               </div>
             )}
-            <div className={cn(
-              'max-w-[85%] p-4 rounded-2xl leading-relaxed',
-              msg.role === 'user'
-                ? 'bg-[#14532D] text-white rounded-br-sm text-[14px]'
-                : msg.isError
-                  ? 'bg-red-50 dark:bg-[#450a0a] text-red-600 dark:text-[#EF4444] border border-red-200 dark:border-[#7f1d1d] rounded-bl-sm text-[14px]'
-                  : 'bg-slate-100 dark:bg-[#1E293B] text-slate-800 dark:text-[#F1F5F9] rounded-bl-sm border border-slate-200 dark:border-[#334155]/50'
-            )}>
+            <div
+              data-ai-message={idx}
+              className={cn(
+                'max-w-[85%] p-4 rounded-2xl leading-relaxed',
+                msg.role === 'user'
+                  ? 'bg-[#14532D] text-white rounded-br-sm text-[14px]'
+                  : msg.isError
+                    ? 'bg-red-50 dark:bg-[#450a0a] text-red-600 dark:text-[#EF4444] border border-red-200 dark:border-[#7f1d1d] rounded-bl-sm text-[14px]'
+                    : 'bg-slate-100 dark:bg-[#1E293B] text-slate-800 dark:text-[#F1F5F9] rounded-bl-sm border border-slate-200 dark:border-[#334155]/50'
+              )}>
               {msg.role === 'assistant' && !msg.isError
                 ? <MarkdownText content={msg.content} streaming={msg.isStreaming} />
                 : msg.content}
             </div>
-            {msg.timestamp && (
-              <span className="text-[10px] text-slate-400 dark:text-[#64748B] px-1">
-                {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            )}
+            <div className="flex items-center gap-2 px-1">
+              {msg.timestamp && (
+                <span className="text-[10px] text-slate-400 dark:text-[#64748B]">
+                  {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              )}
+              {msg.role === 'assistant' && !msg.isError && !msg.isStreaming && (
+                <button
+                  onClick={() => {
+                    const el = document.querySelector(`[data-ai-message="${idx}"]`);
+                    if (el) downloadMessageAsPDF(el, `passmark-solution-${idx}.pdf`);
+                  }}
+                  title="Download as PDF"
+                  className="flex items-center gap-1 text-[10px] text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  <Download size={11} />
+                  <span>PDF</span>
+                </button>
+              )}
+            </div>
           </div>
         ))}
 
