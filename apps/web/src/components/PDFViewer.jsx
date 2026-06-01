@@ -89,6 +89,7 @@ export default function PDFViewer({ url, watermark }) {
         renderAll(pdf);
       })
       .catch(err => {
+        console.error('[PDFViewer] load error:', err);
         setError(err.message || 'Failed to load PDF');
         setLoading(false);
       });
@@ -107,8 +108,9 @@ export default function PDFViewer({ url, watermark }) {
   );
 
   if (error) return (
-    <div className="flex-1 flex items-center justify-center">
-      <p className="text-[13px] text-red-400">Unable to load paper. Try again.</p>
+    <div className="flex-1 flex flex-col items-center justify-center gap-2 p-4">
+      <p className="text-[13px] text-red-400">Unable to load paper.</p>
+      <p className="text-[11px] text-slate-500 text-center">{error}</p>
     </div>
   );
 
