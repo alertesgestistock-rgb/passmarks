@@ -83,7 +83,8 @@ serve(async (req) => {
 
     const rawCountry = (profile?.phone_country || '237').toString()
     const isoCountry = COUNTRY_MAP[rawCountry] || COUNTRY_MAP[`+${rawCountry}`] || 'CM'
-    const cleanPhone = (profile?.phone || '').replace(/\D/g, '').replace(/^(237|225|221|241|242|243|233|234|33|1)/, '') || '600000000'
+    const rawPhone = (profile?.phone || '').replace(/\D/g, '').replace(/^(237|225|221|241|242|243|233|234|33|1)/, '')
+    const cleanPhone = rawPhone.length >= 8 ? rawPhone : '670000000'
 
     // Enregistrer l'achat en attente
     const { data: purchase } = await supabase
