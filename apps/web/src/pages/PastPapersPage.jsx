@@ -176,7 +176,7 @@ export default function PastPapersPage({ navigate }) {
     const watermark   = user?.email || user?.name || 'PassMark';
 
     return (
-      <div className="fade-in flex flex-col" style={{ height: 'calc(100vh - 140px)' }}>
+      <div className="fade-in flex flex-col" style={{ height: 'calc(100dvh - 130px)', minHeight: '500px' }}>
         {/* Header */}
         <div className="flex items-center gap-3 mb-3 shrink-0">
           <button
@@ -247,11 +247,10 @@ export default function PastPapersPage({ navigate }) {
           {/* iframe — signed URL + toolbar hidden */}
           {signedUrl ? (
             <iframe
-              src={`${signedUrl}#toolbar=0&navpanes=0`}
+              src={`${signedUrl}#toolbar=0&navpanes=0&view=FitH`}
               title={`${selectedSubject.subject} P${selectedPaper.paper_number} ${selectedPaper.year}`}
               className="w-full h-full"
-              style={{ border: 'none' }}
-              sandbox="allow-same-origin allow-scripts"
+              style={{ border: 'none', display: 'block' }}
             />
           ) : !pdfLoading && (
             <div className="absolute inset-0 flex items-center justify-center">
