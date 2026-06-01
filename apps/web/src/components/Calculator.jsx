@@ -16,9 +16,9 @@ function safeEval(expr) {
       .replace(/\^/g, '**');
     // eslint-disable-next-line no-new-func
     const r = Function(`"use strict"; return (${s})`)();
-    if (!isFinite(r) || isNaN(r)) return 'Erreur';
+    if (!isFinite(r) || isNaN(r)) return 'Error';
     return String(parseFloat(r.toFixed(10)));
-  } catch { return 'Erreur'; }
+  } catch { return 'Error'; }
 }
 
 function applyFn(fn, val) {
@@ -39,7 +39,7 @@ function applyFn(fn, val) {
   const fn_ = map[fn];
   if (!fn_) return val;
   const r = fn_();
-  return r === null || r === undefined ? 'Erreur' : String(r);
+  return r === null || r === undefined ? 'Error' : String(r);
 }
 
 function computeStats(numbers) {
@@ -141,7 +141,7 @@ function StandardCalc({ scientific }) {
     const { display: d, expr: e, evaled: ev } = prev;
 
     if (type === 'clear')  return { display: '0', expr: '', evaled: false };
-    if (type === 'back')   return { ...prev, display: d === 'Erreur' ? '0' : d.length > 1 ? d.slice(0, -1) : '0' };
+    if (type === 'back')   return { ...prev, display: d === 'Error' ? '0' : d.length > 1 ? d.slice(0, -1) : '0' };
 
     if (type === 'equal') {
       const full = e + d;
@@ -156,7 +156,7 @@ function StandardCalc({ scientific }) {
       return isNaN(v) ? prev : { ...prev, display: String(v / 100) };
     }
     if (type === 'sign') {
-      if (d === '0' || d === 'Erreur') return prev;
+      if (d === '0' || d === 'Error') return prev;
       return { ...prev, display: d.startsWith('-') ? d.slice(1) : '-' + d };
     }
     if (type === 'fn') {
@@ -316,14 +316,14 @@ function PctSection() {
 
   return (
     <div className="space-y-3">
-      <InputField label="Montant" value={amount} onChange={setAmount} suffix="FCFA" />
-      <InputField label="Pourcentage" value={pct} onChange={setPct} suffix="%" />
-      <ActionBtn label="Calculer" onClick={calc} />
+      <InputField label="Amount" value={amount} onChange={setAmount} suffix="FCFA" />
+      <InputField label="Percentage" value={pct} onChange={setPct} suffix="%" />
+      <ActionBtn label="Calculate" onClick={calc} />
       {res && (
         <div className="space-y-1.5">
-          <ResultRow label={`${pct}% de ${amount}`}            value={`${res.part} FCFA`} />
-          <ResultRow label={`${amount} augmenté de ${pct}%`}   value={`${res.plus} FCFA`} highlight />
-          <ResultRow label={`${amount} réduit de ${pct}%`}     value={`${res.minus} FCFA`} />
+          <ResultRow label={`${pct}% of ${amount}`}              value={`${res.part} FCFA`} />
+          <ResultRow label={`${amount} increased by ${pct}%`}    value={`${res.plus} FCFA`} highlight />
+          <ResultRow label={`${amount} decreased by ${pct}%`}    value={`${res.minus} FCFA`} />
         </div>
       )}
     </div>
@@ -349,14 +349,14 @@ function MarginSection() {
 
   return (
     <div className="space-y-3">
-      <InputField label="Prix d'achat (coût)" value={cost} onChange={setCost} suffix="FCFA" />
-      <InputField label="Prix de vente"        value={sell} onChange={setSell} suffix="FCFA" />
-      <ActionBtn label="Calculer" onClick={calc} />
+      <InputField label="Purchase price (cost)" value={cost} onChange={setCost} suffix="FCFA" />
+      <InputField label="Selling price"         value={sell} onChange={setSell} suffix="FCFA" />
+      <ActionBtn label="Calculate" onClick={calc} />
       {res && (
         <div className="space-y-1.5">
-          <ResultRow label="Bénéfice"                value={`${res.profit} FCFA`} highlight />
-          <ResultRow label="Marge brute"             value={`${res.margin}%`} />
-          <ResultRow label="Markup (taux de marque)" value={`${res.markup}%`} />
+          <ResultRow label="Profit"        value={`${res.profit} FCFA`} highlight />
+          <ResultRow label="Gross margin"  value={`${res.margin}%`} />
+          <ResultRow label="Markup rate"   value={`${res.markup}%`} />
         </div>
       )}
     </div>
@@ -380,16 +380,16 @@ function InterestSection() {
 
   return (
     <div className="space-y-3">
-      <InputField label="Capital initial" value={principal} onChange={setPrincipal} suffix="FCFA" />
-      <InputField label="Taux annuel"     value={rate}      onChange={setRate}      suffix="%" />
-      <InputField label="Durée"           value={years}     onChange={setYears}     suffix="ans" />
-      <ActionBtn label="Calculer" onClick={calc} />
+      <InputField label="Initial capital" value={principal} onChange={setPrincipal} suffix="FCFA" />
+      <InputField label="Annual rate"     value={rate}      onChange={setRate}      suffix="%" />
+      <InputField label="Duration"        value={years}     onChange={setYears}     suffix="yrs" />
+      <ActionBtn label="Calculate" onClick={calc} />
       {res && (
         <div className="grid grid-cols-2 gap-1.5">
-          <ResultRow label="Intérêt simple"   value={`${res.si} FCFA`} />
-          <ResultRow label="Intérêt composé"  value={`${res.ci} FCFA`} />
-          <ResultRow label="Total (simple)"   value={`${res.tsi} FCFA`} highlight />
-          <ResultRow label="Total (composé)"  value={`${res.tci} FCFA`} highlight />
+          <ResultRow label="Simple interest"    value={`${res.si} FCFA`} />
+          <ResultRow label="Compound interest"  value={`${res.ci} FCFA`} />
+          <ResultRow label="Total (simple)"     value={`${res.tsi} FCFA`} highlight />
+          <ResultRow label="Total (compound)"   value={`${res.tci} FCFA`} highlight />
         </div>
       )}
     </div>
@@ -415,19 +415,19 @@ function TVASection() {
   return (
     <div className="space-y-3">
       <SubTabBar
-        tabs={[{ id: true, label: 'Montant HT' }, { id: false, label: 'Montant TTC' }]}
+        tabs={[{ id: true, label: 'Pre-tax (HT)' }, { id: false, label: 'Tax-incl. (TTC)' }]}
         active={isHT}
         onChange={v => setIsHT(v === true || v === 'true')}
       />
-      <InputField label={isHT ? 'Montant HT' : 'Montant TTC'} value={amount} onChange={setAmount} suffix="FCFA" />
-      <InputField label="Taux TVA" value={tvaRate} onChange={setTvaRate} suffix="%" />
-      <p className="text-[10px] text-slate-400 dark:text-slate-600">💡 TVA par défaut : Cameroun 19.25%</p>
-      <ActionBtn label="Calculer" onClick={calc} />
+      <InputField label={isHT ? 'Pre-tax amount (HT)' : 'Tax-inclusive amount (TTC)'} value={amount} onChange={setAmount} suffix="FCFA" />
+      <InputField label="VAT rate" value={tvaRate} onChange={setTvaRate} suffix="%" />
+      <p className="text-[10px] text-slate-400 dark:text-slate-600">💡 Default VAT: Cameroon 19.25%</p>
+      <ActionBtn label="Calculate" onClick={calc} />
       {res && (
         <div className="space-y-1.5">
-          <ResultRow label="Montant HT"          value={`${res.ht} FCFA`} />
-          <ResultRow label={`TVA (${tvaRate}%)`}  value={`${res.tva} FCFA`} />
-          <ResultRow label="Montant TTC"          value={`${res.ttc} FCFA`} highlight />
+          <ResultRow label="Pre-tax (HT)"         value={`${res.ht} FCFA`} />
+          <ResultRow label={`VAT (${tvaRate}%)`}   value={`${res.tva} FCFA`} />
+          <ResultRow label="Tax-inclusive (TTC)"   value={`${res.ttc} FCFA`} highlight />
         </div>
       )}
     </div>
@@ -438,10 +438,10 @@ function TVASection() {
 function FinancialCalc() {
   const [tab, setTab] = useState('pct');
   const tabs = [
-    { id: 'pct',      label: 'Pourcentage' },
-    { id: 'margin',   label: 'Marge' },
-    { id: 'interest', label: 'Intérêts' },
-    { id: 'tva',      label: 'TVA' },
+    { id: 'pct',      label: 'Percentage' },
+    { id: 'margin',   label: 'Margin' },
+    { id: 'interest', label: 'Interest' },
+    { id: 'tva',      label: 'VAT' },
   ];
 
   return (
@@ -468,7 +468,7 @@ function StatisticsCalc() {
     const parts = input.split(/[\s,;]+/).filter(Boolean);
     const nums = parts.map(Number);
     if (!parts.length || nums.some(isNaN)) {
-      setError('Entrez des nombres valides séparés par virgules ou espaces');
+      setError('Enter valid numbers separated by commas or spaces');
       setStats(null);
       return;
     }
@@ -477,28 +477,28 @@ function StatisticsCalc() {
   };
 
   const ITEMS = stats ? [
-    { label: 'Effectif (n)',    value: stats.n },
-    { label: 'Somme (Σx)',      value: stats.sum },
-    { label: 'Moyenne (x̄)',     value: stats.mean },
-    { label: 'Médiane',         value: stats.median },
+    { label: 'Count (n)',       value: stats.n },
+    { label: 'Sum (Σx)',        value: stats.sum },
+    { label: 'Mean (x̄)',        value: stats.mean },
+    { label: 'Median',          value: stats.median },
     { label: 'Mode',            value: stats.mode },
-    { label: 'Écart-type (σ)',  value: stats.stddev },
+    { label: 'Std dev (σ)',     value: stats.stddev },
     { label: 'Variance (σ²)',   value: stats.variance },
-    { label: 'Minimum',         value: stats.min },
-    { label: 'Maximum',         value: stats.max },
-    { label: 'Étendue',         value: stats.range },
+    { label: 'Min',             value: stats.min },
+    { label: 'Max',             value: stats.max },
+    { label: 'Range',           value: stats.range },
   ] : [];
 
   return (
     <div className="space-y-3">
       <div>
         <label className="text-[11px] text-slate-500 dark:text-slate-400 mb-1.5 block">
-          Données (virgule, espace ou point-virgule)
+          Data (comma, space or semicolon)
         </label>
         <textarea
           value={input}
           onChange={e => setInput(e.target.value)}
-          placeholder="Ex: 12, 15, 18, 22, 9, 31..."
+          placeholder="e.g. 12, 15, 18, 22, 9, 31..."
           rows={3}
           className="w-full bg-slate-100 dark:bg-[#0F172A] text-slate-900 dark:text-white text-[14px] rounded-xl p-3 outline-none border border-slate-200 dark:border-[#1E293B] focus:border-[#22C55E] resize-none placeholder:text-slate-400 dark:placeholder:text-slate-600 font-mono transition-colors"
         />
@@ -508,12 +508,12 @@ function StatisticsCalc() {
         onClick={calculate}
         className="w-full h-10 bg-[#22C55E] text-[#052e16] rounded-xl font-bold text-[14px] hover:brightness-110 active:scale-95 transition-all"
       >
-        Calculer les statistiques
+        Calculate statistics
       </button>
       {stats && (
         <div className="space-y-2">
           <p className="text-[11px] text-slate-400 dark:text-slate-500">
-            {stats.n} valeur{stats.n > 1 ? 's' : ''} analysée{stats.n > 1 ? 's' : ''}
+            {stats.n} value{stats.n > 1 ? 's' : ''} analysed
           </p>
           <div className="grid grid-cols-2 gap-1.5">
             {ITEMS.map(({ label, value }) => (
@@ -535,9 +535,9 @@ function StatisticsCalc() {
 
 const MODES = [
   { id: 'standard',   label: 'Standard' },
-  { id: 'scientific', label: 'Scientifique' },
-  { id: 'financial',  label: 'Commercial' },
-  { id: 'statistics', label: 'Statistiques' },
+  { id: 'scientific', label: 'Scientific' },
+  { id: 'financial',  label: 'Financial' },
+  { id: 'statistics', label: 'Statistics' },
 ];
 
 export default function Calculator({ onClose }) {
@@ -574,7 +574,7 @@ export default function Calculator({ onClose }) {
             <div className="w-8 h-8 rounded-lg bg-[#22C55E]/10 flex items-center justify-center text-[#22C55E]">
               <CalcIcon size={16} />
             </div>
-            <h2 className="text-slate-900 dark:text-white font-bold text-[15px]">Calculatrice</h2>
+            <h2 className="text-slate-900 dark:text-white font-bold text-[15px]">Calculator</h2>
           </div>
           <button
             onClick={onClose}
