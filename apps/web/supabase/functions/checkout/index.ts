@@ -23,12 +23,8 @@ serve(async (req) => {
 
     const secureUserId = user.id
 
-    const { packageId, customerPhone, customerCountry, userId } = await req.json()
-
-    // Vérification anti-usurpation
-    if (userId !== secureUserId) {
-      throw new Error('Tentative de fraude détectée : usurpation d\'identité')
-    }
+    // userId, phone et country viennent du JWT + profil — jamais du body (sécurité)
+    const { package_id } = await req.json()
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -39,7 +35,7 @@ serve(async (req) => {
     const { data: pkg, error: pkgError } = await supabase
       .from('token_packages')
       .select('id, name, tokens, price_xaf')
-      .eq('id', packageId)
+      .eq('id', package_id)
       .eq('is_active', true)
       .single()
 
@@ -74,10 +70,10 @@ serve(async (req) => {
       })
     }
 
-    // Récupérer le nom depuis le profil
+    // Récupérer nom + téléphone depuis le profil (jamais depuis le body)
     const { data: profile } = await supabase
       .from('profiles')
-      .select('name')
+      .select('name, phone, phone_country')
       .eq('id', secureUserId)
       .maybeSingle()
 
@@ -85,8 +81,9 @@ serve(async (req) => {
     const firstName = parts[0] || 'Eleve'
     const lastName = parts.slice(1).join(' ') || 'PassMark'
 
-    const isoCountry = COUNTRY_MAP[customerCountry] || COUNTRY_MAP[`+${customerCountry}`] || 'CM'
-    const cleanPhone = (customerPhone || '').replace(/\D/g, '').replace(/^(237|225|221|241|242|243|233|234|33|1)/, '')
+    const rawCountry = (profile?.phone_country || '237').toString()
+    const isoCountry = COUNTRY_MAP[rawCountry] || COUNTRY_MAP[`+${rawCountry}`] || 'CM'
+    const cleanPhone = (profile?.phone || '').replace(/\D/g, '').replace(/^(237|225|221|241|242|243|233|234|33|1)/, '') || '600000000'
 
     // Enregistrer l'achat en attente
     const { data: purchase } = await supabase

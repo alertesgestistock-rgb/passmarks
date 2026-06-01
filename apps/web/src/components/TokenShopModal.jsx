@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Coins, Zap, Star, Trophy, Flame } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
-import apiServerClient from '@/lib/apiServerClient';
 import { supabase } from '@/lib/supabase';
 import { useTranslation } from 'react-i18next';
 
@@ -22,7 +21,7 @@ async function getPackages() {
 }
 
 export default function TokenShopModal({ onClose }) {
-  const { tokenBalance, refreshTokenBalance } = useUser();
+  const { tokenBalance } = useUser();
   const { i18n } = useTranslation();
   const lang = i18n.language;
 
@@ -41,10 +40,20 @@ export default function TokenShopModal({ onClose }) {
   const handleBuy = async (pkg) => {
     setBuying(pkg.id);
     try {
-      const data = await apiServerClient.json('/chariow/checkout', {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const EF_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/checkout`;
+      const res = await fetch(EF_URL, {
         method: 'POST',
-        body: { package_id: pkg.id },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ package_id: pkg.id }),
       });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Payment error');
       if (data.checkout_url) {
         window.location.href = data.checkout_url;
       }
