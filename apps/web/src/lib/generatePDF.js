@@ -18,8 +18,10 @@ function addWatermark(pdf, pageWidth, pageHeight) {
   pdf.setTextColor(0, 0, 0);
 }
 
+const APP_FULL_URL = `https://${APP_URL}`;
+
 function addHeader(pdf, pageWidth, margin, dateStr) {
-  // Background band
+  // Background band — entirely clickable
   pdf.setFillColor(...BLUE);
   pdf.rect(0, 0, pageWidth, 18, 'F');
 
@@ -34,6 +36,9 @@ function addHeader(pdf, pageWidth, margin, dateStr) {
   pdf.setFont('helvetica', 'normal');
   pdf.text(dateStr, pageWidth - margin, 11, { align: 'right' });
 
+  // Clickable zone covering the entire header band
+  pdf.link(0, 0, pageWidth, 18, { url: APP_FULL_URL });
+
   pdf.setTextColor(0, 0, 0);
 }
 
@@ -45,11 +50,10 @@ function addFooter(pdf, pageWidth, pageHeight, margin, currentPage, totalPages) 
   pdf.setLineWidth(0.3);
   pdf.line(margin, footerY - 3, pageWidth - margin, footerY - 3);
 
-  // URL on the left
-  pdf.setTextColor(37, 99, 235);
+  // URL as clickable link
   pdf.setFontSize(8);
   pdf.setFont('helvetica', 'normal');
-  pdf.text(APP_URL, margin, footerY);
+  pdf.textWithLink(APP_URL, margin, footerY, { url: APP_FULL_URL });
 
   // Page number on the right
   pdf.setTextColor(100, 100, 100);
