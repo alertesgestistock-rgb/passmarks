@@ -920,8 +920,8 @@ export default function AITutorPage({ navigate, viewState }) {
 
       {/* ── Mobile : vue liste (plein écran) ──────────────── */}
       {view === 'list' && (
-        <div className="lg:hidden h-[calc(100vh-160px)] md:h-[calc(100vh-168px)] overflow-hidden">
-          <div className="flex items-center gap-3 mb-5">
+        <div className="lg:hidden h-[calc(100vh-160px)] md:h-[calc(100vh-168px)] flex flex-col overflow-hidden">
+          <div className="flex items-center gap-3 mb-5 shrink-0">
             <div className="w-[44px] h-[44px] rounded-xl bg-[#22C55E]/10 flex items-center justify-center shrink-0">
               <GraduationCap size={22} className="text-[#22C55E]" />
             </div>
@@ -932,18 +932,18 @@ export default function AITutorPage({ navigate, viewState }) {
               </p>
             </div>
           </div>
-          <button onClick={openNewChat} className="w-full bg-[#22C55E] text-white rounded-2xl p-4 flex items-center justify-center gap-2 font-semibold text-[15px] mb-4 scale-on-click">
+          <button onClick={openNewChat} className="w-full bg-[#22C55E] text-white rounded-2xl p-4 flex items-center justify-center gap-2 font-semibold text-[15px] mb-4 shrink-0 scale-on-click">
             <Plus size={20} /> New conversation
           </button>
           {convLoading ? (
-            <div className="flex flex-col gap-3">{[1,2,3].map(i => <div key={i} className="h-[70px] rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 animate-pulse" />)}</div>
+            <div className="flex flex-col gap-3 shrink-0">{[1,2,3].map(i => <div key={i} className="h-[70px] rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 animate-pulse" />)}</div>
           ) : conversations.length === 0 ? (
             <div className="text-center py-16">
               <MessageSquare size={28} className="text-slate-300 dark:text-[#475569] mx-auto mb-3" />
               <p className="text-[14px] font-medium text-slate-400 dark:text-[#64748B]">No conversations</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-2 overflow-y-auto hide-scrollbar">
+            <div className="flex-1 min-h-0 overflow-y-auto hide-scrollbar flex flex-col gap-2 pb-4">
               {conversations.map(conv => (
                 <button key={conv.id} onClick={() => openConversation(conv.id)}
                   className="bg-white dark:bg-[#1E293B] rounded-2xl p-4 flex items-center gap-3 text-left border border-slate-200 dark:border-[#334155]/50 hover:border-[#22C55E]/40 transition-all scale-on-click w-full">
