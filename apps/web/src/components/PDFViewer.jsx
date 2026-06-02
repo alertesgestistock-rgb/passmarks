@@ -5,10 +5,9 @@ import pdfjsLib from '@/lib/pdfjs';
 export default function PDFViewer({ url, watermark }) {
   const containerRef = useRef(null);
   const pdfRef       = useRef(null);
-  const renderRef    = useRef(null); // cancel flag
-  const [numPages, setNumPages] = useState(0);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState(null);
+  const renderRef    = useRef(null); // cancel flag for renderAll
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState(null);
 
   // Render all pages on canvas with watermark
   const renderAll = useCallback(async (pdf) => {
@@ -28,22 +27,17 @@ export default function PDFViewer({ url, watermark }) {
       const scale    = containerWidth / baseView.width;
       const viewport = page.getViewport({ scale });
 
-      // Canvas
       const canvas    = document.createElement('canvas');
       canvas.width    = viewport.width;
       canvas.height   = viewport.height;
       canvas.style.cssText = 'width:100%;display:block;margin-bottom:6px;border-radius:6px;background:#fff';
-
       container.appendChild(canvas);
 
       const ctx = canvas.getContext('2d');
-
-      // Render PDF page
       await page.render({ canvasContext: ctx, viewport }).promise;
 
       if (cancelled.value) break;
 
-      // Draw watermark grid on top
       if (watermark) {
         ctx.save();
         ctx.globalAlpha = 0.11;
@@ -70,18 +64,16 @@ export default function PDFViewer({ url, watermark }) {
     }
   }, [watermark]);
 
-  // Load PDF when url changes — fetch as ArrayBuffer to avoid PDF.js URL-object bug in v6
+  // Effect 1: fetch PDF bytes and parse with PDF.js
   useEffect(() => {
     if (!url || typeof url !== 'string') return;
     if (renderRef.current) renderRef.current.value = true;
 
     setLoading(true);
     setError(null);
-    setNumPages(0);
+    pdfRef.current = null;
 
     const cancelled = { value: false };
-    renderRef.current = cancelled;
-
     let task = null;
 
     fetch(url)
@@ -97,9 +89,7 @@ export default function PDFViewer({ url, watermark }) {
       .then(pdf => {
         if (cancelled.value) return;
         pdfRef.current = pdf;
-        setNumPages(pdf.numPages);
-        setLoading(false);
-        renderAll(pdf);
+        setLoading(false); // triggers re-render → container div mounts → Effect 2 runs
       })
       .catch(err => {
         if (cancelled.value) return;
@@ -112,7 +102,13 @@ export default function PDFViewer({ url, watermark }) {
       cancelled.value = true;
       task?.destroy?.();
     };
-  }, [url, renderAll]);
+  }, [url]);
+
+  // Effect 2: render pages once the container div is in the DOM (loading = false)
+  useEffect(() => {
+    if (loading || error || !pdfRef.current) return;
+    renderAll(pdfRef.current);
+  }, [loading, error, renderAll]);
 
   if (loading) return (
     <div className="flex-1 flex flex-col items-center justify-center gap-3">
