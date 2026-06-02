@@ -193,8 +193,9 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
         }
         const extracted = text.trim().substring(0, 30000);
 
+        let pdfData;
         if (extracted.length > 50) {
-          setPendingPdf({ name: initialPdfName, text: extracted, images: null, pageCount: totalPages });
+          pdfData = { name: initialPdfName, text: extracted, images: null, pageCount: totalPages };
         } else {
           // PDF scanné → rendre en images
           const images = [];
@@ -203,10 +204,11 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
             const b64 = await renderPageToBase64(page);
             images.push(b64);
           }
-          setPendingPdf({ name: initialPdfName, text: null, images, pageCount: totalPages });
+          pdfData = { name: initialPdfName, text: null, images, pageCount: totalPages };
         }
-        // Auto-envoyer le message initial avec le PDF pré-chargé
-        if (initialMessage) handleSend(initialMessage);
+        setPendingPdf(pdfData);
+        // Pass pdfData directly — React state won't be flushed yet at this point
+        if (initialMessage) handleSend(initialMessage, pdfData);
       } catch {
         setMessages(prev => [...prev, { role: 'assistant', content: 'Could not load the paper. Please try again.', isError: true, timestamp: new Date().toISOString() }]);
       } finally {
@@ -352,10 +354,10 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
     return [...past, { role: 'user', content: newContent }];
   };
 
-  const handleSend = async (textOverride) => {
+  const handleSend = async (textOverride, pdfOverride) => {
     const rawText = typeof textOverride === 'string' ? textOverride : input.trim();
     const image = pendingImage;
-    const pdf = pendingPdf;
+    const pdf = pdfOverride !== undefined ? pdfOverride : pendingPdf;
     const pdfHeader = pdf?.text
       ? `[PDF: ${pdf.name} — ${pdf.pageCount} page(s)${pdf.truncated ? ', text truncated at 30 000 chars' : ', complete'}]\n`
       : null;
