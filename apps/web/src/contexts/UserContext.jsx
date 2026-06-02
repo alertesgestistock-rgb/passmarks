@@ -87,7 +87,28 @@ export const UserProvider = ({ children }) => {
 
         return true;
       }
-      return false;
+
+      // Fallback: auth session exists but profile not yet in DB (DB trigger lag or race).
+      // Set a minimal user from auth metadata so ProtectedRoute lets the user through
+      // to onboarding instead of bouncing them to the landing page.
+      const meta = session.user.user_metadata || {};
+      const minimalUser = {
+        id: session.user.id,
+        email: session.user.email,
+        name: meta.name || '',
+        level: meta.level || 'A Level',
+        subjects: [],
+        examMonth: null,
+        examYear: null,
+        avatarUrl: null,
+        phone: null,
+        phoneCountry: '237',
+        stats: { questionsSolved: 0, papersRead: 0, quizzesCompleted: 0, totalScore: 0, bySubject: {} },
+        recentActivity: [],
+      };
+      setUser(minimalUser);
+      saveUserToLocalStorage(minimalUser);
+      return true;
     };
 
     const init = async () => {
