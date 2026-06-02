@@ -261,14 +261,14 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
   };
 
   const renderPageToBase64 = async (page) => {
-    // scale 1.0 = résolution native, lisible par l'IA
-    // quality 0.5 = ~60-100KB/page → 4 pages ≈ 300KB, bien sous la limite 4.5MB Vercel
-    const viewport = page.getViewport({ scale: 1.0 });
+    // scale 2.0 for scanned PDFs — Claude needs high-res to read math formulas
+    // quality 0.8 = ~150-250KB/page × 4 pages ≈ ~800KB, well within Supabase EF limits
+    const viewport = page.getViewport({ scale: 2.0 });
     const canvas = document.createElement('canvas');
     canvas.width = viewport.width;
     canvas.height = viewport.height;
     await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-    return canvas.toDataURL('image/jpeg', 0.5).split(',')[1];
+    return canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
   };
 
   const handlePDFSelect = async (e) => {
