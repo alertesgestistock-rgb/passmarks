@@ -425,6 +425,8 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
               const json = JSON.parse(clean.slice(6));
               // Événement de solde envoyé après déduction réussie
               if (typeof json.b === 'number') { updateTokenBalance(json.b); continue; }
+              // Événement d'erreur envoyé par l'EF (ex: timeout OpenRouter)
+              if (json.error) throw new Error(json.error);
               const token = json.choices?.[0]?.delta?.content || '';
               if (!token) continue;
               fullContent += token;

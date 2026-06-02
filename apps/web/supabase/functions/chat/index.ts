@@ -115,24 +115,37 @@ serve(async (req: Request) => {
     return jsonError(cors, 'insufficient_tokens', 402, { balance });
   }
 
-  // ── Appel OpenRouter ──────────────────────────────────────────────────────
-  const upstream = await fetch(OPENROUTER_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-      'HTTP-Referer': 'https://passmarks.vercel.app',
-      'X-Title': 'PassMark AI Tutor',
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: 4000,
-      stream: true,
-      messages: toOpenAIMessages(messages),
-    }),
-  });
+  // ── Appel OpenRouter avec timeout strict ─────────────────────────────────
+  // Sans timeout, si OpenRouter freeze le heartbeat masque le problème indéfiniment
+  const ac = new AbortController();
+  const timeoutId = setTimeout(() => ac.abort(new Error('OpenRouter timeout after 90s')), 90_000);
+
+  let upstream: Response;
+  try {
+    upstream = await fetch(OPENROUTER_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': 'https://passmarks.vercel.app',
+        'X-Title': 'PassMark AI Tutor',
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 4000,
+        stream: true,
+        messages: toOpenAIMessages(messages),
+      }),
+      signal: ac.signal,
+    });
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    const isTimeout = err?.name === 'AbortError' || err?.message?.includes('timeout');
+    return jsonError(cors, isTimeout ? 'AI service timed out. Please try again.' : 'Failed to reach AI service.', 504);
+  }
 
   if (!upstream.ok) {
+    clearTimeout(timeoutId);
     const err = await upstream.json().catch(() => ({})) as any;
     if (upstream.status === 429) return jsonError(cors, 'Rate limit reached. Try again later.', 429);
     return jsonError(cors, err.error?.message ?? 'AI service error', upstream.status);
@@ -176,10 +189,20 @@ serve(async (req: Request) => {
             );
           }
         }
-      } catch {
-        // Stream interrompu — si la déduction était lancée, elle continue en arrière-plan
-        // L'élève est facturé si l'IA avait commencé à répondre
+      } catch (err: any) {
+        // Si l'abort a coupé le stream en cours de lecture, envoyer une erreur au client
+        const isTimeout = err?.name === 'AbortError' || err?.message?.includes('timeout');
+        if (isTimeout && deductPromise === null) {
+          // Aucun chunk reçu → pas de déduction, juste un message d'erreur
+          try {
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ error: 'AI service timed out. Please try again.' })}\n\n`),
+            );
+          } catch { /* client déjà déconnecté */ }
+        }
+        // Si deductPromise !== null, l'IA avait commencé à répondre → l'élève est facturé
       } finally {
+        clearTimeout(timeoutId);
         clearInterval(heartbeat);
         controller.close();
       }
