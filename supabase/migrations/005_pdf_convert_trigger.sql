@@ -24,10 +24,10 @@ BEGIN
   -- Non-blocking HTTP POST to pdf-convert Edge Function
   -- The webhook secret is set via: supabase secrets set PDF_WEBHOOK_SECRET=pm_pdf_conv_passmark
   PERFORM net.http_post(
-    url     := current_setting('app.supabase_functions_url') || '/pdf-convert',
+    url     := 'https://dnnbtzvidbsodqolpqia.supabase.co/functions/v1/pdf-convert',
     headers := jsonb_build_object(
-      'Content-Type',      'application/json',
-      'x-webhook-secret',  current_setting('app.pdf_webhook_secret', true)
+      'Content-Type',     'application/json',
+      'x-webhook-secret', 'pm_pdf_conv_passmark'
     ),
     body    := jsonb_build_object('path', pdf_path)::text,
     timeout_milliseconds := 5000
@@ -45,11 +45,5 @@ CREATE TRIGGER trg_pdf_url_set
   FOR EACH ROW
   EXECUTE FUNCTION public.on_pdf_url_set();
 
--- Set the two config values needed by the trigger
--- Replace with your actual Supabase project URL and the webhook secret
--- you set via: supabase secrets set PDF_WEBHOOK_SECRET=pm_pdf_conv_passmark
-ALTER DATABASE postgres
-  SET app.supabase_functions_url TO 'https://dnnbtzvidbsodqolpqia.supabase.co/functions/v1';
-
-ALTER DATABASE postgres
-  SET app.pdf_webhook_secret TO 'pm_pdf_conv_passmark';
+-- Note: the EF URL and webhook secret are hardcoded in the trigger function above.
+-- Supabase managed Postgres does not allow ALTER DATABASE SET for custom params.
