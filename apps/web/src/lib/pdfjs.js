@@ -1,6 +1,6 @@
 import * as pdfjsLib from 'pdfjs-dist';
-import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
+// Stable public URL — not hashed by Vite, properly cached by PWA service worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
 export default pdfjsLib;
