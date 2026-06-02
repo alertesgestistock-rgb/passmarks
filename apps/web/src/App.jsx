@@ -4,6 +4,7 @@ import { UserProvider, useUser } from './contexts/UserContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 
+import { Toaster } from '@/components/ui/sonner';
 import LandingPage from './pages/LandingPage';
 import PricingPage from './pages/PricingPage';
 import FeaturesPage from './pages/FeaturesPage';
@@ -83,6 +84,7 @@ export default function App() {
         <NotificationProvider>
           <UserProvider>
             <AppRoutes />
+            <Toaster position="top-center" richColors />
           </UserProvider>
         </NotificationProvider>
       </ThemeProvider>

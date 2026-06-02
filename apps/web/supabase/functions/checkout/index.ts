@@ -119,7 +119,7 @@ serve(async (req) => {
         tokens: pkg.tokens,
         packageName: pkg.name,
       },
-      redirect_url: `${APP_URL}?payment=success`,
+      redirect_url: `${APP_URL}/app?payment=success`,
     }
 
     const response = await fetch('https://api.chariow.com/v1/checkout', {

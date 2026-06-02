@@ -1,8 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
+import { useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import { MainLayout } from '@/components/Navigation';
 import TokenShopModal from '@/components/TokenShopModal';
+import { useUser } from '@/contexts/UserContext';
 import HomePage from './HomePage';
 import PastPapersPage from './PastPapersPage';
 import AITutorPage from './AITutorPage';
@@ -16,10 +19,22 @@ import CalendarPage from './CalendarPage';
 export default function Dashboard() {
   const [view, setView] = useState({ path: 'home', state: null });
   const [showTokenShop, setShowTokenShop] = useState(false);
+  const [searchParams] = useSearchParams();
+  const { refreshTokenBalance } = useUser();
 
   const navigate = (path, state = null) => {
     setView({ path, state });
   };
+
+  // Handle redirect back from Chariow after payment
+  useEffect(() => {
+    if (searchParams.get('payment') !== 'success') return;
+    window.history.replaceState({}, '', '/app');
+    toast.success('Paiement reçu ! Tes tokens seront crédités dans quelques secondes.', { duration: 6000 });
+    const t1 = setTimeout(() => refreshTokenBalance(), 4000);
+    const t2 = setTimeout(() => refreshTokenBalance(), 12000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
 
   // Expose globals so external HTML modals can open the token shop or navigate
   useEffect(() => {
