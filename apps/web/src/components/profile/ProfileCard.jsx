@@ -1,8 +1,10 @@
 import React, { useRef, useState } from 'react';
+import ReactDOM from 'react-dom';
 import { Edit2, Camera, Coins, Loader2, LogOut } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { uploadAvatar } from '@/lib/avatarUpload';
 import { useNavigate } from 'react-router-dom';
+import TokenShopModal from '@/components/TokenShopModal';
 
 function getInitials(name) {
   if (!name) return 'U';
@@ -13,6 +15,7 @@ function getInitials(name) {
 
 export default function ProfileCard({ onEdit }) {
   const { user, updateUser, tokenBalance, clearUser } = useUser();
+  const [showTokenShop, setShowTokenShop] = useState(false);
   const navigate = useNavigate();
   const fileRef = useRef(null);
   const [uploading, setUploading] = useState(false);
@@ -43,6 +46,7 @@ export default function ProfileCard({ onEdit }) {
   };
 
   return (
+    <>
     <div className="bg-white dark:bg-[#1E293B] rounded-2xl p-6 flex flex-col items-center justify-center border border-slate-200 dark:border-[#334155]/50 relative shadow-sm mb-6">
       <div className="absolute top-4 right-4 flex items-center gap-2">
         <button
@@ -120,7 +124,7 @@ export default function ProfileCard({ onEdit }) {
               {tokenBalance} token{tokenBalance !== 1 ? 's' : ''}
             </span>
             <button
-              onClick={() => navigate('/pricing')}
+              onClick={() => setShowTokenShop(true)}
               className="text-[#F97316] text-[11px] underline mt-1"
             >
               Buy tokens
@@ -132,7 +136,7 @@ export default function ProfileCard({ onEdit }) {
               Free Plan
             </span>
             <button
-              onClick={() => navigate('/pricing')}
+              onClick={() => setShowTokenShop(true)}
               className="text-[#F97316] text-[11px] underline mt-1"
             >
               Upgrade for unlimited AI · 3 500 FCFA/mo
@@ -141,5 +145,11 @@ export default function ProfileCard({ onEdit }) {
         )}
       </div>
     </div>
+
+    {showTokenShop && ReactDOM.createPortal(
+      <TokenShopModal onClose={() => setShowTokenShop(false)} />,
+      document.body
+    )}
+    </>
   );
 }
