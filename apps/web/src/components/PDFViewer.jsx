@@ -70,33 +70,47 @@ export default function PDFViewer({ url, watermark }) {
     }
   }, [watermark]);
 
-  // Load PDF when url changes
+  // Load PDF when url changes — fetch as ArrayBuffer to avoid PDF.js URL-object bug in v6
   useEffect(() => {
-    if (!url) return;
+    if (!url || typeof url !== 'string') return;
     if (renderRef.current) renderRef.current.value = true;
 
     setLoading(true);
     setError(null);
     setNumPages(0);
 
-    const task = pdfjsLib.getDocument({ url, withCredentials: false });
+    const cancelled = { value: false };
+    renderRef.current = cancelled;
 
-    task.promise
+    let task = null;
+
+    fetch(url)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.arrayBuffer();
+      })
+      .then(data => {
+        if (cancelled.value) return;
+        task = pdfjsLib.getDocument({ data });
+        return task.promise;
+      })
       .then(pdf => {
+        if (cancelled.value) return;
         pdfRef.current = pdf;
         setNumPages(pdf.numPages);
         setLoading(false);
         renderAll(pdf);
       })
       .catch(err => {
+        if (cancelled.value) return;
         console.error('[PDFViewer] load error:', err);
         setError(err.message || 'Failed to load PDF');
         setLoading(false);
       });
 
     return () => {
-      task.destroy?.();
-      if (renderRef.current) renderRef.current.value = true;
+      cancelled.value = true;
+      task?.destroy?.();
     };
   }, [url, renderAll]);
 
