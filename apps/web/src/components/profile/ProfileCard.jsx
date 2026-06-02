@@ -135,7 +135,7 @@ export default function ProfileCard({ onEdit }) {
               onClick={() => navigate('/pricing')}
               className="text-[#F97316] text-[11px] underline mt-1"
             >
-              Upgrade for unlimited AI · 1 500 FCFA/mo
+              Upgrade for unlimited AI · 3 500 FCFA/mo
             </button>
           </>
         )}

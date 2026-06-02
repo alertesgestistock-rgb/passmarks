@@ -1,6 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { MainLayout } from '@/components/Navigation';
+import TokenShopModal from '@/components/TokenShopModal';
 import HomePage from './HomePage';
 import PastPapersPage from './PastPapersPage';
 import AITutorPage from './AITutorPage';
@@ -13,39 +15,34 @@ import CalendarPage from './CalendarPage';
 
 export default function Dashboard() {
   const [view, setView] = useState({ path: 'home', state: null });
+  const [showTokenShop, setShowTokenShop] = useState(false);
 
   const navigate = (path, state = null) => {
     setView({ path, state });
   };
 
-  // Expose navigate globally so the HTML upgrade modal can redirect to profile
+  // Expose globals so external HTML modals can open the token shop or navigate
   useEffect(() => {
     window.passmarkNavigate = navigate;
-    return () => { delete window.passmarkNavigate; };
+    window.passmarkOpenTokenShop = () => setShowTokenShop(true);
+    return () => {
+      delete window.passmarkNavigate;
+      delete window.passmarkOpenTokenShop;
+    };
   }, []);
 
   const renderView = () => {
     switch (view.path) {
-      case 'home':
-        return <HomePage navigate={navigate} />;
-      case 'papers':
-        return <PastPapersPage navigate={navigate} />;
-      case 'tutor':
-        return <AITutorPage navigate={navigate} viewState={view.state} />;
-      case 'profile':
-        return <ProfilePage navigate={navigate} />;
-      case 'settings':
-        return <SettingsPage navigate={navigate} />;
-      case 'quiz-setup':
-        return <QuizSetupScreen navigate={navigate} viewState={view.state} />;
-      case 'quiz-play':
-        return <QuizPlayScreen navigate={navigate} viewState={view.state} />;
-      case 'quiz-results':
-        return <QuizResultsScreen navigate={navigate} viewState={view.state} />;
-      case 'calendar':
-        return <CalendarPage navigate={navigate} />;
-      default:
-        return <HomePage navigate={navigate} />;
+      case 'home':        return <HomePage navigate={navigate} />;
+      case 'papers':      return <PastPapersPage navigate={navigate} />;
+      case 'tutor':       return <AITutorPage navigate={navigate} viewState={view.state} />;
+      case 'profile':     return <ProfilePage navigate={navigate} />;
+      case 'settings':    return <SettingsPage navigate={navigate} />;
+      case 'quiz-setup':  return <QuizSetupScreen navigate={navigate} viewState={view.state} />;
+      case 'quiz-play':   return <QuizPlayScreen navigate={navigate} viewState={view.state} />;
+      case 'quiz-results':return <QuizResultsScreen navigate={navigate} viewState={view.state} />;
+      case 'calendar':    return <CalendarPage navigate={navigate} />;
+      default:            return <HomePage navigate={navigate} />;
     }
   };
 
@@ -54,11 +51,13 @@ export default function Dashboard() {
     return view.path;
   };
 
-
-
   return (
     <MainLayout activeTab={getActiveTab()} setActiveTab={(tab) => navigate(tab)}>
       {renderView()}
+      {showTokenShop && ReactDOM.createPortal(
+        <TokenShopModal onClose={() => setShowTokenShop(false)} />,
+        document.body
+      )}
     </MainLayout>
   );
 }
