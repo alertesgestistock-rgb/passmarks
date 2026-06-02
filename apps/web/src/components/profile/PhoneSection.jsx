@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Phone, ChevronDown, Check, Loader2, Gift } from 'lucide-react';
+import { Phone, ChevronDown, Check, Loader2, Gift, MessageCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useUser } from '@/contexts/UserContext';
 
@@ -166,6 +166,17 @@ export default function PhoneSection() {
             : `${phone.length}/${selectedCountry.digits} digits`}
         </span>
       </div>
+
+      {/* WhatsApp notice */}
+      {!claimed && (
+        <div className="mt-3 flex items-start gap-2 bg-[#22C55E]/8 dark:bg-[#22C55E]/10 border border-[#22C55E]/20 rounded-xl px-3 py-2.5">
+          <MessageCircle size={13} className="text-[#22C55E] shrink-0 mt-[1px]" />
+          <p className="text-[11px] text-slate-600 dark:text-[#94A3B8] leading-relaxed">
+            <span className="font-semibold text-slate-800 dark:text-[#F1F5F9]">WhatsApp number only.</span>{' '}
+            Make sure this is your correct WhatsApp number — a confirmation will be sent to verify it before the tokens are credited.
+          </p>
+        </div>
+      )}
 
       {error && (
         <p className="text-[12px] text-red-500 mt-2">{error}</p>
