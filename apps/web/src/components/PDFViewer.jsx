@@ -2,14 +2,16 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import pdfjsLib from '@/lib/pdfjs';
 
+const FETCH_TIMEOUT_MS = 45_000; // 45 s — generous for mobile
+
 export default function PDFViewer({ url, watermark }) {
   const containerRef = useRef(null);
   const pdfRef       = useRef(null);
-  const renderRef    = useRef(null); // cancel flag for renderAll
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState(null);
+  const renderRef    = useRef(null);
+  const [loading, setLoading]   = useState(true);
+  const [progress, setProgress] = useState(0);   // 0-100 download %
+  const [error, setError]       = useState(null);
 
-  // Render all pages on canvas with watermark
   const renderAll = useCallback(async (pdf) => {
     if (!containerRef.current) return;
     const container = containerRef.current;
@@ -64,63 +66,112 @@ export default function PDFViewer({ url, watermark }) {
     }
   }, [watermark]);
 
-  // Effect 1: fetch PDF bytes and parse with PDF.js
+  // Effect 1: fetch PDF bytes (with timeout + progress) then parse with PDF.js
   useEffect(() => {
     if (!url || typeof url !== 'string') return;
     if (renderRef.current) renderRef.current.value = true;
 
     setLoading(true);
+    setProgress(0);
     setError(null);
     pdfRef.current = null;
 
     const cancelled = { value: false };
     let task = null;
 
-    fetch(url)
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.arrayBuffer();
-      })
-      .then(data => {
+    const controller = new AbortController();
+    const timeoutId  = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+    const run = async () => {
+      let res;
+      try {
+        res = await fetch(url, { signal: controller.signal });
+      } catch (err) {
+        throw err.name === 'AbortError'
+          ? new Error('Download timed out — check your connection and try again.')
+          : err;
+      }
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      // Stream response to track download progress
+      const contentLength = Number(res.headers.get('Content-Length')) || 0;
+      const reader  = res.body.getReader();
+      const chunks  = [];
+      let received  = 0;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
         if (cancelled.value) return;
-        task = pdfjsLib.getDocument({ data });
-        return task.promise;
-      })
-      .then(pdf => {
-        if (cancelled.value) return;
-        pdfRef.current = pdf;
-        setLoading(false); // triggers re-render → container div mounts → Effect 2 runs
-      })
-      .catch(err => {
-        if (cancelled.value) return;
-        console.error('[PDFViewer] load error:', err);
-        setError(err.message || 'Failed to load PDF');
-        setLoading(false);
-      });
+        chunks.push(value);
+        received += value.length;
+        if (contentLength > 0) {
+          setProgress(Math.min(99, Math.round((received / contentLength) * 100)));
+        }
+      }
+
+      if (cancelled.value) return;
+
+      // Assemble chunks into one ArrayBuffer
+      const all = new Uint8Array(received);
+      let pos = 0;
+      for (const chunk of chunks) { all.set(chunk, pos); pos += chunk.length; }
+
+      task = pdfjsLib.getDocument({ data: all.buffer });
+      const pdf = await task.promise;
+
+      if (cancelled.value) return;
+      pdfRef.current = pdf;
+      setProgress(100);
+      setLoading(false);
+    };
+
+    run().catch(err => {
+      if (cancelled.value) return;
+      console.error('[PDFViewer] load error:', err);
+      setError(err.message || 'Failed to load PDF');
+      setLoading(false);
+    }).finally(() => clearTimeout(timeoutId));
 
     return () => {
       cancelled.value = true;
+      clearTimeout(timeoutId);
+      controller.abort();
       task?.destroy?.();
     };
   }, [url]);
 
-  // Effect 2: render pages once the container div is in the DOM (loading = false)
+  // Effect 2: render pages once container div is in the DOM
   useEffect(() => {
     if (loading || error || !pdfRef.current) return;
     renderAll(pdfRef.current);
   }, [loading, error, renderAll]);
 
   if (loading) return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-3">
+    <div className="flex-1 flex flex-col items-center justify-center gap-3 px-6">
       <div className="w-8 h-8 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin" />
-      <span className="text-[12px] text-slate-400 dark:text-[#64748B]">Loading paper...</span>
+      <span className="text-[12px] text-slate-400 dark:text-[#64748B]">
+        {progress > 0 ? `Downloading… ${progress}%` : 'Loading paper…'}
+      </span>
+      {progress > 0 && (
+        <div className="w-full max-w-[200px] h-1 bg-slate-200 dark:bg-[#334155] rounded-full overflow-hidden">
+          <div
+            className="h-full bg-[#22C55E] rounded-full transition-all duration-200"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      )}
+      <span className="text-[11px] text-slate-300 dark:text-[#475569]">
+        This may take a moment on mobile
+      </span>
     </div>
   );
 
   if (error) return (
     <div className="flex-1 flex flex-col items-center justify-center gap-2 p-4">
       <p className="text-[13px] text-red-400">Unable to load paper.</p>
-      <p className="text-[11px] text-slate-500 text-center">{error}</p>
+      <p className="text-[11px] text-slate-500 dark:text-[#64748B] text-center">{error}</p>
     </div>
   );
 

@@ -154,7 +154,14 @@ export default function PastPapersPage({ navigate }) {
     const path = selectedPaper.url.split('/object/public/past-papers/')[1];
     if (!path) { setPdfLoading(false); return; }
 
-    supabase.storage.from('past-papers').createSignedUrl(path, 1800)
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), 8000)
+    );
+
+    Promise.race([
+      supabase.storage.from('past-papers').createSignedUrl(path, 1800),
+      timeout,
+    ])
       .then(({ data, error }) => {
         const resolved = (!error && typeof data?.signedUrl === 'string') ? data.signedUrl : selectedPaper.url;
         setSignedUrl(typeof resolved === 'string' ? resolved : null);
