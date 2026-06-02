@@ -555,24 +555,6 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
         <h2 className="text-[14px] font-medium text-slate-900 dark:text-white">AI Tutor</h2>
       </div>
 
-      {/* PDF progress bar — shown while loading a PDF */}
-      {pdfLoading && (
-        <div className="shrink-0 mb-4 flex flex-col items-center gap-2 px-4">
-          <div className="w-full max-w-[280px]">
-            <div className="flex justify-between items-center mb-1.5">
-              <span className="text-[11px] text-slate-400 dark:text-[#64748B]">Processing PDF</span>
-              <span className="text-[12px] font-semibold text-[#22C55E]">{pdfProgress}%</span>
-            </div>
-            <div className="h-1.5 w-full bg-slate-200 dark:bg-[#334155] rounded-full overflow-hidden">
-              <div
-                className="h-full bg-[#22C55E] rounded-full transition-all duration-300"
-                style={{ width: `${pdfProgress}%` }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Messages */}
       <div className="flex-1 min-h-0 overflow-y-auto mb-4 flex flex-col gap-4 pr-1 pb-4 hide-scrollbar">
         {messages.map((msg, idx) => (
@@ -682,6 +664,22 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
         <InsufficientTokensAlert onBuyTokens={() => setShowTokenShop(true)} />
       )}
       {showTokenShop && <TokenShopModal onClose={() => setShowTokenShop(false)} />}
+
+      {/* PDF progress bar — just above input */}
+      {pdfLoading && (
+        <div className="shrink-0 mb-2 px-1">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-[11px] text-slate-400 dark:text-[#64748B]">Processing PDF</span>
+            <span className="text-[12px] font-semibold text-[#22C55E]">{pdfProgress}%</span>
+          </div>
+          <div className="h-1.5 w-full bg-slate-200 dark:bg-[#334155] rounded-full overflow-hidden">
+            <div
+              className="h-full bg-[#22C55E] rounded-full transition-all duration-300"
+              style={{ width: `${pdfProgress}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Input Bar */}
       <div className="shrink-0 sticky bottom-0 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 rounded-2xl p-2 flex items-center gap-2">
