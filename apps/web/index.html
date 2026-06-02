@@ -21,8 +21,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="PassMark">
   
-  <!-- PDF.js CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -194,6 +192,17 @@
         } catch (e) {}
       }
     });
+  </script>
+
+  <!-- Polyfill Promise.withResolvers — missing in iOS Safari < 17.4, required by PDF.js -->
+  <script>
+    if (typeof Promise.withResolvers === 'undefined') {
+      Promise.withResolvers = function () {
+        var resolve, reject;
+        var promise = new Promise(function (res, rej) { resolve = res; reject = rej; });
+        return { promise: promise, resolve: resolve, reject: reject };
+      };
+    }
   </script>
 
   <script type="module" src="/src/main.jsx"></script>
