@@ -57,7 +57,22 @@ serve(async (req) => {
         }
       }
 
-      // 3. Confirmer l'achat en attente
+      // 3. Créditer les tokens EN PREMIER — si ça échoue, chariow_sale_id n'est pas encore
+      //    posé donc Chariow peut retenter proprement. Le RPC est idempotent sur purchaseId.
+      const { data: newBalance, error: creditError } = await supabase.rpc('credit_tokens', {
+        p_user_id: userId,
+        p_amount: tokens,
+        p_purchase_id: purchaseId || null,
+      })
+
+      if (creditError) {
+        console.error("Erreur credit_tokens:", creditError)
+        return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500 })
+      }
+
+      console.log(`✓ ${tokens} tokens crédités à ${userId}. Nouveau solde: ${newBalance}`)
+
+      // 4. Poser le verrou d'idempotence APRÈS succès du crédit
       if (purchaseId) {
         await supabase
           .from('token_purchases')
@@ -86,20 +101,6 @@ serve(async (req) => {
           confirmed_at: new Date().toISOString(),
         })
       }
-
-      // 4. Créditer les tokens atomiquement via RPC
-      const { data: newBalance, error: creditError } = await supabase.rpc('credit_tokens', {
-        p_user_id: userId,
-        p_amount: tokens,
-        p_purchase_id: purchaseId || null,
-      })
-
-      if (creditError) {
-        console.error("Erreur credit_tokens:", creditError)
-        return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500 })
-      }
-
-      console.log(`✓ ${tokens} tokens crédités à ${userId}. Nouveau solde: ${newBalance}`)
     }
 
     return new Response(JSON.stringify({ received: true }), { status: 200 })
