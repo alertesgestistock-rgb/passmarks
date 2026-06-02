@@ -2,7 +2,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import pdfjsLib from '@/lib/pdfjs';
 
-const FETCH_TIMEOUT_MS = 45_000; // 45 s — generous for mobile
+const FETCH_TIMEOUT_MS  = 45_000; // 45 s fetch
+const PARSE_TIMEOUT_MS  = 30_000; // 30 s PDF.js parsing
 
 export default function PDFViewer({ url, watermark }) {
   const containerRef = useRef(null);
@@ -96,36 +97,47 @@ export default function PDFViewer({ url, watermark }) {
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      // Stream response to track download progress
-      const contentLength = Number(res.headers.get('Content-Length')) || 0;
-      const reader  = res.body.getReader();
-      const chunks  = [];
-      let received  = 0;
+      // Stream with progress when available (res.body can be null on some iOS builds)
+      let buffer;
+      if (res.body) {
+        const contentLength = Number(res.headers.get('Content-Length')) || 0;
+        const reader  = res.body.getReader();
+        const chunks  = [];
+        let received  = 0;
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        if (cancelled.value) return;
-        chunks.push(value);
-        received += value.length;
-        if (contentLength > 0) {
-          setProgress(Math.min(99, Math.round((received / contentLength) * 100)));
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (cancelled.value) return;
+          chunks.push(value);
+          received += value.length;
+          if (contentLength > 0) {
+            setProgress(Math.min(99, Math.round((received / contentLength) * 100)));
+          }
         }
+
+        if (cancelled.value) return;
+        const all = new Uint8Array(received);
+        let pos = 0;
+        for (const chunk of chunks) { all.set(chunk, pos); pos += chunk.length; }
+        buffer = all.buffer;
+      } else {
+        // Fallback for environments without ReadableStream support
+        buffer = await res.arrayBuffer();
       }
 
       if (cancelled.value) return;
 
-      // Assemble chunks into one ArrayBuffer
-      const all = new Uint8Array(received);
-      let pos = 0;
-      for (const chunk of chunks) { all.set(chunk, pos); pos += chunk.length; }
-
-      // Download done — now PDF.js parses (CPU-bound, can be slow on mobile)
+      // Download done — PDF.js parses (CPU-bound, can be slow on mobile)
       setProgress(100);
       setPhase('processing');
 
-      task = pdfjsLib.getDocument({ data: all.buffer });
-      const pdf = await task.promise;
+      const parseTimeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('PDF processing timed out. Please try again.')), PARSE_TIMEOUT_MS)
+      );
+
+      task = pdfjsLib.getDocument({ data: buffer });
+      const pdf = await Promise.race([task.promise, parseTimeoutPromise]);
 
       if (cancelled.value) return;
       pdfRef.current = pdf;
@@ -177,7 +189,7 @@ export default function PDFViewer({ url, watermark }) {
         </div>
       )}
       <span className="text-[11px] text-slate-300 dark:text-[#475569]">
-        This may take a moment on mobile
+        This may take a moment
       </span>
     </div>
   );
