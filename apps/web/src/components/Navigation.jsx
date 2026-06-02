@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
+import ReactDOM from 'react-dom';
 import { Home, BookOpen, GraduationCap, User, Search, Settings, Sun, Moon, Calculator as CalcIcon, WifiOff, CalendarDays, RotateCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -180,7 +181,10 @@ export function TopNav({ setActiveTab }) {
 
           <TokenBalance balance={tokenBalance} onClick={() => setShowTokenShop(true)} compact />
           <NotificationCenter navigate={setActiveTab} />
-          {showTokenShop && <TokenShopModal onClose={() => setShowTokenShop(false)} />}
+          {showTokenShop && ReactDOM.createPortal(
+            <TokenShopModal onClose={() => setShowTokenShop(false)} />,
+            document.body
+          )}
 
           <button
             onClick={() => setActiveTab('profile')}
