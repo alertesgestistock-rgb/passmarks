@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Home, BookOpen, GraduationCap, User, Search, Settings, Sun, Moon, Calculator as CalcIcon, WifiOff, CalendarDays } from 'lucide-react';
+import { Home, BookOpen, GraduationCap, User, Search, Settings, Sun, Moon, Calculator as CalcIcon, WifiOff, CalendarDays, RotateCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUser } from '@/contexts/UserContext';
@@ -89,6 +89,12 @@ export function TopNav({ setActiveTab }) {
   const [showTokenShop, setShowTokenShop] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
+  // True only when running as an installed PWA (standalone mode)
+  const isPWA =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true ||
+    document.referrer.startsWith('android-app://');
+
   useEffect(() => {
     const goOnline = () => setIsOffline(false);
     const goOffline = () => setIsOffline(true);
@@ -139,6 +145,18 @@ export function TopNav({ setActiveTab }) {
               <WifiOff size={15} />
               <span className="hidden sm:inline">Offline</span>
             </div>
+          )}
+
+          {/* PWA refresh button — only visible when installed as a PWA */}
+          {isPWA && (
+            <button
+              onClick={() => window.location.reload()}
+              aria-label="Refresh app"
+              title="Refresh"
+              className="w-[36px] h-[36px] rounded-full bg-slate-100 dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 flex items-center justify-center text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-[#334155] transition-colors active:rotate-180 duration-300"
+            >
+              <RotateCw size={16} />
+            </button>
           )}
 
           {/* Calculator button */}
