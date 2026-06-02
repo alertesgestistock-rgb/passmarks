@@ -269,7 +269,7 @@ function DailyBonusToast() {
         whiteSpace: 'nowrap',
       }}
     >
-      🎁 +{dailyBonus} tokens gratuits aujourd'hui !
+      🎁 +{dailyBonus} free tokens today!
     </div>
   );
 }

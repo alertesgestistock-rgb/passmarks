@@ -10,7 +10,7 @@ export default function TokenBalance({ balance, onClick, compact = false }) {
   return (
     <button
       onClick={onClick}
-      title="Voir les packs de tokens"
+      title="View token packs"
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -37,7 +37,7 @@ export default function TokenBalance({ balance, onClick, compact = false }) {
       `}</style>
       <Coins size={compact ? 13 : 15} />
       <span>{balance}</span>
-      {isLow && !compact && <span style={{ fontSize: 10, opacity: 0.8 }}>faible</span>}
+      {isLow && !compact && <span style={{ fontSize: 10, opacity: 0.8 }}>low</span>}
     </button>
   );
 }
