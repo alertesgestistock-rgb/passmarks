@@ -325,8 +325,9 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
           }
           setPendingPdf({ name: file.name, text: null, images, pageCount: totalPages });
         }
-      } catch {
-        setMessages(prev => [...prev, { role: 'assistant', content: 'Error reading PDF. Please try again.', isError: true, timestamp: new Date().toISOString() }]);
+      } catch (err) {
+        const detail = err?.message || err?.name || String(err) || 'unknown';
+        setMessages(prev => [...prev, { role: 'assistant', content: `Error reading PDF: ${detail}`, isError: true, timestamp: new Date().toISOString() }]);
       } finally {
         setPdfLoading(false);
       }
