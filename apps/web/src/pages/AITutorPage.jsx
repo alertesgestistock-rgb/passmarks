@@ -727,6 +727,12 @@ export default function AITutorPage({ navigate, viewState }) {
   const [activeConvId, setActiveConvId] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [convLoading, setConvLoading] = useState(false);
+  // PDF props from "Ask AI" — consumed once then cleared so other conversations don't inherit them
+  const [pdfInitState, setPdfInitState] = useState({
+    initialMessage: viewState?.initialMessage,
+    initialPdfUrl: viewState?.initialPdfUrl,
+    initialPdfName: viewState?.initialPdfName,
+  });
   const [editingConvId, setEditingConvId] = useState(null);
   const [editingTitle, setEditingTitle] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(() => {
@@ -748,7 +754,15 @@ export default function AITutorPage({ navigate, viewState }) {
   }, [user?.id]);
 
   useEffect(() => {
-    if (viewState?.initialMessage || viewState?.initialPdfUrl) { setActiveConvId(null); setView('chat'); }
+    if (viewState?.initialMessage || viewState?.initialPdfUrl) {
+      setPdfInitState({
+        initialMessage: viewState.initialMessage,
+        initialPdfUrl: viewState.initialPdfUrl,
+        initialPdfName: viewState.initialPdfName,
+      });
+      setActiveConvId(null);
+      setView('chat');
+    }
   }, [viewState]);
 
   const CONV_CACHE_KEY = `pm_convs_${user?.id}`;
@@ -800,8 +814,8 @@ export default function AITutorPage({ navigate, viewState }) {
     setEditingConvId(null);
   };
 
-  const openNewChat = () => { setActiveConvId(null); setView('chat'); };
-  const openConversation = (convId) => { setActiveConvId(convId); setView('chat'); };
+  const openNewChat = () => { setPdfInitState({}); setActiveConvId(null); setView('chat'); };
+  const openConversation = (convId) => { setPdfInitState({}); setActiveConvId(convId); setView('chat'); };
   const handleBack = () => { setView('list'); loadConversations(); navigate('tutor', null); };
 
   if (userLoading) return <div className="animate-pulse h-full bg-slate-200 dark:bg-[#1E293B] rounded-2xl m-4" />;
@@ -975,9 +989,9 @@ export default function AITutorPage({ navigate, viewState }) {
           <ChatView
             key={activeConvId}
             initConvId={activeConvId}
-            initialMessage={viewState?.initialMessage}
-            initialPdfUrl={viewState?.initialPdfUrl}
-            initialPdfName={viewState?.initialPdfName}
+            initialMessage={pdfInitState.initialMessage}
+            initialPdfUrl={pdfInitState.initialPdfUrl}
+            initialPdfName={pdfInitState.initialPdfName}
             onBack={handleBack}
             showBackButton={view === 'chat'}
             user={user}
