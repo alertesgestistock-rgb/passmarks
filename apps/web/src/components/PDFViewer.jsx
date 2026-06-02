@@ -10,6 +10,7 @@ export default function PDFViewer({ url, watermark }) {
   const renderRef    = useRef(null);
   const [loading, setLoading]   = useState(true);
   const [progress, setProgress] = useState(0);   // 0-100 download %
+  const [phase, setPhase]       = useState('downloading'); // 'downloading' | 'processing'
   const [error, setError]       = useState(null);
 
   const renderAll = useCallback(async (pdf) => {
@@ -73,6 +74,7 @@ export default function PDFViewer({ url, watermark }) {
 
     setLoading(true);
     setProgress(0);
+    setPhase('downloading');
     setError(null);
     pdfRef.current = null;
 
@@ -118,12 +120,15 @@ export default function PDFViewer({ url, watermark }) {
       let pos = 0;
       for (const chunk of chunks) { all.set(chunk, pos); pos += chunk.length; }
 
+      // Download done — now PDF.js parses (CPU-bound, can be slow on mobile)
+      setProgress(100);
+      setPhase('processing');
+
       task = pdfjsLib.getDocument({ data: all.buffer });
       const pdf = await task.promise;
 
       if (cancelled.value) return;
       pdfRef.current = pdf;
-      setProgress(100);
       setLoading(false);
     };
 
@@ -152,14 +157,23 @@ export default function PDFViewer({ url, watermark }) {
     <div className="flex-1 flex flex-col items-center justify-center gap-3 px-6">
       <div className="w-8 h-8 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin" />
       <span className="text-[12px] text-slate-400 dark:text-[#64748B]">
-        {progress > 0 ? `Downloading… ${progress}%` : 'Loading paper…'}
+        {phase === 'processing'
+          ? 'Processing PDF…'
+          : progress > 0
+            ? `Downloading… ${progress}%`
+            : 'Loading paper…'}
       </span>
-      {progress > 0 && (
+      {phase === 'downloading' && progress > 0 && (
         <div className="w-full max-w-[200px] h-1 bg-slate-200 dark:bg-[#334155] rounded-full overflow-hidden">
           <div
             className="h-full bg-[#22C55E] rounded-full transition-all duration-200"
             style={{ width: `${progress}%` }}
           />
+        </div>
+      )}
+      {phase === 'processing' && (
+        <div className="w-full max-w-[200px] h-1 bg-slate-200 dark:bg-[#334155] rounded-full overflow-hidden">
+          <div className="h-full bg-[#3B82F6] rounded-full animate-pulse" style={{ width: '100%' }} />
         </div>
       )}
       <span className="text-[11px] text-slate-300 dark:text-[#475569]">
