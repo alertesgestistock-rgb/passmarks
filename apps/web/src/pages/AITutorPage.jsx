@@ -119,6 +119,7 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
   const [pendingImage, setPendingImage] = useState(null);
   const [pendingPdf, setPendingPdf] = useState(null); // { name, text }
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfProgress, setPdfProgress] = useState('');
   const [conversationId, setConversationId] = useState(initConvId || null);
   const [messages, setMessages] = useState([buildWelcome(user)]);
   const [noTokens, setNoTokens] = useState(false);
@@ -177,10 +178,12 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
   useEffect(() => {
     if (!initialPdfUrl || !initialPdfName) return;
     setPdfLoading(true);
+    setPdfProgress('Loading paper…');
     (async () => {
       try {
         const res = await fetch(initialPdfUrl);
         const buffer = await res.arrayBuffer();
+        setPdfProgress('Reading PDF…');
         const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise;
         const totalPages = pdf.numPages;
 
@@ -198,8 +201,10 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
           pdfData = { name: initialPdfName, text: extracted, images: null, pageCount: totalPages };
         } else {
           // PDF scanné → rendre en images
+          const pageCount = Math.min(totalPages, 4);
           const images = [];
-          for (let i = 1; i <= Math.min(totalPages, 4); i++) {
+          for (let i = 1; i <= pageCount; i++) {
+            setPdfProgress(`Processing page ${i}/${pageCount}…`);
             const page = await pdf.getPage(i);
             const b64 = await renderPageToBase64(page);
             images.push(b64);
@@ -207,12 +212,12 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
           pdfData = { name: initialPdfName, text: null, images, pageCount: totalPages };
         }
         setPendingPdf(pdfData);
-        // Pass pdfData directly — React state won't be flushed yet at this point
         if (initialMessage) handleSend(initialMessage, pdfData);
       } catch {
         setMessages(prev => [...prev, { role: 'assistant', content: 'Could not load the paper. Please try again.', isError: true, timestamp: new Date().toISOString() }]);
       } finally {
         setPdfLoading(false);
+        setPdfProgress('');
       }
     })();
   }, []);
@@ -280,6 +285,7 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
       return;
     }
     setPdfLoading(true);
+    setPdfProgress('Reading PDF…');
     setPendingPdf(null);
     const reader = new FileReader();
     reader.onload = async (ev) => {
@@ -317,8 +323,10 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
           });
         } else {
           // ── Chemin 2 : PDF scanné (images) ────────────────────────────
+          const pageCount = Math.min(totalPages, 4);
           const images = [];
-          for (let i = 1; i <= Math.min(totalPages, 4); i++) {
+          for (let i = 1; i <= pageCount; i++) {
+            setPdfProgress(`Processing page ${i}/${pageCount}…`);
             const page = await pdf.getPage(i);
             const b64 = await renderPageToBase64(page);
             images.push(b64);
@@ -330,6 +338,7 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
         setMessages(prev => [...prev, { role: 'assistant', content: `Error reading PDF: ${detail}`, isError: true, timestamp: new Date().toISOString() }]);
       } finally {
         setPdfLoading(false);
+        setPdfProgress('');
       }
     };
     reader.readAsArrayBuffer(file);
@@ -637,8 +646,8 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
           )}
           {pdfLoading && (
             <div className="flex items-center gap-2 bg-slate-100 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl px-3 py-2">
-              <div className="w-3 h-3 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin" />
-              <span className="text-[12px] text-slate-500 dark:text-[#64748B]">Reading PDF…</span>
+              <div className="w-3 h-3 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin shrink-0" />
+              <span className="text-[12px] text-slate-500 dark:text-[#64748B]">{pdfProgress || 'Reading PDF…'}</span>
             </div>
           )}
           {pendingPdf && (
