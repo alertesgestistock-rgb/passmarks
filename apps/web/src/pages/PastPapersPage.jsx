@@ -200,14 +200,15 @@ export default function PastPapersPage({ navigate }) {
             </p>
           </div>
           <button
+            disabled={pdfLoading || !signedUrl}
             onClick={() => navigate('tutor', {
               initialMessage: aiMessage,
               ...(signedUrl ? { initialPdfUrl: signedUrl, initialPdfName: `${selectedSubject.subject} P${selectedPaper.paper_number} ${selectedPaper.year}.pdf` } : {}),
             })}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#3B82F6] text-white text-[12px] font-medium hover:bg-[#2563EB] transition-colors shrink-0"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#3B82F6] text-white text-[12px] font-medium hover:bg-[#2563EB] transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Sparkles size={13} />
-            Ask AI
+            {pdfLoading ? 'Loading...' : 'Ask AI'}
           </button>
         </div>
 
