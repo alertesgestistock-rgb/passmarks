@@ -33,8 +33,7 @@ export default function PastPapersPage({ navigate }) {
   const [search, setSearch]                   = useState('');
   const [activeCategories, setActiveCategories] = useState([]);
   const [selectedPaper, setSelectedPaper]     = useState(null); // { url, year, paper_number }
-  const [signedUrl, setSignedUrl]             = useState(null);
-  const [pdfLoading, setPdfLoading]           = useState(false);
+  const [aiLoading, setAiLoading]             = useState(false);
   const [loadingSubjects, setLoadingSubjects] = useState(true);
   const [loadingPapers, setLoadingPapers]     = useState(false);
   const [error, setError]                     = useState(null);
@@ -145,34 +144,10 @@ export default function PastPapersPage({ navigate }) {
       .sort((a, b) => a.subject.localeCompare(b.subject));
   }, [subjects, search, activeCategories, selectedLevel]);
 
-  // Generate signed URL (expires 30 min) when reader opens
-  useEffect(() => {
-    if (!selectedPaper?.url || view !== 'reader') return;
-    setSignedUrl(null);
-    setPdfLoading(true);
-
-    const path = selectedPaper.url.split('/object/public/past-papers/')[1];
-    if (!path) { setPdfLoading(false); return; }
-
-    const timeout = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('timeout')), 8000)
-    );
-
-    Promise.race([
-      supabase.storage.from('past-papers').createSignedUrl(path, 1800),
-      timeout,
-    ])
-      .then(({ data, error }) => {
-        const resolved = (!error && typeof data?.signedUrl === 'string') ? data.signedUrl : selectedPaper.url;
-        setSignedUrl(typeof resolved === 'string' ? resolved : null);
-        setPdfLoading(false);
-      })
-      .catch(() => {
-        const fallback = selectedPaper.url;
-        setSignedUrl(typeof fallback === 'string' ? fallback : null);
-        setPdfLoading(false);
-      });
-  }, [selectedPaper, view]);
+  // Extract storage path from public URL
+  const pdfPath = selectedPaper?.url
+    ? (selectedPaper.url.split('/object/public/past-papers/')[1] ?? null)
+    : null;
 
   const handleOpenSubject = (sub) => {
     setSelectedSubject(sub);
@@ -187,6 +162,24 @@ export default function PastPapersPage({ navigate }) {
     const sourceLabel = SOURCES.find(s => s.key === selectedSource)?.label || selectedSource;
     const aiMessage   = `I'm studying GCE ${levelLabel} ${selectedSubject.subject} Paper ${selectedPaper.paper_number} ${selectedPaper.year} (${sourceLabel}). Help me understand and solve questions from this paper.`;
     const watermark   = user?.email || user?.name || 'PassMark';
+
+    const handleAskAI = async () => {
+      setAiLoading(true);
+      try {
+        const path = selectedPaper.url?.split('/object/public/past-papers/')[1];
+        let pdfUrl = selectedPaper.url;
+        if (path) {
+          const { data } = await supabase.storage.from('past-papers').createSignedUrl(path, 1800);
+          if (typeof data?.signedUrl === 'string') pdfUrl = data.signedUrl;
+        }
+        navigate('tutor', {
+          initialMessage: aiMessage,
+          ...(pdfUrl ? { initialPdfUrl: pdfUrl, initialPdfName: `${selectedSubject.subject} P${selectedPaper.paper_number} ${selectedPaper.year}.pdf` } : {}),
+        });
+      } finally {
+        setAiLoading(false);
+      }
+    };
 
     return (
       <div className="fade-in flex flex-col" style={{ height: 'calc(100dvh - 130px)', minHeight: '500px' }}>
@@ -207,32 +200,22 @@ export default function PastPapersPage({ navigate }) {
             </p>
           </div>
           <button
-            disabled={pdfLoading || !signedUrl}
-            onClick={() => navigate('tutor', {
-              initialMessage: aiMessage,
-              ...(signedUrl ? { initialPdfUrl: signedUrl, initialPdfName: `${selectedSubject.subject} P${selectedPaper.paper_number} ${selectedPaper.year}.pdf` } : {}),
-            })}
+            disabled={aiLoading}
+            onClick={handleAskAI}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#3B82F6] text-white text-[12px] font-medium hover:bg-[#2563EB] transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Sparkles size={13} />
-            {pdfLoading ? 'Loading...' : 'Ask AI'}
+            {aiLoading ? 'Opening…' : 'Ask AI'}
           </button>
         </div>
 
-        {/* PDF viewer — PDF.js canvas rendering */}
+        {/* PDF viewer — image-based, page-by-page lazy loading */}
         <div className="flex-1 rounded-2xl overflow-hidden border border-slate-200 dark:border-[#334155]/50 bg-slate-100 dark:bg-[#0F172A] flex flex-col">
-          {pdfLoading ? (
-            <div className="flex-1 flex flex-col items-center justify-center gap-3">
-              <div className="w-8 h-8 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin" />
-              <span className="text-[12px] text-slate-400 dark:text-[#64748B]">Loading paper...</span>
-            </div>
-          ) : signedUrl ? (
-            <PDFViewer url={signedUrl} watermark={watermark} />
-          ) : (
-            <div className="flex-1 flex items-center justify-center">
-              <p className="text-[13px] text-slate-400 dark:text-[#64748B]">Unable to load paper. Try again.</p>
-            </div>
-          )}
+          <PDFViewer
+            pdfPath={pdfPath}
+            pdfUrl={selectedPaper.url}
+            watermark={watermark}
+          />
         </div>
       </div>
     );

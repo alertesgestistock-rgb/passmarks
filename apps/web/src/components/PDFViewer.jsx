@@ -1,212 +1,230 @@
-
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import pdfjsLib from '@/lib/pdfjs';
+import { supabase } from '@/lib/supabase';
 
-const FETCH_TIMEOUT_MS  = 45_000; // 45 s fetch
-const PARSE_TIMEOUT_MS  = 30_000; // 30 s PDF.js parsing
+const SUPABASE_URL  = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const EF_BASE       = `${SUPABASE_URL}/functions/v1/pdf-pages`;
 
-export default function PDFViewer({ url, watermark }) {
+// ─── Single page component ────────────────────────────────────────────────────
+
+function PDFPage({ pageNum, pdfPath, watermark, token }) {
   const containerRef = useRef(null);
-  const pdfRef       = useRef(null);
-  const renderRef    = useRef(null);
-  const [loading, setLoading]   = useState(true);
-  const [progress, setProgress] = useState(0);   // 0-100 download %
-  const [phase, setPhase]       = useState('downloading'); // 'downloading' | 'processing'
-  const [error, setError]       = useState(null);
+  const canvasRef    = useRef(null);
+  const fetchedRef   = useRef(false);
+  const [state, setState] = useState('idle'); // idle | loading | done | error
 
-  const renderAll = useCallback(async (pdf) => {
-    if (!containerRef.current) return;
-    const container = containerRef.current;
-    container.innerHTML = '';
+  const drawPage = useCallback(async () => {
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+    setState('loading');
 
-    const containerWidth = container.clientWidth || 340;
-    const cancelled = { value: false };
-    renderRef.current = cancelled;
-
-    for (let i = 1; i <= pdf.numPages; i++) {
-      if (cancelled.value) break;
-
-      const page     = await pdf.getPage(i);
-      const baseView = page.getViewport({ scale: 1 });
-      const scale    = containerWidth / baseView.width;
-      const viewport = page.getViewport({ scale });
-
-      const canvas    = document.createElement('canvas');
-      canvas.width    = viewport.width;
-      canvas.height   = viewport.height;
-      canvas.style.cssText = 'width:100%;display:block;margin-bottom:6px;border-radius:6px;background:#fff';
-      container.appendChild(canvas);
-
-      const ctx = canvas.getContext('2d');
-      await page.render({ canvasContext: ctx, viewport }).promise;
-
-      if (cancelled.value) break;
-
-      if (watermark) {
-        ctx.save();
-        ctx.globalAlpha = 0.11;
-        ctx.fillStyle   = '#334155';
-        const fontSize  = Math.max(11, viewport.width * 0.022);
-        ctx.font        = `500 ${fontSize}px system-ui, sans-serif`;
-        const text      = `PassMark · ${watermark}`;
-        const cols      = 4;
-        const rows      = 6;
-        const spacingX  = viewport.width  / cols;
-        const spacingY  = viewport.height / rows;
-
-        for (let r = 0; r < rows; r++) {
-          for (let c = 0; c < cols; c++) {
-            ctx.save();
-            ctx.translate(spacingX * c + spacingX / 2, spacingY * r + spacingY / 2);
-            ctx.rotate(-Math.PI / 7);
-            ctx.fillText(text, -ctx.measureText(text).width / 2, 0);
-            ctx.restore();
-          }
-        }
-        ctx.restore();
-      }
-    }
-  }, [watermark]);
-
-  // Effect 1: fetch PDF bytes (with timeout + progress) then parse with PDF.js
-  useEffect(() => {
-    if (!url || typeof url !== 'string') return;
-    if (renderRef.current) renderRef.current.value = true;
-
-    setLoading(true);
-    setProgress(0);
-    setPhase('downloading');
-    setError(null);
-    pdfRef.current = null;
-
-    const cancelled = { value: false };
-    let task = null;
-
-    const controller = new AbortController();
-    const timeoutId  = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-
-    const run = async () => {
-      let res;
-      try {
-        res = await fetch(url, { signal: controller.signal });
-      } catch (err) {
-        throw err.name === 'AbortError'
-          ? new Error('Download timed out — check your connection and try again.')
-          : err;
-      }
+    try {
+      const url = `${EF_BASE}?path=${encodeURIComponent(pdfPath)}&page=${pageNum}`;
+      const res = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'apikey': SUPABASE_ANON,
+        },
+      });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      // Stream with progress when available (res.body can be null on some iOS builds)
-      let buffer;
-      if (res.body) {
-        const contentLength = Number(res.headers.get('Content-Length')) || 0;
-        const reader  = res.body.getReader();
-        const chunks  = [];
-        let received  = 0;
+      const blob  = await res.blob();
+      const imgUrl = URL.createObjectURL(blob);
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          if (cancelled.value) return;
-          chunks.push(value);
-          received += value.length;
-          if (contentLength > 0) {
-            setProgress(Math.min(99, Math.round((received / contentLength) * 100)));
+      await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = canvasRef.current;
+          if (!canvas) { resolve(); return; }
+
+          canvas.width  = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d');
+
+          // Draw PDF page
+          ctx.drawImage(img, 0, 0);
+          URL.revokeObjectURL(imgUrl);
+
+          // Draw watermark grid
+          if (watermark) {
+            ctx.save();
+            ctx.globalAlpha = 0.11;
+            ctx.fillStyle   = '#334155';
+            const fontSize  = Math.max(11, img.naturalWidth * 0.022);
+            ctx.font        = `500 ${fontSize}px system-ui, sans-serif`;
+            const text      = `PassMark · ${watermark}`;
+            const cols = 4, rows = 6;
+            const sx = img.naturalWidth  / cols;
+            const sy = img.naturalHeight / rows;
+            for (let r = 0; r < rows; r++) {
+              for (let c = 0; c < cols; c++) {
+                ctx.save();
+                ctx.translate(sx * c + sx / 2, sy * r + sy / 2);
+                ctx.rotate(-Math.PI / 7);
+                ctx.fillText(text, -ctx.measureText(text).width / 2, 0);
+                ctx.restore();
+              }
+            }
+            ctx.restore();
           }
-        }
 
-        if (cancelled.value) return;
-        const all = new Uint8Array(received);
-        let pos = 0;
-        for (const chunk of chunks) { all.set(chunk, pos); pos += chunk.length; }
-        buffer = all.buffer;
-      } else {
-        // Fallback for environments without ReadableStream support
-        buffer = await res.arrayBuffer();
-      }
+          resolve();
+        };
+        img.onerror = reject;
+        img.src = imgUrl;
+      });
 
-      if (cancelled.value) return;
+      setState('done');
+    } catch (err) {
+      console.error(`[PDFViewer] page ${pageNum} error:`, err);
+      fetchedRef.current = false; // allow retry
+      setState('error');
+    }
+  }, [pdfPath, pageNum, token, watermark]);
 
-      // Download done — PDF.js parses (CPU-bound, can be slow on mobile)
-      setProgress(100);
-      setPhase('processing');
-
-      const parseTimeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('PDF processing timed out. Please try again.')), PARSE_TIMEOUT_MS)
-      );
-
-      task = pdfjsLib.getDocument({ data: buffer });
-      const pdf = await Promise.race([task.promise, parseTimeoutPromise]);
-
-      if (cancelled.value) return;
-      pdfRef.current = pdf;
-      setLoading(false);
-    };
-
-    run().catch(err => {
-      if (cancelled.value) return;
-      console.error('[PDFViewer] load error:', err);
-      setError(err.message || 'Failed to load PDF');
-      setLoading(false);
-    }).finally(() => clearTimeout(timeoutId));
-
-    return () => {
-      cancelled.value = true;
-      clearTimeout(timeoutId);
-      controller.abort();
-      task?.destroy?.();
-    };
-  }, [url]);
-
-  // Effect 2: render pages once container div is in the DOM
   useEffect(() => {
-    if (loading || error || !pdfRef.current) return;
-    renderAll(pdfRef.current);
-  }, [loading, error, renderAll]);
+    if (!token || !containerRef.current) return;
 
-  if (loading) return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-3 px-6">
-      <div className="w-8 h-8 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin" />
-      <span className="text-[12px] text-slate-400 dark:text-[#64748B]">
-        {phase === 'processing'
-          ? 'Processing PDF…'
-          : progress > 0
-            ? `Downloading… ${progress}%`
-            : 'Loading paper…'}
-      </span>
-      {phase === 'downloading' && progress > 0 && (
-        <div className="w-full max-w-[200px] h-1 bg-slate-200 dark:bg-[#334155] rounded-full overflow-hidden">
-          <div
-            className="h-full bg-[#22C55E] rounded-full transition-all duration-200"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      )}
-      {phase === 'processing' && (
-        <div className="w-full max-w-[200px] h-1 bg-slate-200 dark:bg-[#334155] rounded-full overflow-hidden">
-          <div className="h-full bg-[#3B82F6] rounded-full animate-pulse" style={{ width: '100%' }} />
-        </div>
-      )}
-      <span className="text-[11px] text-slate-300 dark:text-[#475569]">
-        This may take a moment
-      </span>
-    </div>
-  );
-
-  if (error) return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-2 p-4">
-      <p className="text-[13px] text-red-400">Unable to load paper.</p>
-      <p className="text-[11px] text-slate-500 dark:text-[#64748B] text-center">{error}</p>
-    </div>
-  );
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) drawPage(); },
+      { rootMargin: '400px' },
+    );
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [token, drawPage]);
 
   return (
     <div
       ref={containerRef}
-      className="flex-1 overflow-y-auto overflow-x-hidden p-2"
-      style={{ WebkitOverflowScrolling: 'touch' }}
+      className="relative bg-white rounded-[6px] overflow-hidden mb-[6px]"
+      style={{ minHeight: state === 'done' ? undefined : '420px' }}
       onContextMenu={e => e.preventDefault()}
-    />
+    >
+      <canvas
+        ref={canvasRef}
+        style={{ width: '100%', display: state === 'done' ? 'block' : 'none' }}
+      />
+
+      {state !== 'done' && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+          {state === 'loading' && (
+            <>
+              <div className="w-6 h-6 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin" />
+              <span className="text-[11px] text-slate-400 dark:text-[#64748B]">Page {pageNum}</span>
+            </>
+          )}
+          {state === 'idle' && (
+            <span className="text-[11px] text-slate-300 dark:text-[#475569]">Page {pageNum}</span>
+          )}
+          {state === 'error' && (
+            <button
+              onClick={() => { fetchedRef.current = false; setState('idle'); drawPage(); }}
+              className="text-[11px] text-red-400 underline"
+            >
+              Page {pageNum} — retry
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main viewer ──────────────────────────────────────────────────────────────
+
+export default function PDFViewer({ pdfPath, pdfUrl, watermark }) {
+  const [token,    setToken]    = useState(null);
+  const [numPages, setNumPages] = useState(null);
+  const [status,   setStatus]   = useState('loading'); // loading | ready | not_converted | error
+
+  // Get session token
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.access_token) setToken(session.access_token);
+      else setStatus('error');
+    });
+  }, []);
+
+  // Fetch metadata once we have the token
+  useEffect(() => {
+    if (!token || !pdfPath) return;
+
+    const url = `${EF_BASE}?path=${encodeURIComponent(pdfPath)}&page=meta`;
+    fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'apikey': SUPABASE_ANON,
+      },
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.numPages) {
+          setNumPages(data.numPages);
+          setStatus('ready');
+        } else {
+          setStatus('not_converted');
+        }
+      })
+      .catch(() => setStatus('error'));
+  }, [token, pdfPath]);
+
+  // ── States ──────────────────────────────────────────────────────────────────
+
+  if (status === 'loading') return (
+    <div className="flex-1 flex flex-col items-center justify-center gap-3">
+      <div className="w-8 h-8 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin" />
+      <span className="text-[12px] text-slate-400 dark:text-[#64748B]">Loading paper…</span>
+    </div>
+  );
+
+  if (status === 'not_converted') return (
+    <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center">
+      <p className="text-[13px] text-slate-500 dark:text-[#94A3B8]">
+        This paper is being prepared for mobile viewing.
+      </p>
+      {pdfUrl && (
+        <a
+          href={pdfUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-4 py-2 rounded-xl bg-[#22C55E] text-white text-[13px] font-medium"
+        >
+          Open in browser ↗
+        </a>
+      )}
+    </div>
+  );
+
+  if (status === 'error') return (
+    <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center">
+      <p className="text-[13px] text-red-400">Unable to load paper.</p>
+      {pdfUrl && (
+        <a
+          href={pdfUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#1E293B] text-slate-600 dark:text-[#94A3B8] text-[13px] font-medium"
+        >
+          Open in browser ↗
+        </a>
+      )}
+    </div>
+  );
+
+  // ── Render pages ────────────────────────────────────────────────────────────
+
+  return (
+    <div className="flex-1 overflow-y-auto overflow-x-hidden p-2">
+      {Array.from({ length: numPages }, (_, i) => (
+        <PDFPage
+          key={i + 1}
+          pageNum={i + 1}
+          pdfPath={pdfPath}
+          watermark={watermark}
+          token={token}
+        />
+      ))}
+    </div>
   );
 }

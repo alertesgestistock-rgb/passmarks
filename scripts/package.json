@@ -1,0 +1,12 @@
+{
+  "name": "passmark-scripts",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.7",
+    "dotenv": "^16.4.5",
+    "pdf-to-img": "^4.2.0",
+    "sharp": "^0.33.5"
+  }
+}
