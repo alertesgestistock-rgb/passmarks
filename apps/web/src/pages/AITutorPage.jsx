@@ -119,7 +119,7 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
   const [pendingImage, setPendingImage] = useState(null);
   const [pendingPdf, setPendingPdf] = useState(null); // { name, text }
   const [pdfLoading, setPdfLoading] = useState(false);
-  const [pdfProgress, setPdfProgress] = useState('');
+  const [pdfProgress, setPdfProgress] = useState(0);
   const [conversationId, setConversationId] = useState(initConvId || null);
   const [messages, setMessages] = useState([buildWelcome(user)]);
   const [noTokens, setNoTokens] = useState(false);
@@ -178,16 +178,17 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
   useEffect(() => {
     if (!initialPdfUrl || !initialPdfName) return;
     setPdfLoading(true);
-    setPdfProgress('Loading paper…');
+    setPdfProgress(0);
     (async () => {
       try {
+        setPdfProgress(10);
         const res = await fetch(initialPdfUrl);
         const buffer = await res.arrayBuffer();
-        setPdfProgress('Reading PDF…');
+        setPdfProgress(40);
         const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise;
         const totalPages = pdf.numPages;
+        setPdfProgress(60);
 
-        // Extraire le texte (PDF numérique)
         let text = '';
         for (let i = 1; i <= totalPages; i++) {
           const page = await pdf.getPage(i);
@@ -200,24 +201,24 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
         if (extracted.length > 50) {
           pdfData = { name: initialPdfName, text: extracted, images: null, pageCount: totalPages };
         } else {
-          // PDF scanné → rendre en images
           const pageCount = Math.min(totalPages, 4);
           const images = [];
           for (let i = 1; i <= pageCount; i++) {
-            setPdfProgress(`Processing page ${i}/${pageCount}…`);
             const page = await pdf.getPage(i);
             const b64 = await renderPageToBase64(page);
             images.push(b64);
+            setPdfProgress(60 + Math.round((i / pageCount) * 40));
           }
           pdfData = { name: initialPdfName, text: null, images, pageCount: totalPages };
         }
+        setPdfProgress(100);
         setPendingPdf(pdfData);
         if (initialMessage) handleSend(initialMessage, pdfData);
       } catch {
         setMessages(prev => [...prev, { role: 'assistant', content: 'Could not load the paper. Please try again.', isError: true, timestamp: new Date().toISOString() }]);
       } finally {
         setPdfLoading(false);
-        setPdfProgress('');
+        setPdfProgress(0);
       }
     })();
   }, []);
@@ -285,15 +286,16 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
       return;
     }
     setPdfLoading(true);
-    setPdfProgress('Reading PDF…');
+    setPdfProgress(0);
     setPendingPdf(null);
     const reader = new FileReader();
     reader.onload = async (ev) => {
       try {
+        setPdfProgress(20);
         const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(ev.target.result) }).promise;
         const totalPages = pdf.numPages;
+        setPdfProgress(40);
 
-        // ── Limite stricte : 10 pages maximum ────────────────────────────
         if (totalPages > 10) {
           setMessages(prev => [...prev, {
             role: 'assistant',
@@ -302,10 +304,10 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
             timestamp: new Date().toISOString(),
           }]);
           setPdfLoading(false);
+          setPdfProgress(0);
           return;
         }
 
-        // ── Chemin 1 : PDF numérique (texte sélectionnable) ──────────────
         let text = '';
         for (let i = 1; i <= totalPages; i++) {
           const page = await pdf.getPage(i);
@@ -315,21 +317,16 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
         const extracted = text.trim().substring(0, 30000);
 
         if (extracted.length > 50) {
-          setPendingPdf({
-            name: file.name,
-            text: extracted,
-            images: null,
-            pageCount: totalPages,
-          });
+          setPdfProgress(100);
+          setPendingPdf({ name: file.name, text: extracted, images: null, pageCount: totalPages });
         } else {
-          // ── Chemin 2 : PDF scanné (images) ────────────────────────────
           const pageCount = Math.min(totalPages, 4);
           const images = [];
           for (let i = 1; i <= pageCount; i++) {
-            setPdfProgress(`Processing page ${i}/${pageCount}…`);
             const page = await pdf.getPage(i);
             const b64 = await renderPageToBase64(page);
             images.push(b64);
+            setPdfProgress(40 + Math.round((i / pageCount) * 60));
           }
           setPendingPdf({ name: file.name, text: null, images, pageCount: totalPages });
         }
@@ -338,7 +335,7 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
         setMessages(prev => [...prev, { role: 'assistant', content: `Error reading PDF: ${detail}`, isError: true, timestamp: new Date().toISOString() }]);
       } finally {
         setPdfLoading(false);
-        setPdfProgress('');
+        setPdfProgress(0);
       }
     };
     reader.readAsArrayBuffer(file);
@@ -558,6 +555,24 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
         <h2 className="text-[14px] font-medium text-slate-900 dark:text-white">AI Tutor</h2>
       </div>
 
+      {/* PDF progress bar — shown while loading a PDF */}
+      {pdfLoading && (
+        <div className="shrink-0 mb-4 flex flex-col items-center gap-2 px-4">
+          <div className="w-full max-w-[280px]">
+            <div className="flex justify-between items-center mb-1.5">
+              <span className="text-[11px] text-slate-400 dark:text-[#64748B]">Processing PDF</span>
+              <span className="text-[12px] font-semibold text-[#22C55E]">{pdfProgress}%</span>
+            </div>
+            <div className="h-1.5 w-full bg-slate-200 dark:bg-[#334155] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[#22C55E] rounded-full transition-all duration-300"
+                style={{ width: `${pdfProgress}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Messages */}
       <div className="flex-1 min-h-0 overflow-y-auto mb-4 flex flex-col gap-4 pr-1 pb-4 hide-scrollbar">
         {messages.map((msg, idx) => (
@@ -642,12 +657,6 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
               <button onClick={() => setPendingImage(null)} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-slate-800 text-white flex items-center justify-center">
                 <X size={10} />
               </button>
-            </div>
-          )}
-          {pdfLoading && (
-            <div className="flex items-center gap-2 bg-slate-100 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl px-3 py-2">
-              <div className="w-3 h-3 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin shrink-0" />
-              <span className="text-[12px] text-slate-500 dark:text-[#64748B]">{pdfProgress || 'Reading PDF…'}</span>
             </div>
           )}
           {pendingPdf && (
