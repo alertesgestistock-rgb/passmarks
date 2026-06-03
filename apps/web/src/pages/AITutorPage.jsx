@@ -127,6 +127,8 @@ function ChatView({ initConvId, initialMessage, initialPdfPath, initialPdfPage, 
   const messagesEndRef = useRef(null);
   const imageInputRef = useRef(null);
   const pdfInputRef = useRef(null);
+  // Keeps pdfPath alive for the whole conversation so follow-up messages still get PDF context
+  const sessionPdfRef = useRef(initialPdfPath ? { pdfPath: initialPdfPath, currentPage: initialPdfPage || 1 } : null);
 
   useEffect(() => {
     const on = () => setIsOffline(false);
@@ -177,6 +179,7 @@ function ChatView({ initConvId, initialMessage, initialPdfPath, initialPdfPage, 
   useEffect(() => {
     if (!initialPdfPath || !initialPdfName) return;
     const pdfData = { pdfPath: initialPdfPath, currentPage: initialPdfPage || 1, name: initialPdfName };
+    sessionPdfRef.current = { pdfPath: initialPdfPath, currentPage: initialPdfPage || 1 };
     setPendingPdf(pdfData);
     if (initialMessage) handleSend(initialMessage, pdfData);
   }, []);
@@ -359,7 +362,9 @@ function ChatView({ initConvId, initialMessage, initialPdfPath, initialPdfPage, 
         },
         body: JSON.stringify({
           messages: buildClaudeMessages(messages, text, image, pdf),
-          ...(pdf?.pdfPath ? { pdfPath: pdf.pdfPath, currentPage: pdf.currentPage } : {}),
+          ...(pdf?.pdfPath ? { pdfPath: pdf.pdfPath, currentPage: pdf.currentPage }
+            : sessionPdfRef.current ? { pdfPath: sessionPdfRef.current.pdfPath, currentPage: sessionPdfRef.current.currentPage }
+            : {}),
         }),
         signal: abortCtrl.signal,
       });
