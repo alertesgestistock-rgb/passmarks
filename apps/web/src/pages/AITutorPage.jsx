@@ -11,6 +11,7 @@ import { InsufficientTokensError } from '@/lib/apiServerClient';
 import InsufficientTokensAlert from '@/components/InsufficientTokensAlert';
 import TokenShopModal from '@/components/TokenShopModal';
 import { downloadMessageAsPDF } from '@/lib/generatePDF';
+import pdfjsLib from '@/lib/pdfjs';
 
 const SUGGESTED_QUESTIONS = {
   'Physics': "Explain Newton's 3rd Law",
