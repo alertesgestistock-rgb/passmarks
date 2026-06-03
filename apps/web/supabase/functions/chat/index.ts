@@ -15,7 +15,9 @@ function jsonError(corsHeaders: Record<string, string>, message: string, status:
   });
 }
 
-function detectCost(messages: unknown[]): { cost: number; actionType: string } {
+function detectCost(messages: unknown[], hasPdfPath = false): { cost: number; actionType: string } {
+  if (hasPdfPath) return { cost: 4, actionType: 'pdf' };
+
   const lastUser = [...messages].reverse().find((m: any) => m.role === 'user') as any;
 
   // Vision in last message
@@ -28,8 +30,7 @@ function detectCost(messages: unknown[]): { cost: number; actionType: string } {
   const text = typeof lastUser?.content === 'string' ? lastUser.content : '';
   if (text.startsWith('[PDF:')) return { cost: 4, actionType: 'pdf' };
 
-  // Follow-up in a conversation with PDF/image context — full PDF is retransmitted
-  // to OpenRouter each time, so API cost is higher than a plain text message.
+  // Follow-up in a conversation with PDF/image context
   const hasPdfContext = (messages as any[]).some((m: any) => {
     if (m.role !== 'user') return false;
     if (typeof m.content === 'string' && m.content.startsWith('[PDF:')) return true;
@@ -39,6 +40,16 @@ function detectCost(messages: unknown[]): { cost: number; actionType: string } {
   if (hasPdfContext) return { cost: 2, actionType: 'message_with_context' };
 
   return { cost: 1, actionType: 'message' };
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  const chunkSize = 8192;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, Math.min(i + chunkSize, bytes.length)));
+  }
+  return btoa(binary);
 }
 
 function toOpenAIMessages(messages: unknown[]) {
@@ -97,13 +108,13 @@ serve(async (req: Request) => {
   let body: any;
   try { body = await req.json(); } catch { return jsonError(cors, 'Invalid JSON body', 400); }
 
-  const { messages } = body;
+  const { messages, pdfPath, currentPage } = body;
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return jsonError(cors, 'messages must be a non-empty array', 400);
   }
 
   // ── Vérif solde (lecture seule — pas de débit avant que l'IA réponde) ─────
-  const { cost, actionType } = detectCost(messages);
+  const { cost, actionType } = detectCost(messages, !!pdfPath);
   const { data: wallet } = await supabase
     .from('token_wallets')
     .select('balance')
@@ -113,6 +124,51 @@ serve(async (req: Request) => {
   const balance = (wallet as any)?.balance ?? 0;
   if (balance < cost) {
     return jsonError(cors, 'insufficient_tokens', 402, { balance });
+  }
+
+  // ── Injection des pages PDF depuis le cache serveur ──────────────────────
+  let finalMessages = messages;
+  if (pdfPath && typeof pdfPath === 'string') {
+    try {
+      const { data: metaBlob } = await supabase.storage
+        .from('pdf-page-cache')
+        .download(`${pdfPath}/meta.json`);
+
+      if (metaBlob) {
+        const meta = JSON.parse(await metaBlob.text());
+        const numPages: number = meta.numPages || 0;
+        const page = Math.max(1, Math.min(currentPage || 1, numPages));
+
+        // Fenêtre glissante [page-1, page, page+1, page+2], max 4 pages
+        const pagesToFetch: number[] = [];
+        for (let p = Math.max(1, page - 1); p <= Math.min(numPages, page + 2) && pagesToFetch.length < 4; p++) {
+          pagesToFetch.push(p);
+        }
+
+        const imageContents: unknown[] = [];
+        for (const p of pagesToFetch) {
+          const { data: img } = await supabase.storage
+            .from('pdf-page-cache')
+            .download(`${pdfPath}/page-${p}.jpg`);
+          if (img) {
+            const b64 = arrayBufferToBase64(await img.arrayBuffer());
+            imageContents.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } });
+          }
+        }
+
+        if (imageContents.length > 0) {
+          finalMessages = messages.map((m: any, i: number) => {
+            if (i !== messages.length - 1 || m.role !== 'user') return m;
+            const textParts = typeof m.content === 'string'
+              ? [{ type: 'text', text: m.content }]
+              : (Array.isArray(m.content) ? m.content : []);
+            return { ...m, content: [...imageContents, ...textParts] };
+          });
+        }
+      }
+    } catch (err) {
+      console.error('[chat] pdf injection error:', (err as Error).message);
+    }
   }
 
   // ── Appel OpenRouter avec timeout strict ─────────────────────────────────
@@ -134,7 +190,7 @@ serve(async (req: Request) => {
         model: MODEL,
         max_tokens: 4000,
         stream: true,
-        messages: toOpenAIMessages(messages),
+        messages: toOpenAIMessages(finalMessages),
       }),
       signal: ac.signal,
     });

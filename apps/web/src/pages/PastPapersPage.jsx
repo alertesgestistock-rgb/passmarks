@@ -34,6 +34,7 @@ export default function PastPapersPage({ navigate }) {
   const [activeCategories, setActiveCategories] = useState([]);
   const [selectedPaper, setSelectedPaper]     = useState(null); // { url, year, paper_number }
   const [aiLoading, setAiLoading]             = useState(false);
+  const [currentPage, setCurrentPage]         = useState(1);
   const [loadingSubjects, setLoadingSubjects] = useState(true);
   const [loadingPapers, setLoadingPapers]     = useState(false);
   const [error, setError]                     = useState(null);
@@ -163,22 +164,15 @@ export default function PastPapersPage({ navigate }) {
     const aiMessage   = `I'm studying GCE ${levelLabel} ${selectedSubject.subject} Paper ${selectedPaper.paper_number} ${selectedPaper.year} (${sourceLabel}). Help me understand and solve questions from this paper.`;
     const watermark   = user?.email || user?.name || 'PassMark';
 
-    const handleAskAI = async () => {
-      setAiLoading(true);
-      try {
-        const path = selectedPaper.url?.split('/object/public/past-papers/')[1];
-        let pdfUrl = selectedPaper.url;
-        if (path) {
-          const { data } = await supabase.storage.from('past-papers').createSignedUrl(path, 1800);
-          if (typeof data?.signedUrl === 'string') pdfUrl = data.signedUrl;
-        }
-        navigate('tutor', {
-          initialMessage: aiMessage,
-          ...(pdfUrl ? { initialPdfUrl: pdfUrl, initialPdfName: `${selectedSubject.subject} P${selectedPaper.paper_number} ${selectedPaper.year}.pdf` } : {}),
-        });
-      } finally {
-        setAiLoading(false);
-      }
+    const handleAskAI = () => {
+      const path = selectedPaper.url?.split('/object/public/past-papers/')[1];
+      if (!path) return;
+      navigate('tutor', {
+        initialMessage: aiMessage,
+        initialPdfPath: path,
+        initialPdfPage: currentPage,
+        initialPdfName: `${selectedSubject.subject} P${selectedPaper.paper_number} ${selectedPaper.year}.pdf`,
+      });
     };
 
     return (
@@ -200,12 +194,11 @@ export default function PastPapersPage({ navigate }) {
             </p>
           </div>
           <button
-            disabled={aiLoading}
             onClick={handleAskAI}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#3B82F6] text-white text-[12px] font-medium hover:bg-[#2563EB] transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#3B82F6] text-white text-[12px] font-medium hover:bg-[#2563EB] transition-colors shrink-0"
           >
             <Sparkles size={13} />
-            {aiLoading ? 'Opening…' : 'Ask AI'}
+            Ask AI
           </button>
         </div>
 
@@ -215,6 +208,7 @@ export default function PastPapersPage({ navigate }) {
             pdfPath={pdfPath}
             pdfUrl={selectedPaper.url}
             watermark={watermark}
+            onPageChange={setCurrentPage}
           />
         </div>
       </div>

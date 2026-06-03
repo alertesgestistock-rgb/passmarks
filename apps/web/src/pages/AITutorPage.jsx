@@ -11,8 +11,6 @@ import { InsufficientTokensError } from '@/lib/apiServerClient';
 import InsufficientTokensAlert from '@/components/InsufficientTokensAlert';
 import TokenShopModal from '@/components/TokenShopModal';
 import { downloadMessageAsPDF } from '@/lib/generatePDF';
-import pdfjsLib from '@/lib/pdfjs';
-
 
 const SUGGESTED_QUESTIONS = {
   'Physics': "Explain Newton's 3rd Law",
@@ -110,7 +108,7 @@ function MarkdownText({ content, streaming }) {
 // ─────────────────────────────────────────────────────────────
 // Chat View
 // ─────────────────────────────────────────────────────────────
-function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, onBack, user, showBackButton, onConversationCreated }) {
+function ChatView({ initConvId, initialMessage, initialPdfPath, initialPdfPage, initialPdfName, onBack, user, showBackButton, onConversationCreated }) {
   const { updateUser, addRecentActivity, updateTokenBalance } = useUser();
 
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -171,56 +169,15 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
   }, [initConvId]);
 
   useEffect(() => {
-    if (initialMessage && !initialPdfUrl) handleSend(initialMessage);
+    if (initialMessage && !initialPdfPath) handleSend(initialMessage);
   }, []);
 
-  // Charge automatiquement un PDF depuis une URL (bouton "Ask AI" des Past Papers)
+  // Charge automatiquement un PDF depuis le cache serveur (bouton "Ask AI" des Past Papers)
   useEffect(() => {
-    if (!initialPdfUrl || !initialPdfName) return;
-    setPdfLoading(true);
-    setPdfProgress(0);
-    (async () => {
-      try {
-        setPdfProgress(10);
-        const res = await fetch(initialPdfUrl);
-        const buffer = await res.arrayBuffer();
-        setPdfProgress(40);
-        const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise;
-        const totalPages = pdf.numPages;
-        setPdfProgress(60);
-
-        let text = '';
-        for (let i = 1; i <= totalPages; i++) {
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          text += content.items.map(item => item.str).join(' ') + '\n';
-        }
-        const extracted = text.trim().substring(0, 30000);
-
-        let pdfData;
-        if (extracted.length > 50) {
-          pdfData = { name: initialPdfName, text: extracted, images: null, pageCount: totalPages };
-        } else {
-          const pageCount = Math.min(totalPages, 4);
-          const images = [];
-          for (let i = 1; i <= pageCount; i++) {
-            const page = await pdf.getPage(i);
-            const b64 = await renderPageToBase64(page);
-            images.push(b64);
-            setPdfProgress(60 + Math.round((i / pageCount) * 40));
-          }
-          pdfData = { name: initialPdfName, text: null, images, pageCount: totalPages };
-        }
-        setPdfProgress(100);
-        setPendingPdf(pdfData);
-        if (initialMessage) handleSend(initialMessage, pdfData);
-      } catch {
-        setMessages(prev => [...prev, { role: 'assistant', content: 'Could not load the paper. Please try again.', isError: true, timestamp: new Date().toISOString() }]);
-      } finally {
-        setPdfLoading(false);
-        setPdfProgress(0);
-      }
-    })();
+    if (!initialPdfPath || !initialPdfName) return;
+    const pdfData = { pdfPath: initialPdfPath, currentPage: initialPdfPage || 1, name: initialPdfName };
+    setPendingPdf(pdfData);
+    if (initialMessage) handleSend(initialMessage, pdfData);
   }, []);
 
   const getOrCreateConversation = async (firstText, onCreated) => {
@@ -344,8 +301,11 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
   const buildClaudeMessages = (history, newText, image, pdf) => {
     const past = history.filter((_, i) => i !== 0).slice(-18).map(m => ({ role: m.role, content: m.content }));
     let newContent;
-    if (pdf?.images) {
-      // PDF scanné : envoyer les pages comme images
+    if (pdf?.pdfPath) {
+      // Past paper depuis le cache serveur — les images sont injectées par l'EF chat
+      newContent = newText || `Analyze this exam paper (${pdf.name}) and help me with the questions.`;
+    } else if (pdf?.images) {
+      // PDF scanné uploadé manuellement : envoyer les pages comme images
       newContent = [
         ...pdf.images.map(b64 => ({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } })),
         { type: 'text', text: newText || `Analyze this PDF (${pdf.name}) and explain its content.` },
@@ -396,7 +356,10 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
           'Content-Type': 'application/json',
           ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
         },
-        body: JSON.stringify({ messages: buildClaudeMessages(messages, text, image, pdf) }),
+        body: JSON.stringify({
+          messages: buildClaudeMessages(messages, text, image, pdf),
+          ...(pdf?.pdfPath ? { pdfPath: pdf.pdfPath, currentPage: pdf.currentPage } : {}),
+        }),
         signal: abortCtrl.signal,
       });
 
@@ -647,9 +610,11 @@ function ChatView({ initConvId, initialMessage, initialPdfUrl, initialPdfName, o
               <div className="flex-1 min-w-0">
                 <p className="text-[12px] text-[#22C55E] font-medium truncate">{pendingPdf.name}</p>
                 <p className="text-[10px] text-[#22C55E]/70">
-                  {pendingPdf.images
-                    ? `${pendingPdf.images.length}/${pendingPdf.pageCount} page(s) · scanned`
-                    : `${pendingPdf.pageCount} page(s) · text extracted`}
+                  {pendingPdf.pdfPath
+                    ? `Page ${pendingPdf.currentPage} · cached`
+                    : pendingPdf.images
+                      ? `${pendingPdf.images.length}/${pendingPdf.pageCount} page(s) · scanned`
+                      : `${pendingPdf.pageCount} page(s) · text extracted`}
                 </p>
               </div>
               <button onClick={() => setPendingPdf(null)} className="shrink-0 text-[#22C55E]/60 hover:text-[#22C55E]">
@@ -747,7 +712,8 @@ export default function AITutorPage({ navigate, viewState }) {
   // PDF props from "Ask AI" — consumed once then cleared so other conversations don't inherit them
   const [pdfInitState, setPdfInitState] = useState({
     initialMessage: viewState?.initialMessage,
-    initialPdfUrl: viewState?.initialPdfUrl,
+    initialPdfPath: viewState?.initialPdfPath,
+    initialPdfPage: viewState?.initialPdfPage,
     initialPdfName: viewState?.initialPdfName,
   });
   const [editingConvId, setEditingConvId] = useState(null);
@@ -771,10 +737,11 @@ export default function AITutorPage({ navigate, viewState }) {
   }, [user?.id]);
 
   useEffect(() => {
-    if (viewState?.initialMessage || viewState?.initialPdfUrl) {
+    if (viewState?.initialMessage || viewState?.initialPdfPath) {
       setPdfInitState({
         initialMessage: viewState.initialMessage,
-        initialPdfUrl: viewState.initialPdfUrl,
+        initialPdfPath: viewState.initialPdfPath,
+        initialPdfPage: viewState.initialPdfPage,
         initialPdfName: viewState.initialPdfName,
       });
       setActiveConvId(null);
@@ -1007,7 +974,8 @@ export default function AITutorPage({ navigate, viewState }) {
             key={activeConvId}
             initConvId={activeConvId}
             initialMessage={pdfInitState.initialMessage}
-            initialPdfUrl={pdfInitState.initialPdfUrl}
+            initialPdfPath={pdfInitState.initialPdfPath}
+            initialPdfPage={pdfInitState.initialPdfPage}
             initialPdfName={pdfInitState.initialPdfName}
             onBack={handleBack}
             showBackButton={view === 'chat'}

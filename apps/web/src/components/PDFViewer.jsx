@@ -7,7 +7,7 @@ const EF_BASE       = `${SUPABASE_URL}/functions/v1/pdf-pages`;
 
 // ─── Single page component ────────────────────────────────────────────────────
 
-function PDFPage({ pageNum, pdfPath, watermark, token }) {
+function PDFPage({ pageNum, pdfPath, watermark, token, onVisible }) {
   const containerRef = useRef(null);
   const canvasRef    = useRef(null);
   const fetchedRef   = useRef(false);
@@ -86,12 +86,19 @@ function PDFPage({ pageNum, pdfPath, watermark, token }) {
   useEffect(() => {
     if (!token || !containerRef.current) return;
 
-    const observer = new IntersectionObserver(
+    const loadObserver = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) drawPage(); },
       { rootMargin: '400px' },
     );
-    observer.observe(containerRef.current);
-    return () => observer.disconnect();
+    loadObserver.observe(containerRef.current);
+
+    const visibleObserver = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) onVisible?.(pageNum); },
+      { threshold: 0.5 },
+    );
+    visibleObserver.observe(containerRef.current);
+
+    return () => { loadObserver.disconnect(); visibleObserver.disconnect(); };
   }, [token, drawPage]);
 
   return (
@@ -133,7 +140,7 @@ function PDFPage({ pageNum, pdfPath, watermark, token }) {
 
 // ─── Main viewer ──────────────────────────────────────────────────────────────
 
-export default function PDFViewer({ pdfPath, pdfUrl, watermark }) {
+export default function PDFViewer({ pdfPath, pdfUrl, watermark, onPageChange }) {
   const [token,    setToken]    = useState(null);
   const [numPages, setNumPages] = useState(null);
   const [status,   setStatus]   = useState('loading'); // loading | ready | not_converted | error
@@ -223,6 +230,7 @@ export default function PDFViewer({ pdfPath, pdfUrl, watermark }) {
           pdfPath={pdfPath}
           watermark={watermark}
           token={token}
+          onVisible={onPageChange}
         />
       ))}
     </div>
