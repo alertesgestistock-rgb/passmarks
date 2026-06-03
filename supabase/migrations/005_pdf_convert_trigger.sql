@@ -27,9 +27,11 @@ BEGIN
     url     := 'https://dnnbtzvidbsodqolpqia.supabase.co/functions/v1/pdf-convert',
     headers := jsonb_build_object(
       'Content-Type',     'application/json',
+      'Authorization',    'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRubmJ0enZpZGJzb2Rxb2xwcWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwMDA4MjEsImV4cCI6MjA5NTU3NjgyMX0.--tA4Ij06SKEFtaiSKFYmbJEKPVWTFg6Chx6jQlYjCI',
+      'apikey',           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRubmJ0enZpZGJzb2Rxb2xwcWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwMDA4MjEsImV4cCI6MjA5NTU3NjgyMX0.--tA4Ij06SKEFtaiSKFYmbJEKPVWTFg6Chx6jQlYjCI',
       'x-webhook-secret', 'pm_pdf_conv_passmark'
     ),
-    body    := jsonb_build_object('path', pdf_path)::text,
+    body    := jsonb_build_object('path', pdf_path),
     timeout_milliseconds := 5000
   );
 

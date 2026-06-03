@@ -8,7 +8,6 @@ serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'GET') return new Response('Method not allowed', { status: 405, headers: cors });
 
-  // ── Auth ──────────────────────────────────────────────────────────────────────
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) return new Response('Unauthorized', { status: 401, headers: cors });
 
@@ -21,7 +20,6 @@ serve(async (req: Request) => {
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   if (authError || !user) return new Response('Unauthorized', { status: 401, headers: cors });
 
-  // ── Params ────────────────────────────────────────────────────────────────────
   const reqUrl = new URL(req.url);
   const path   = reqUrl.searchParams.get('path');
   const page   = reqUrl.searchParams.get('page');
@@ -30,7 +28,6 @@ serve(async (req: Request) => {
     return new Response('Missing path or page param', { status: 400, headers: cors });
   }
 
-  // ── Metadata ──────────────────────────────────────────────────────────────────
   if (page === 'meta') {
     const { data: cached } = await supabase.storage
       .from('pdf-page-cache')
@@ -48,18 +45,28 @@ serve(async (req: Request) => {
     });
   }
 
-  // ── Page image (PNG) ──────────────────────────────────────────────────────────
   const pageNum = parseInt(page, 10);
   if (isNaN(pageNum) || pageNum < 1) {
     return new Response('Invalid page number', { status: 400, headers: cors });
   }
 
-  const { data: cachedImg } = await supabase.storage
+  // Try JPEG first (current format), fall back to PNG (papers converted before JPEG switch)
+  const { data: jpgImg } = await supabase.storage
+    .from('pdf-page-cache')
+    .download(`${path}/page-${pageNum}.jpg`);
+
+  if (jpgImg) {
+    return new Response(await jpgImg.arrayBuffer(), {
+      headers: { ...cors, 'Content-Type': 'image/jpeg', 'Cache-Control': 'private, max-age=86400' },
+    });
+  }
+
+  const { data: pngImg } = await supabase.storage
     .from('pdf-page-cache')
     .download(`${path}/page-${pageNum}.png`);
 
-  if (cachedImg) {
-    return new Response(await cachedImg.arrayBuffer(), {
+  if (pngImg) {
+    return new Response(await pngImg.arrayBuffer(), {
       headers: { ...cors, 'Content-Type': 'image/png', 'Cache-Control': 'private, max-age=86400' },
     });
   }
