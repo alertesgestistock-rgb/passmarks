@@ -251,9 +251,18 @@ function ChatView({ initConvId, initialMessage, initialPdfPath, initialPdfPage, 
     setPendingPdf(null);
     const reader = new FileReader();
     reader.onload = async (ev) => {
+      let pdfWorker = null;
       try {
         setPdfProgress(20);
-        const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(ev.target.result) }).promise;
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if (isIOS) {
+          // iOS Safari needs the worker loaded as an ES module — classic Worker() silently fails
+          pdfWorker = new Worker('/pdf.worker.min.mjs', { type: 'module' });
+          pdfjsLib.GlobalWorkerOptions.workerPort = pdfWorker;
+        }
+        const docTask = pdfjsLib.getDocument({ data: new Uint8Array(ev.target.result) });
+        const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('ios_worker_timeout')), 12000));
+        const pdf = await Promise.race([docTask.promise, timeout]);
         const totalPages = pdf.numPages;
         setPdfProgress(40);
 
@@ -292,9 +301,13 @@ function ChatView({ initConvId, initialMessage, initialPdfPath, initialPdfPage, 
           setPendingPdf({ name: file.name, text: null, images, pageCount: totalPages });
         }
       } catch (err) {
-        const detail = err?.message || err?.name || String(err) || 'unknown';
+        const isTimeout = err?.message === 'ios_worker_timeout';
+        const detail = isTimeout
+          ? 'PDF processing timed out on this device. Take a screenshot of the question and send it as an image instead 📷'
+          : (err?.message || err?.name || String(err) || 'unknown');
         setMessages(prev => [...prev, { role: 'assistant', content: `Error reading PDF: ${detail}`, isError: true, timestamp: new Date().toISOString() }]);
       } finally {
+        if (pdfWorker) { try { pdfWorker.terminate(); } catch {} pdfjsLib.GlobalWorkerOptions.workerPort = null; }
         setPdfLoading(false);
         setPdfProgress(0);
       }
