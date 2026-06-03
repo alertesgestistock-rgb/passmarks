@@ -8,7 +8,7 @@ serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'GET') return new Response('Method not allowed', { status: 405, headers: cors });
 
-  // ── Auth ──────────────────────────────────────────────────────────────────
+  // ── Auth ──────────────────────────────────────────────────────────────────────
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) return new Response('Unauthorized', { status: 401, headers: cors });
 
@@ -21,7 +21,7 @@ serve(async (req: Request) => {
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   if (authError || !user) return new Response('Unauthorized', { status: 401, headers: cors });
 
-  // ── Params ────────────────────────────────────────────────────────────────
+  // ── Params ────────────────────────────────────────────────────────────────────
   const reqUrl = new URL(req.url);
   const path   = reqUrl.searchParams.get('path');
   const page   = reqUrl.searchParams.get('page');
@@ -30,7 +30,7 @@ serve(async (req: Request) => {
     return new Response('Missing path or page param', { status: 400, headers: cors });
   }
 
-  // ── Metadata ──────────────────────────────────────────────────────────────
+  // ── Metadata ──────────────────────────────────────────────────────────────────
   if (page === 'meta') {
     const { data: cached } = await supabase.storage
       .from('pdf-page-cache')
@@ -48,7 +48,7 @@ serve(async (req: Request) => {
     });
   }
 
-  // ── Page image ────────────────────────────────────────────────────────────
+  // ── Page image (PNG) ──────────────────────────────────────────────────────────
   const pageNum = parseInt(page, 10);
   if (isNaN(pageNum) || pageNum < 1) {
     return new Response('Invalid page number', { status: 400, headers: cors });
@@ -56,11 +56,11 @@ serve(async (req: Request) => {
 
   const { data: cachedImg } = await supabase.storage
     .from('pdf-page-cache')
-    .download(`${path}/page-${pageNum}.webp`);
+    .download(`${path}/page-${pageNum}.png`);
 
   if (cachedImg) {
     return new Response(await cachedImg.arrayBuffer(), {
-      headers: { ...cors, 'Content-Type': 'image/webp', 'Cache-Control': 'private, max-age=86400' },
+      headers: { ...cors, 'Content-Type': 'image/png', 'Cache-Control': 'private, max-age=86400' },
     });
   }
 
