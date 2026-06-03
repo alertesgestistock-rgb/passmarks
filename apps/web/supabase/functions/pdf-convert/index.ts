@@ -1,14 +1,15 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
-import * as pdfjsLib from 'npm:pdfjs-dist@3.11.174/legacy/build/pdf.js';
 import { CORS } from './cors.ts';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = '';
-
-// ─── Render one page → WebP ArrayBuffer ────────────────────────────────────
+// ─── Render one page using dynamic pdfjs + OffscreenCanvas ─────────────────
 
 async function renderPage(pdfBuffer: ArrayBuffer, pageNum: number): Promise<ArrayBuffer | null> {
   try {
+    // Dynamic import — avoids crashing at startup if pdfjs fails to load
+    const pdfjsLib = await import('npm:pdfjs-dist@3.11.174/legacy/build/pdf.js');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+
     const pdf      = await pdfjsLib.getDocument({ data: pdfBuffer }).promise;
     const page     = await pdf.getPage(pageNum);
     const viewport = page.getViewport({ scale: 2.0 });
@@ -21,7 +22,7 @@ async function renderPage(pdfBuffer: ArrayBuffer, pageNum: number): Promise<Arra
     const blob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.85 });
     return blob.arrayBuffer();
   } catch (err) {
-    console.error(`[pdf-convert] renderPage ${pageNum} error:`, err);
+    console.error(`[pdf-convert] renderPage ${pageNum} error:`, (err as Error).message);
     return null;
   }
 }
@@ -31,15 +32,13 @@ async function renderPage(pdfBuffer: ArrayBuffer, pageNum: number): Promise<Arra
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
 
-  // ── Webhook secret validation ─────────────────────────────────────────────
+  // ── Webhook secret ────────────────────────────────────────────────────────
   const expectedSecret = Deno.env.get('PDF_WEBHOOK_SECRET');
   const receivedSecret = req.headers.get('x-webhook-secret');
-
   if (!expectedSecret || receivedSecret !== expectedSecret) {
     return new Response('Unauthorized', { status: 401, headers: CORS });
   }
 
-  // ── Parse body ────────────────────────────────────────────────────────────
   let path: string;
   try {
     const body = await req.json();
@@ -52,7 +51,7 @@ serve(async (req: Request) => {
     return new Response('Missing path', { status: 400, headers: CORS });
   }
 
-  console.log(`[pdf-convert] Starting conversion: ${path}`);
+  console.log(`[pdf-convert] Starting: ${path}`);
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
@@ -70,18 +69,20 @@ serve(async (req: Request) => {
   }
 
   const pdfBuffer = await pdfBlob.arrayBuffer();
+  console.log(`[pdf-convert] PDF downloaded (${(pdfBuffer.byteLength / 1024).toFixed(0)} KB)`);
 
   // ── Get page count ────────────────────────────────────────────────────────
   let numPages: number;
   try {
+    const pdfjsLib = await import('npm:pdfjs-dist@3.11.174/legacy/build/pdf.js');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '';
     const pdf = await pdfjsLib.getDocument({ data: pdfBuffer }).promise;
     numPages  = pdf.numPages;
+    console.log(`[pdf-convert] ${numPages} pages`);
   } catch (err) {
-    console.error('[pdf-convert] Parse failed:', err);
-    return new Response('PDF parse failed', { status: 500, headers: CORS });
+    console.error('[pdf-convert] Parse failed:', (err as Error).message);
+    return new Response('PDF parse failed: ' + (err as Error).message, { status: 500, headers: CORS });
   }
-
-  console.log(`[pdf-convert] ${numPages} pages to convert`);
 
   // ── Convert each page ─────────────────────────────────────────────────────
   let converted = 0;
@@ -89,28 +90,23 @@ serve(async (req: Request) => {
     const imageBuffer = await renderPage(pdfBuffer, i);
     if (!imageBuffer) { console.error(`[pdf-convert] page ${i} render failed`); continue; }
 
-    const { error: upError } = await supabase.storage
+    const { error } = await supabase.storage
       .from('pdf-page-cache')
-      .upload(`${path}/page-${i}.webp`, imageBuffer, {
-        contentType: 'image/webp',
-        upsert: true,
-      });
+      .upload(`${path}/page-${i}.webp`, imageBuffer, { contentType: 'image/webp', upsert: true });
 
-    if (upError) { console.error(`[pdf-convert] page ${i} upload failed:`, upError.message); continue; }
+    if (error) { console.error(`[pdf-convert] page ${i} upload failed:`, error.message); continue; }
     converted++;
-    console.log(`[pdf-convert] page ${i}/${numPages} done`);
+    console.log(`[pdf-convert] page ${i}/${numPages} ✓`);
   }
 
-  // ── Save meta.json ────────────────────────────────────────────────────────
-  const meta = JSON.stringify({ numPages });
+  // ── Save meta ─────────────────────────────────────────────────────────────
   await supabase.storage
     .from('pdf-page-cache')
-    .upload(`${path}/meta.json`, new TextEncoder().encode(meta), {
-      contentType: 'application/json',
-      upsert: true,
+    .upload(`${path}/meta.json`, new TextEncoder().encode(JSON.stringify({ numPages })), {
+      contentType: 'application/json', upsert: true,
     });
 
-  console.log(`[pdf-convert] Done. ${converted}/${numPages} pages converted.`);
+  console.log(`[pdf-convert] Done: ${converted}/${numPages} pages`);
 
   return new Response(
     JSON.stringify({ success: true, numPages, converted }),
