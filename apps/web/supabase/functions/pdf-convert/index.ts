@@ -7,8 +7,9 @@ import { CORS } from './cors.ts';
 async function renderPage(pdfBuffer: ArrayBuffer, pageNum: number): Promise<ArrayBuffer | null> {
   try {
     // Dynamic import — avoids crashing at startup if pdfjs fails to load
-    const pdfjsLib = await import('npm:pdfjs-dist@3.11.174/legacy/build/pdf.js');
-    pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+    const mod      = await import('npm:pdfjs-dist@3.11.174/legacy/build/pdf.js');
+    const pdfjsLib = mod.default ?? mod;
+    if (pdfjsLib.GlobalWorkerOptions) pdfjsLib.GlobalWorkerOptions.workerSrc = '';
 
     const pdf      = await pdfjsLib.getDocument({ data: pdfBuffer }).promise;
     const page     = await pdf.getPage(pageNum);
@@ -74,8 +75,9 @@ serve(async (req: Request) => {
   // ── Get page count ────────────────────────────────────────────────────────
   let numPages: number;
   try {
-    const pdfjsLib = await import('npm:pdfjs-dist@3.11.174/legacy/build/pdf.js');
-    pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+    const mod      = await import('npm:pdfjs-dist@3.11.174/legacy/build/pdf.js');
+    const pdfjsLib = mod.default ?? mod;
+    if (pdfjsLib.GlobalWorkerOptions) pdfjsLib.GlobalWorkerOptions.workerSrc = '';
     const pdf = await pdfjsLib.getDocument({ data: pdfBuffer }).promise;
     numPages  = pdf.numPages;
     console.log(`[pdf-convert] ${numPages} pages`);
