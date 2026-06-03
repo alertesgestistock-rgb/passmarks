@@ -251,17 +251,10 @@ function ChatView({ initConvId, initialMessage, initialPdfPath, initialPdfPage, 
     setPendingPdf(null);
     const reader = new FileReader();
     reader.onload = async (ev) => {
-      let pdfWorker = null;
       try {
         setPdfProgress(20);
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        if (isIOS) {
-          // iOS Safari needs the worker loaded as an ES module — classic Worker() silently fails
-          pdfWorker = new Worker('/pdf.worker.min.mjs', { type: 'module' });
-          pdfjsLib.GlobalWorkerOptions.workerPort = pdfWorker;
-        }
         const docTask = pdfjsLib.getDocument({ data: new Uint8Array(ev.target.result) });
-        const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('ios_worker_timeout')), 12000));
+        const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('ios_worker_timeout')), 15000));
         const pdf = await Promise.race([docTask.promise, timeout]);
         const totalPages = pdf.numPages;
         setPdfProgress(40);
@@ -307,7 +300,6 @@ function ChatView({ initConvId, initialMessage, initialPdfPath, initialPdfPage, 
           : (err?.message || err?.name || String(err) || 'unknown');
         setMessages(prev => [...prev, { role: 'assistant', content: `Error reading PDF: ${detail}`, isError: true, timestamp: new Date().toISOString() }]);
       } finally {
-        if (pdfWorker) { try { pdfWorker.terminate(); } catch {} pdfjsLib.GlobalWorkerOptions.workerPort = null; }
         setPdfLoading(false);
         setPdfProgress(0);
       }
