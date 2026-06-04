@@ -23,14 +23,7 @@ export default function Footer() {
           {/* Brand Column */}
           <div className="flex flex-col gap-4">
             <Link to="/" className="flex items-center gap-2 font-black text-base text-slate-900 dark:text-white active:scale-95 transition-transform w-fit">
-              <svg width="28" height="28" viewBox="0 0 64 64" fill="none" className="shrink-0">
-                <rect width="64" height="64" rx="16" fill="#1E293B" />
-                <path d="M32 10L19 46h5.5l3.5-9h8l3.5 9H45L32 10z" stroke="#22C55E" strokeWidth="2.5" strokeLinejoin="round" fill="none" />
-                <path d="M23.5 35h17" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round" />
-                <path d="M32 10v5" stroke="#3B82F6" strokeWidth="2.5" strokeLinecap="round" />
-                <circle cx="32" cy="8" r="3" fill="#3B82F6" />
-                <path d="M30 7.5l1.5 1.5 2.5-2.5" stroke="#0F172A" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <img src="/icon-192.png" alt="PassMark" width="28" height="28" className="shrink-0 rounded-lg" />
               <span>Pass<span className="text-[#22C55E]">Mark</span></span>
             </Link>
             <p className="text-xs text-slate-500 dark:text-[#64748B] leading-relaxed max-w-[240px]">
