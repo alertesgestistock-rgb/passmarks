@@ -40,6 +40,8 @@ export default function PastPapersPage({ navigate }) {
   const [error, setError]                     = useState(null);
 
   // Fetch subjects — cache localStorage + refresh Supabase en arrière-plan
+  const [retryKey, setRetryKey] = useState(0);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -56,13 +58,19 @@ export default function PastPapersPage({ navigate }) {
 
     // 2. Rafraîchir depuis Supabase en arrière-plan
     const fetchSubjects = async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000); // 12 seconds timeout
+
       try {
         const { data, error } = await supabase
           .from('gce_papers')
           .select('subject, subject_code, level, category')
           .eq('source', 'GCE_BOARD')
           .eq('year', 2024)
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .abortSignal(controller.signal);
+
+        clearTimeout(timeoutId);
 
         if (cancelled || error || !data) return;
 
@@ -77,16 +85,27 @@ export default function PastPapersPage({ navigate }) {
         localStorage.setItem(CACHE_KEY, JSON.stringify(unique));
         setSubjects(unique);
         setError(null);
-      } catch {
-        // Silencieux si cache déjà affiché
+      } catch (err) {
+        clearTimeout(timeoutId);
+        console.error('[PastPapersPage] fetchSubjects failed:', err);
       } finally {
         if (!cancelled) setLoadingSubjects(false);
       }
     };
 
     fetchSubjects();
-    return () => { cancelled = true; };
-  }, []);
+
+    // S'assurer de relancer si le réseau revient
+    const handleOnline = () => {
+      setRetryKey(k => k + 1);
+    };
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('online', handleOnline);
+    };
+  }, [retryKey]);
 
   // Fetch papers for selected subject + source
   useEffect(() => {
