@@ -10,9 +10,9 @@ export default function InstallBanner() {
     const isDismissed = localStorage.getItem('installBannerDismissed') === 'true';
     
     const handleBeforeInstallPrompt = (e) => {
-      e.preventDefault();
       setDeferredPrompt(e);
       if (!isDismissed) {
+        e.preventDefault();
         setShowBanner(true);
       }
     };
