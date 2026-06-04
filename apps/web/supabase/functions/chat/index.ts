@@ -203,8 +203,9 @@ serve(async (req: Request) => {
   if (!upstream.ok) {
     clearTimeout(timeoutId);
     const err = await upstream.json().catch(() => ({})) as any;
-    if (upstream.status === 429) return jsonError(cors, 'Rate limit reached. Try again later.', 429);
-    return jsonError(cors, err.error?.message ?? 'AI service error', upstream.status);
+    console.error('[chat] upstream error:', upstream.status, err?.error?.message ?? err);
+    if (upstream.status === 429) return jsonError(cors, 'Too many requests. Please wait a moment and try again.', 429);
+    return jsonError(cors, 'AI service temporarily unavailable. Please try again in a few seconds.', 503);
   }
 
   // ── Stream SSE avec heartbeat ─────────────────────────────────────────────
