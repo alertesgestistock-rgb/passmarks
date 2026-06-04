@@ -7,6 +7,8 @@ const EF_BASE       = `${SUPABASE_URL}/functions/v1/pdf-pages`;
 
 // ─── Single page component ────────────────────────────────────────────────────
 
+// ─── Single page component ────────────────────────────────────────────────────
+
 function PDFPage({ pageNum, pdfPath, watermark, token, onVisible }) {
   const containerRef = useRef(null);
   const canvasRef    = useRef(null);
@@ -18,14 +20,20 @@ function PDFPage({ pageNum, pdfPath, watermark, token, onVisible }) {
     fetchedRef.current = true;
     setState('loading');
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout per page load
+
     try {
       const url = `${EF_BASE}?path=${encodeURIComponent(pdfPath)}&page=${pageNum}`;
       const res = await fetch(url, {
+        signal: controller.signal,
         headers: {
           'Authorization': `Bearer ${token}`,
           'apikey': SUPABASE_ANON,
         },
       });
+
+      clearTimeout(timeoutId);
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
@@ -77,6 +85,7 @@ function PDFPage({ pageNum, pdfPath, watermark, token, onVisible }) {
 
       setState('done');
     } catch (err) {
+      clearTimeout(timeoutId);
       console.error(`[PDFViewer] page ${pageNum} error:`, err);
       fetchedRef.current = false; // allow retry
       setState('error');
@@ -101,6 +110,19 @@ function PDFPage({ pageNum, pdfPath, watermark, token, onVisible }) {
     return () => { loadObserver.disconnect(); visibleObserver.disconnect(); };
   }, [token, drawPage]);
 
+  // Force drawPage retry on network reconnection
+  useEffect(() => {
+    const handleOnline = () => {
+      if (state === 'error') {
+        fetchedRef.current = false;
+        setState('idle');
+        drawPage();
+      }
+    };
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [state, drawPage]);
+
   return (
     <div
       ref={containerRef}
@@ -114,7 +136,7 @@ function PDFPage({ pageNum, pdfPath, watermark, token, onVisible }) {
       />
 
       {state !== 'done' && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-50 dark:bg-[#1E293B]/20">
           {state === 'loading' && (
             <>
               <div className="w-6 h-6 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin" />
@@ -127,9 +149,10 @@ function PDFPage({ pageNum, pdfPath, watermark, token, onVisible }) {
           {state === 'error' && (
             <button
               onClick={() => { fetchedRef.current = false; setState('idle'); drawPage(); }}
-              className="text-[11px] text-red-400 underline"
+              className="text-[11px] text-red-500 font-medium hover:underline flex flex-col items-center gap-1 bg-red-500/5 px-3 py-2 rounded-lg border border-red-500/10"
             >
-              Page {pageNum} — retry
+              <span>Page {pageNum} — retry</span>
+              <span className="text-[9px] text-slate-400 font-normal">Check connection</span>
             </button>
           )}
         </div>
@@ -144,21 +167,44 @@ export default function PDFViewer({ pdfPath, pdfUrl, watermark, onPageChange }) 
   const [token,    setToken]    = useState(null);
   const [numPages, setNumPages] = useState(null);
   const [status,   setStatus]   = useState('loading'); // loading | ready | not_converted | error
+  const [retryKey, setRetryKey] = useState(0);
 
-  // Get session token
+  // Get session token dynamically and keep it fresh
   useEffect(() => {
+    let active = true;
+    
+    // Initial fetch
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.access_token) setToken(session.access_token);
-      else setStatus('error');
+      if (active) {
+        if (session?.access_token) setToken(session.access_token);
+        else setStatus('error');
+      }
     });
+
+    // Listen to token changes and refresh events
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (active && (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') && session?.access_token) {
+        setToken(session.access_token);
+      }
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Fetch metadata once we have the token
   useEffect(() => {
     if (!token || !pdfPath) return;
 
+    setStatus('loading');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000); // 12 seconds timeout
+
     const url = `${EF_BASE}?path=${encodeURIComponent(pdfPath)}&page=meta`;
     fetch(url, {
+      signal: controller.signal,
       headers: {
         'Authorization': `Bearer ${token}`,
         'apikey': SUPABASE_ANON,
@@ -166,6 +212,7 @@ export default function PDFViewer({ pdfPath, pdfUrl, watermark, onPageChange }) 
     })
       .then(r => r.json())
       .then(data => {
+        clearTimeout(timeoutId);
         if (data.numPages) {
           setNumPages(data.numPages);
           setStatus('ready');
@@ -173,8 +220,28 @@ export default function PDFViewer({ pdfPath, pdfUrl, watermark, onPageChange }) 
           setStatus('not_converted');
         }
       })
-      .catch(() => setStatus('error'));
-  }, [token, pdfPath]);
+      .catch((err) => {
+        clearTimeout(timeoutId);
+        console.error('[PDFViewer] Meta load failed:', err);
+        setStatus('error');
+      });
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [token, pdfPath, retryKey]);
+
+  // Retry on connection recovery
+  useEffect(() => {
+    const handleOnline = () => {
+      if (status === 'error') {
+        setRetryKey(k => k + 1);
+      }
+    };
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [status]);
 
   // ── States ──────────────────────────────────────────────────────────────────
 
@@ -205,21 +272,27 @@ export default function PDFViewer({ pdfPath, pdfUrl, watermark, onPageChange }) 
 
   if (status === 'error') return (
     <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center">
-      <p className="text-[13px] text-red-400">Unable to load paper.</p>
-      {pdfUrl && (
-        <a
-          href={pdfUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#1E293B] text-slate-600 dark:text-[#94A3B8] text-[13px] font-medium"
+      <p className="text-[13px] text-red-400">Unable to load paper. Network timeout or offline.</p>
+      <div className="flex gap-2">
+        <button
+          onClick={() => setRetryKey(k => k + 1)}
+          className="px-4 py-2 rounded-xl bg-[#22C55E] text-white text-[13px] font-semibold hover:brightness-115 transition-all"
         >
-          Open in browser ↗
-        </a>
-      )}
+          Retry Connection
+        </button>
+        {pdfUrl && (
+          <a
+            href={pdfUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#1E293B] text-slate-600 dark:text-[#94A3B8] text-[13px] font-medium"
+          >
+            Open in browser ↗
+          </a>
+        )}
+      </div>
     </div>
   );
-
-  // ── Render pages ────────────────────────────────────────────────────────────
 
   return (
     <div className="flex-1 overflow-y-auto overflow-x-hidden p-2">
@@ -236,3 +309,4 @@ export default function PDFViewer({ pdfPath, pdfUrl, watermark, onPageChange }) 
     </div>
   );
 }
+

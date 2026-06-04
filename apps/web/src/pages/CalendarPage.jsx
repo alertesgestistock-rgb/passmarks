@@ -313,6 +313,8 @@ export default function CalendarPage() {
   const subjects = user?.subjects || [];
 
   // ── Load events for current month ─────────────────────────────────────────
+  const [retryKey, setRetryKey] = useState(0);
+
   const loadEvents = useCallback(async () => {
     if (!user?.id) {
       setLoading(false);
@@ -322,6 +324,9 @@ export default function CalendarPage() {
     const startDate = toDateStr(currentYear, currentMonth, 1);
     const endDate   = toDateStr(currentYear, currentMonth, getDaysInMonth(currentYear, currentMonth));
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
+
     try {
       const { data, error } = await supabase
         .from('calendar_events')
@@ -330,18 +335,32 @@ export default function CalendarPage() {
         .gte('event_date', startDate)
         .lte('event_date', endDate)
         .order('event_date', { ascending: true })
-        .order('start_time', { ascending: true, nullsFirst: true });
+        .order('start_time', { ascending: true, nullsFirst: true })
+        .abortSignal(controller.signal);
+
+      clearTimeout(timeoutId);
 
       if (!error && data) setEvents(data);
       else setEvents([]);
-    } catch {
+    } catch (err) {
+      clearTimeout(timeoutId);
+      console.error('[CalendarPage] loadEvents failed:', err);
       setEvents([]);
     } finally {
       setLoading(false);
     }
   }, [user?.id, currentYear, currentMonth]);
 
-  useEffect(() => { loadEvents(); }, [loadEvents]);
+  useEffect(() => { loadEvents(); }, [loadEvents, retryKey]);
+
+  // Retry on connection recovery
+  useEffect(() => {
+    const handleOnline = () => {
+      setRetryKey(k => k + 1);
+    };
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, []);
 
   // ── Calendar grid ──────────────────────────────────────────────────────────
   const daysInMonth  = getDaysInMonth(currentYear, currentMonth);
