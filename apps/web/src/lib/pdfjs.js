@@ -1,16 +1,17 @@
 import * as pdfjsLib from 'pdfjs-dist';
 
 const WORKER_URL = '/pdf.worker.min.mjs';
-const isIOS = /iPad|iPhone|iPod/.test(navigator?.userAgent ?? '');
+
+// Detect iOS/iPadOS (includes iPad on modern Safari which reports as MacOS)
+const isIOS =
+  /iPad|iPhone|iPod/.test(navigator?.userAgent ?? '') ||
+  (navigator?.platform === 'MacIntel' && navigator?.maxTouchPoints > 1);
 
 if (isIOS) {
-  // iOS WebKit classic workers cannot use dynamic import() or .mjs syntax.
-  // Solution: create a module worker blob with a static import, then pass it
-  // via workerPort so pdfjs skips its own Worker creation entirely.
-  const absUrl = new URL(WORKER_URL, location.origin).href;
-  const blob = new Blob([`import ${JSON.stringify(absUrl)};`], { type: 'application/javascript' });
-  const worker = new Worker(URL.createObjectURL(blob), { type: 'module' });
-  pdfjsLib.GlobalWorkerOptions.workerPort = worker;
+  // iOS WebKit blocks Web Workers in PWAs and restricts module workers from blob URLs.
+  // The only 100% reliable solution: disable the worker entirely (DisableWorker mode).
+  // PDF.js will run on the main thread — slightly slower but works on all iOS versions.
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '';
 } else {
   pdfjsLib.GlobalWorkerOptions.workerSrc = WORKER_URL;
 }

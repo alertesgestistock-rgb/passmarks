@@ -238,6 +238,11 @@ function ChatView({ initConvId, initialMessage, initialPdfPath, initialPdfPage, 
     return canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
   };
 
+  // Detect iOS/iPadOS for disableWorker mode
+  const isIOSDevice =
+    /iPad|iPhone|iPod/.test(navigator?.userAgent ?? '') ||
+    (navigator?.platform === 'MacIntel' && navigator?.maxTouchPoints > 1);
+
   const handlePDFSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -253,9 +258,13 @@ function ChatView({ initConvId, initialMessage, initialPdfPath, initialPdfPage, 
     reader.onload = async (ev) => {
       try {
         setPdfProgress(20);
-        const docTask = pdfjsLib.getDocument({ data: new Uint8Array(ev.target.result) });
-        const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('ios_worker_timeout')), 15000));
-        const pdf = await Promise.race([docTask.promise, timeout]);
+        // On iOS, Web Workers are blocked in PWA/standalone mode.
+        // disableWorker:true forces PDF.js to run on the main thread — always works.
+        const docTask = pdfjsLib.getDocument({
+          data: new Uint8Array(ev.target.result),
+          ...(isIOSDevice ? { disableWorker: true } : {}),
+        });
+        const pdf = await docTask.promise;
         const totalPages = pdf.numPages;
         setPdfProgress(40);
 
@@ -294,10 +303,7 @@ function ChatView({ initConvId, initialMessage, initialPdfPath, initialPdfPage, 
           setPendingPdf({ name: file.name, text: null, images, pageCount: totalPages });
         }
       } catch (err) {
-        const isTimeout = err?.message === 'ios_worker_timeout';
-        const detail = isTimeout
-          ? 'PDF processing timed out on this device. Take a screenshot of the question and send it as an image instead 📷'
-          : (err?.message || err?.name || String(err) || 'unknown');
+        const detail = err?.message || err?.name || String(err) || 'unknown error';
         setMessages(prev => [...prev, { role: 'assistant', content: `Error reading PDF: ${detail}`, isError: true, timestamp: new Date().toISOString() }]);
       } finally {
         setPdfLoading(false);

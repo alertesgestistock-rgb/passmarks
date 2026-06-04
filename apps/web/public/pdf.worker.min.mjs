@@ -1,4 +1,4 @@
-﻿if(typeof Promise.withResolvers==='undefined'){self.Promise.withResolvers=function(){var r,j;var p=new Promise(function(res,rej){r=res;j=rej;});return{promise:p,resolve:r,reject:j};};}
+if(typeof Promise.withResolvers==='undefined'){self.Promise.withResolvers=function(){var r,j;var p=new Promise(function(res,rej){r=res;j=rej;});return{promise:p,resolve:r,reject:j};};}
 /**
  * @licstart The following is the entire license notice for the
  * JavaScript code in this page
