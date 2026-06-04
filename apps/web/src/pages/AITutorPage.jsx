@@ -11,7 +11,7 @@ import { InsufficientTokensError } from '@/lib/apiServerClient';
 import InsufficientTokensAlert from '@/components/InsufficientTokensAlert';
 import TokenShopModal from '@/components/TokenShopModal';
 import { downloadMessageAsPDF } from '@/lib/generatePDF';
-import pdfjsLib, { isIOSDevice } from '@/lib/pdfjs';
+
 
 const SUGGESTED_QUESTIONS = {
   'Physics': "Explain Newton's 3rd Law",
@@ -227,87 +227,87 @@ function ChatView({ initConvId, initialMessage, initialPdfPath, initialPdfPage, 
     e.target.value = '';
   };
 
-  const renderPageToBase64 = async (page) => {
-    // scale 2.0 for scanned PDFs — Claude needs high-res to read math formulas
-    // quality 0.8 = ~150-250KB/page × 4 pages ≈ ~800KB, well within Supabase EF limits
-    const viewport = page.getViewport({ scale: 2.0 });
-    const canvas = document.createElement('canvas');
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-    return canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
-  };
-
 
   const handlePDFSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = '';
+
     if (file.size > 15 * 1024 * 1024) {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'PDF too large (max 15 MB).', isError: true, timestamp: new Date().toISOString() }]);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'PDF too large (max 15 MB).',
+        isError: true,
+        timestamp: new Date().toISOString(),
+      }]);
       return;
     }
-    setPdfLoading(true);
-    setPdfProgress(0);
-    setPendingPdf(null);
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      try {
-        setPdfProgress(20);
-        // On iOS, Web Workers are blocked in PWA/standalone mode.
-        // disableWorker:true forces PDF.js to run on the main thread — always works.
-        const docTask = pdfjsLib.getDocument({
-          data: new Uint8Array(ev.target.result),
-          ...(isIOSDevice ? { disableWorker: true } : {}),
-        });
-        const pdf = await docTask.promise;
-        const totalPages = pdf.numPages;
-        setPdfProgress(40);
 
-        if (totalPages > 10) {
+    setPdfLoading(true);
+    setPdfProgress(10);
+    setPendingPdf(null);
+
+    try {
+      // ── Envoi du PDF à l'Edge Function pdf-upload (mupdf côté serveur) ──
+      // Fonctionne sur iOS, Android, tous navigateurs — pas de pdfjs-dist local.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const form = new FormData();
+      form.append('file', file);
+
+      setPdfProgress(30);
+
+      const efUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pdf-upload`;
+      const res = await fetch(efUrl, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: form,
+      });
+
+      setPdfProgress(80);
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        if (json?.error === 'too_many_pages') {
           setMessages(prev => [...prev, {
             role: 'assistant',
-            content: `This PDF has ${totalPages} pages — too long to analyze completely.\n\nPassMark can only solve PDFs of **10 pages or less** (GCE past papers are usually 2–6 pages).\n\n**What to do:**\n- If you want help with specific questions, take a **screenshot** of those pages and send it as an image 📷\n- Or upload only the relevant section of your PDF`,
+            content: json.message || `This PDF has too many pages. PassMark can analyze max 10 pages. Send a screenshot instead 📷`,
             isError: false,
             timestamp: new Date().toISOString(),
           }]);
-          setPdfLoading(false);
-          setPdfProgress(0);
           return;
         }
-
-        let text = '';
-        for (let i = 1; i <= totalPages; i++) {
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          text += content.items.map(item => item.str).join(' ') + '\n';
-        }
-        const extracted = text.trim().substring(0, 30000);
-
-        if (extracted.length > 50) {
-          setPdfProgress(100);
-          setPendingPdf({ name: file.name, text: extracted, images: null, pageCount: totalPages });
-        } else {
-          const pageCount = Math.min(totalPages, 4);
-          const images = [];
-          for (let i = 1; i <= pageCount; i++) {
-            const page = await pdf.getPage(i);
-            const b64 = await renderPageToBase64(page);
-            images.push(b64);
-            setPdfProgress(40 + Math.round((i / pageCount) * 60));
-          }
-          setPendingPdf({ name: file.name, text: null, images, pageCount: totalPages });
-        }
-      } catch (err) {
-        const detail = err?.message || err?.name || String(err) || 'unknown error';
-        setMessages(prev => [...prev, { role: 'assistant', content: `Error reading PDF: ${detail}`, isError: true, timestamp: new Date().toISOString() }]);
-      } finally {
-        setPdfLoading(false);
-        setPdfProgress(0);
+        throw new Error(json?.error || json?.detail || `Server error ${res.status}`);
       }
-    };
-    reader.readAsArrayBuffer(file);
+
+      if (!json.images || json.images.length === 0) {
+        throw new Error('No images returned from server');
+      }
+
+      setPdfProgress(100);
+      setPendingPdf({
+        name: file.name,
+        text: null,
+        images: json.images,        // base64 JPEG depuis mupdf
+        pageCount: json.numPages,
+      });
+
+    } catch (err) {
+      const detail = err?.message || String(err) || 'unknown error';
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: `Error reading PDF: ${detail}`,
+        isError: true,
+        timestamp: new Date().toISOString(),
+      }]);
+    } finally {
+      setPdfLoading(false);
+      setPdfProgress(0);
+    }
   };
+
 
   const buildClaudeMessages = (history, newText, image, pdf) => {
     const past = history.filter((_, i) => i !== 0).slice(-18).map(m => ({ role: m.role, content: m.content }));
