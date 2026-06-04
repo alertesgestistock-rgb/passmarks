@@ -246,7 +246,7 @@ export default function SettingsPage({ navigate }) {
             <div className="p-4 flex justify-between items-center">
               <span className="text-[13px] font-medium text-slate-800 dark:text-[#F1F5F9]">Powered by</span>
               <a
-                href="https://wa.me/237694620209?text=Hello%20Sir%2C%20I%20had%20got%20your%20number%20from%20Pass%20Mark%20App"
+                href="https://wa.me/237683982584?text=Hello%20sir%2C%20I%20got%20your%20number%20from%20PassMark%20App"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[12px] font-semibold text-[#25D366] flex items-center gap-1 hover:opacity-80 transition-opacity"

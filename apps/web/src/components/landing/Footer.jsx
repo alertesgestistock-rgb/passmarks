@@ -52,7 +52,7 @@ export default function Footer() {
             <div className="flex flex-col gap-3 w-fit">
               <h4 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#64748B] mb-1">Contact</h4>
               <a
-                href="https://wa.me/237000000000"
+                href="https://wa.me/237683982584?text=Hello%20sir%2C%20I%20got%20your%20number%20from%20PassMark%20App"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-sm text-slate-650 hover:text-[#25D366] dark:text-[#94A3B8] dark:hover:text-[#25D366] transition-colors duration-150"
@@ -85,7 +85,7 @@ export default function Footer() {
 
       {/* Floating WhatsApp Action Button */}
       <motion.a
-        href="https://wa.me/237000000000"
+        href="https://wa.me/237683982584?text=Hello%20sir%2C%20I%20got%20your%20number%20from%20PassMark%20App"
         target="_blank"
         rel="noopener noreferrer"
         whileHover={{ scale: 1.1, y: -2 }}
