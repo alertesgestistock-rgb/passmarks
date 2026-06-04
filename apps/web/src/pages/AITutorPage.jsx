@@ -129,6 +129,10 @@ function ChatView({ initConvId, initialMessage, initialPdfPath, initialPdfPage, 
   const pdfInputRef = useRef(null);
   // Keeps pdfPath alive for the whole conversation so follow-up messages still get PDF context
   const sessionPdfRef = useRef(initialPdfPath ? { pdfPath: initialPdfPath, currentPage: initialPdfPage || 1 } : null);
+  const abortCtrlRef = useRef(null);
+  const userCancelledRef = useRef(false);
+  const savedInputRef = useRef('');
+  const streamingStartedRef = useRef(false);
 
   useEffect(() => {
     const on = () => setIsOffline(false);
@@ -352,10 +356,14 @@ function ChatView({ initConvId, initialMessage, initialPdfPath, initialPdfPage, 
       pdfName: pdf?.name,
       timestamp: new Date().toISOString(),
     }]);
+    savedInputRef.current = rawText;
+    userCancelledRef.current = false;
+    streamingStartedRef.current = false;
     setIsLoading(true);
 
     // Abort après 140 secondes — EF Supabase supporte jusqu'à 150s
     const abortCtrl = new AbortController();
+    abortCtrlRef.current = abortCtrl;
     const abortTimer = setTimeout(() => abortCtrl.abort(), 140000);
 
     try {
@@ -416,6 +424,7 @@ function ChatView({ initConvId, initialMessage, initialPdfPath, initialPdfPage, 
 
               if (!streamingStarted) {
                 streamingStarted = true;
+                streamingStartedRef.current = true;
                 setIsLoading(false);
                 setMessages(prev => [...prev, {
                   role: 'assistant',
@@ -486,9 +495,16 @@ function ChatView({ initConvId, initialMessage, initialPdfPath, initialPdfPage, 
       if (error instanceof InsufficientTokensError) {
         setNoTokens(true);
         updateTokenBalance(error.balance);
+      } else if (error.name === 'AbortError' && userCancelledRef.current) {
+        if (!streamingStartedRef.current) {
+          // Annulé avant la 1ère réponse — restaurer le message et l'input
+          setMessages(prev => prev.slice(0, -1));
+          setInput(savedInputRef.current);
+        }
+        // Si streaming déjà commencé — la réponse partielle est déjà gardée, rien à faire
       } else {
         const msg = error.name === 'AbortError'
-          ? 'Request timed out (55s). The AI may be overloaded — please try again.'
+          ? 'Request timed out. The AI may be overloaded — please try again.'
           : (error.message || 'Connection error. Please try again.');
         setMessages(prev => [...prev, {
           role: 'assistant',
@@ -498,12 +514,19 @@ function ChatView({ initConvId, initialMessage, initialPdfPath, initialPdfPage, 
         }]);
       }
     } finally {
+      abortCtrlRef.current = null;
       setIsLoading(false);
     }
   };
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+  };
+
+  const handleCancel = () => {
+    if (!abortCtrlRef.current) return;
+    userCancelledRef.current = true;
+    abortCtrlRef.current.abort();
   };
 
   return (
@@ -596,12 +619,19 @@ function ChatView({ initConvId, initialMessage, initialPdfPath, initialPdfPage, 
         )}
 
         {isLoading && (
-          <div className="flex w-full justify-start">
+          <div className="flex w-full justify-start items-center gap-3">
             <div className="bg-slate-100 dark:bg-[#1E293B] p-4 rounded-2xl rounded-bl-sm border border-slate-200 dark:border-[#334155]/50 w-[60px] h-[40px] flex items-center justify-center gap-1">
               <span className="w-1.5 h-1.5 bg-[#22C55E] rounded-full animate-pulse" />
               <span className="w-1.5 h-1.5 bg-[#22C55E] rounded-full animate-pulse delay-75" />
               <span className="w-1.5 h-1.5 bg-[#22C55E] rounded-full animate-pulse delay-150" />
             </div>
+            <button
+              onClick={handleCancel}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 text-slate-400 dark:text-[#64748B] active:bg-red-50 dark:active:bg-red-900/20 active:text-red-500 dark:active:text-red-400 active:border-red-200 dark:active:border-red-800 transition-colors"
+            >
+              <X size={13} />
+              <span className="text-[12px] font-medium">Cancel</span>
+            </button>
           </div>
         )}
         <div ref={messagesEndRef} />
