@@ -4,6 +4,7 @@ import { useUser } from '@/contexts/UserContext';
 import { supabase } from '@/lib/supabase';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const PACK_ICONS = [Coins, Zap, Star, Trophy];
 const PACK_COLORS = ['#3B82F6', '#22C55E', '#F97316', '#A855F7'];
@@ -24,6 +25,8 @@ export default function TokenShopModal({ onClose }) {
   const { tokenBalance } = useUser();
   const { i18n } = useTranslation();
   const lang = i18n.language;
+  const { theme } = useTheme();
+  const textPrimary = theme === 'dark' ? '#F1F5F9' : '#0F172A';
 
   const [packages, setPackages] = useState(_cachedPackages || []);
   const [loading, setLoading] = useState(!_cachedPackages);
@@ -135,7 +138,7 @@ export default function TokenShopModal({ onClose }) {
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <div className="font-bold text-[15px] text-slate-900 dark:text-[#F1F5F9]">{pkg.name}</div>
+                  <div className="font-bold text-[15px]" style={{ color: textPrimary }}>{pkg.name}</div>
                   <div className="text-[12px] text-slate-500 dark:text-[#94A3B8] mt-0.5">
                     <span className="font-bold" style={{ color }}>{pkg.tokens}</span> tokens
                     {' · '}
@@ -145,7 +148,7 @@ export default function TokenShopModal({ onClose }) {
 
                 {/* Price + Buy */}
                 <div className="text-right shrink-0">
-                  <div className="text-[16px] font-extrabold text-slate-900 dark:text-[#F1F5F9]">
+                  <div className="text-[16px] font-extrabold" style={{ color: textPrimary }}>
                     {pkg.price_xaf.toLocaleString()} XAF
                   </div>
                   <button
