@@ -560,15 +560,8 @@ export default function LandingPage() {
         
         <div className="max-w-xl mx-auto text-center space-y-6 z-10 relative">
           <Reveal>
-            <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center bg-slate-50 dark:bg-[#1E293B] rounded-full p-2 border border-slate-200 dark:border-white/5">
-              <svg width="48" height="48" viewBox="0 0 64 64" fill="none" className="shrink-0">
-                <rect width="64" height="64" rx="16" fill="#1E293B" />
-                <path d="M32 10L19 46h5.5l3.5-9h8l3.5 9H45L32 10z" stroke="#22C55E" strokeWidth="2.5" strokeLinejoin="round" fill="none" />
-                <path d="M23.5 35h17" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round" />
-                <path d="M32 10v5" stroke="#3B82F6" strokeWidth="2.5" strokeLinecap="round" />
-                <circle cx="32" cy="8" r="3" fill="#3B82F6" />
-                <path d="M30 7.5l1.5 1.5 2.5-2.5" stroke="#0F172A" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+            <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <img src="/icon-192.jpg" alt="PassMark" width="56" height="56" className="rounded-xl" />
             </div>
             
             <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight whitespace-pre-line">
