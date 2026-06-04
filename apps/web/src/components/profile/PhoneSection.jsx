@@ -89,7 +89,7 @@ export default function PhoneSection() {
             <div className="flex items-center gap-1 mt-0.5">
               <Gift size={11} className="text-[#F97316]" />
               <span className="text-[11px] text-[#F97316] font-medium">
-                Add your number → get 25 free tokens
+                Add your number → get 20 free tokens
               </span>
             </div>
           )}
@@ -192,7 +192,7 @@ export default function PhoneSection() {
           ? <Loader2 size={16} className="animate-spin" />
           : claimed
           ? '✓ Number saved'
-          : <><Gift size={15} /> Confirm and get 25 free tokens</>}
+          : <><Gift size={15} /> Confirm and get 20 free tokens</>}
       </button>
     </div>
   );
