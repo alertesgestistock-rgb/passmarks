@@ -353,13 +353,22 @@ export default function CalendarPage() {
 
   useEffect(() => { loadEvents(); }, [loadEvents, retryKey]);
 
-  // Retry on connection recovery
+  // Retry on connection recovery and app visibility (coming back from background on mobile)
   useEffect(() => {
     const handleOnline = () => {
       setRetryKey(k => k + 1);
     };
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        setRetryKey(k => k + 1);
+      }
+    };
     window.addEventListener('online', handleOnline);
-    return () => window.removeEventListener('online', handleOnline);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, []);
 
   // ── Calendar grid ──────────────────────────────────────────────────────────

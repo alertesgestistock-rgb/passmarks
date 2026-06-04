@@ -95,15 +95,22 @@ export default function PastPapersPage({ navigate }) {
 
     fetchSubjects();
 
-    // S'assurer de relancer si le réseau revient
+    // S'assurer de relancer si le réseau revient ou si l'app sort de veille
     const handleOnline = () => {
       setRetryKey(k => k + 1);
     };
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        setRetryKey(k => k + 1);
+      }
+    };
     window.addEventListener('online', handleOnline);
+    document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
       cancelled = true;
       window.removeEventListener('online', handleOnline);
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, [retryKey]);
 

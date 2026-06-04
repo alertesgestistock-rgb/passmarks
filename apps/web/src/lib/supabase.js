@@ -28,15 +28,22 @@ export const supabase = createClient(
 
 // Rendre le client Supabase résilient au réseau lors de la sortie de veille sur mobile / PWA
 if (typeof window !== 'undefined') {
-  window.addEventListener('online', () => {
-    console.log('[Supabase] Device went online. Refreshing session network connections...');
-    // Force la reconnexion et le rafraîchissement silencieux de la session active
+  const triggerReconnection = () => {
+    console.log('[Supabase] App active/online. Re-evaluating network session...');
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        // En touchant la session, Supabase ré-évalue la connexion WebSocket et ré-émet les tokens expirés
         supabase.auth.startAutoRefresh?.();
       }
     }).catch(err => console.warn('[Supabase] Reconnection refresh skipped:', err));
+  };
+
+  window.addEventListener('online', triggerReconnection);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      triggerReconnection();
+    }
   });
+  window.addEventListener('focus', triggerReconnection);
 }
+
 
