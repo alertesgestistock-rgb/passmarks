@@ -219,11 +219,30 @@ serve(async (req: Request) => {
       }, 15000);
 
       const reader = upstream.body!.getReader();
+      const dec = new TextDecoder();
       let deductPromise: Promise<{ data: unknown; error: unknown }> | null = null;
       try {
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
+
+          // Sanitize: intercept OpenRouter error events before forwarding to client
+          const raw = dec.decode(value, { stream: true });
+          let sanitized = raw;
+          for (const line of raw.split('\n')) {
+            const clean = line.trim();
+            if (!clean.startsWith('data: ') || clean === 'data: [DONE]') continue;
+            try {
+              const parsed = JSON.parse(clean.slice(6));
+              if (parsed?.error) {
+                console.error('[chat] stream error from upstream:', JSON.stringify(parsed.error));
+                sanitized = sanitized.replace(
+                  line,
+                  `data: ${JSON.stringify({ error: 'AI service temporarily unavailable. Please try again in a few seconds.' })}`,
+                );
+              }
+            } catch { /* not JSON, skip */ }
+          }
 
           // Débiter dès le 1er chunk — l'IA a commencé, on est facturé
           if (deductPromise === null) {
@@ -234,7 +253,7 @@ serve(async (req: Request) => {
             });
           }
 
-          controller.enqueue(value);
+          controller.enqueue(encoder.encode(sanitized));
         }
 
         // Attendre la déduction et envoyer le nouveau solde
