@@ -11,7 +11,7 @@ import { InsufficientTokensError } from '@/lib/apiServerClient';
 import InsufficientTokensAlert from '@/components/InsufficientTokensAlert';
 import TokenShopModal from '@/components/TokenShopModal';
 import { downloadMessageAsPDF } from '@/lib/generatePDF';
-import pdfjsLib from '@/lib/pdfjs';
+import pdfjsLib, { isIOSDevice } from '@/lib/pdfjs';
 
 const SUGGESTED_QUESTIONS = {
   'Physics': "Explain Newton's 3rd Law",
@@ -238,10 +238,6 @@ function ChatView({ initConvId, initialMessage, initialPdfPath, initialPdfPage, 
     return canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
   };
 
-  // Detect iOS/iPadOS for disableWorker mode
-  const isIOSDevice =
-    /iPad|iPhone|iPod/.test(navigator?.userAgent ?? '') ||
-    (navigator?.platform === 'MacIntel' && navigator?.maxTouchPoints > 1);
 
   const handlePDFSelect = async (e) => {
     const file = e.target.files?.[0];
