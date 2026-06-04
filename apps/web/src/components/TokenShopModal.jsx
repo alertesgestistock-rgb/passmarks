@@ -3,11 +3,11 @@ import { X, Coins, Zap, Star, Trophy, Flame } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { supabase } from '@/lib/supabase';
 import { useTranslation } from 'react-i18next';
+import { cn } from '@/lib/utils';
 
 const PACK_ICONS = [Coins, Zap, Star, Trophy];
 const PACK_COLORS = ['#3B82F6', '#22C55E', '#F97316', '#A855F7'];
 
-// Cache module-level : fetch une seule fois par session
 let _cachedPackages = null;
 async function getPackages() {
   if (_cachedPackages) return _cachedPackages;
@@ -54,10 +54,8 @@ export default function TokenShopModal({ onClose }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Payment error');
-      if (data.checkout_url) {
-        window.location.href = data.checkout_url;
-      }
-    } catch (err) {
+      if (data.checkout_url) window.location.href = data.checkout_url;
+    } catch {
       alert(lang === 'fr'
         ? 'Erreur lors de la création du paiement. Réessayez.'
         : 'Error creating payment. Please try again.');
@@ -66,123 +64,95 @@ export default function TokenShopModal({ onClose }) {
   };
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 9999,
-      background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
-      display: 'flex', alignItems: 'flex-end',
-    }}
+    <div
+      className="fixed inset-0 z-[9999] flex items-end bg-black/70 backdrop-blur-sm"
       onClick={onClose}
     >
-      <style>{`
-        .tsm-card:hover { border-color: rgba(255,255,255,0.2) !important; transform: translateY(-2px); }
-        .tsm-btn:not(:disabled):hover { opacity: 0.88; }
-        .tsm-btn:not(:disabled):active { transform: scale(0.97); }
-      `}</style>
-
       <div
-        style={{
-          width: '100%', maxWidth: 520, margin: '0 auto',
-          background: '#1E293B',
-          borderRadius: '20px 20px 0 0',
-          padding: '0 0 env(safe-area-inset-bottom)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          maxHeight: '92dvh', overflowY: 'auto',
-        }}
+        className="w-full max-w-[520px] mx-auto bg-white dark:bg-[#1E293B] rounded-t-[20px] border border-slate-200 dark:border-white/8 max-h-[92dvh] overflow-y-auto pb-safe"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '20px 20px 0',
-        }}>
+        <div className="flex items-center justify-between px-5 pt-5 pb-0">
           <div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#F1F5F9' }}>
+            <div className="text-[18px] font-bold text-slate-900 dark:text-[#F1F5F9]">
               {lang === 'fr' ? 'Acheter des tokens' : 'Buy Tokens'}
             </div>
-            <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
+            <div className="text-[12px] text-slate-400 dark:text-[#64748B] mt-0.5">
               {lang === 'fr' ? 'Solde actuel :' : 'Current balance:'}{' '}
-              <span style={{ color: '#22C55E', fontWeight: 700 }}>{tokenBalance ?? 0}</span> tokens
+              <span className="text-[#22C55E] font-bold">{tokenBalance ?? 0}</span> tokens
             </div>
           </div>
-          <button onClick={onClose} style={{
-            background: 'rgba(255,255,255,0.06)', border: 'none',
-            borderRadius: 8, padding: 8, cursor: 'pointer', color: '#94A3B8',
-            display: 'flex',
-          }}>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-white/6 text-slate-400 dark:text-[#94A3B8] hover:text-slate-700 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+          >
             <X size={18} />
           </button>
         </div>
 
         {/* Packs */}
-        <div style={{ padding: '16px 16px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div className="p-4 flex flex-col gap-2.5">
           {loading && (
-            <div style={{ textAlign: 'center', padding: 32, color: '#64748B', fontSize: 14 }}>
+            <div className="text-center py-8 text-slate-400 dark:text-[#64748B] text-[14px]">
               {lang === 'fr' ? 'Chargement…' : 'Loading…'}
             </div>
           )}
+
           {packages.map((pkg, i) => {
             const Icon = PACK_ICONS[i % PACK_ICONS.length];
             const color = PACK_COLORS[i % PACK_COLORS.length];
             return (
-              <div key={pkg.id} className="tsm-card" style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: pkg.is_popular
-                  ? `1.5px solid ${color}`
-                  : '1px solid rgba(255,255,255,0.08)',
-                borderRadius: 14,
-                padding: '14px 16px',
-                display: 'flex', alignItems: 'center', gap: 14,
-                transition: 'all 0.15s', position: 'relative',
-              }}>
+              <div
+                key={pkg.id}
+                className={cn(
+                  'relative flex items-center gap-3.5 rounded-[14px] p-3.5 transition-all hover:-translate-y-0.5',
+                  'bg-slate-50 dark:bg-white/4',
+                  pkg.is_popular
+                    ? 'border-[1.5px]'
+                    : 'border border-slate-200 dark:border-white/8 hover:border-slate-300 dark:hover:border-white/20'
+                )}
+                style={pkg.is_popular ? { borderColor: color } : {}}
+              >
+                {/* Popular badge */}
                 {pkg.is_popular && (
-                  <div style={{
-                    position: 'absolute', top: -10, left: 16,
-                    background: color, color: '#fff',
-                    fontSize: 10, fontWeight: 700, padding: '2px 8px',
-                    borderRadius: 20, letterSpacing: '0.05em',
-                    display: 'flex', alignItems: 'center', gap: 4,
-                  }}>
+                  <div
+                    className="absolute -top-2.5 left-4 flex items-center gap-1 px-2 py-0.5 rounded-full text-white text-[10px] font-bold tracking-wider"
+                    style={{ background: color }}
+                  >
                     <Flame size={10} />
                     {lang === 'fr' ? 'POPULAIRE' : 'POPULAR'}
                   </div>
                 )}
 
-                <div style={{
-                  width: 44, height: 44, borderRadius: 12,
-                  background: `${color}20`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0,
-                }}>
+                {/* Icon */}
+                <div
+                  className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: `${color}20` }}
+                >
                   <Icon size={22} style={{ color }} />
                 </div>
 
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: '#F1F5F9' }}>{pkg.name}</div>
-                  <div style={{ fontSize: 12, color: '#94A3B8', marginTop: 2 }}>
-                    <span style={{ color, fontWeight: 700 }}>{pkg.tokens}</span> tokens
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-[15px] text-slate-900 dark:text-[#F1F5F9]">{pkg.name}</div>
+                  <div className="text-[12px] text-slate-500 dark:text-[#94A3B8] mt-0.5">
+                    <span className="font-bold" style={{ color }}>{pkg.tokens}</span> tokens
                     {' · '}
-                    <span style={{ fontSize: 11 }}>
-                      {Math.round(pkg.price_xaf / pkg.tokens)} XAF/token
-                    </span>
+                    <span className="text-[11px]">{Math.round(pkg.price_xaf / pkg.tokens)} XAF/token</span>
                   </div>
                 </div>
 
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: '#F1F5F9' }}>
+                {/* Price + Buy */}
+                <div className="text-right shrink-0">
+                  <div className="text-[16px] font-extrabold text-slate-900 dark:text-[#F1F5F9]">
                     {pkg.price_xaf.toLocaleString()} XAF
                   </div>
                   <button
-                    className="tsm-btn"
                     onClick={() => handleBuy(pkg)}
                     disabled={buying === pkg.id}
-                    style={{
-                      marginTop: 6,
-                      background: color, border: 'none', borderRadius: 8,
-                      color: '#fff', fontWeight: 700, fontSize: 12,
-                      padding: '6px 14px', cursor: 'pointer',
-                      transition: 'all 0.15s', fontFamily: 'inherit',
-                      opacity: buying === pkg.id ? 0.6 : 1,
-                    }}
+                    className="mt-1.5 px-3.5 py-1.5 rounded-lg text-white font-bold text-[12px] transition-all disabled:opacity-60 hover:brightness-110 active:scale-95"
+                    style={{ background: color }}
                   >
                     {buying === pkg.id
                       ? (lang === 'fr' ? 'Redirection…' : 'Redirecting…')
@@ -195,10 +165,7 @@ export default function TokenShopModal({ onClose }) {
         </div>
 
         {/* Footer */}
-        <div style={{
-          padding: '0 20px 20px',
-          fontSize: 11, color: '#475569', textAlign: 'center', lineHeight: 1.6,
-        }}>
+        <div className="px-5 pb-5 text-[11px] text-slate-400 dark:text-[#475569] text-center leading-relaxed">
           {lang === 'fr'
             ? 'Paiement sécurisé via Chariow · MTN MoMo · Orange Money · Carte'
             : 'Secure payment via Chariow · MTN MoMo · Orange Money · Card'}
