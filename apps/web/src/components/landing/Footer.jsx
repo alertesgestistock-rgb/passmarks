@@ -23,7 +23,7 @@ export default function Footer() {
           {/* Brand Column */}
           <div className="flex flex-col gap-4">
             <Link to="/" className="flex items-center gap-2 font-black text-base text-slate-900 dark:text-white active:scale-95 transition-transform w-fit">
-              <img src="/icon-192.png" alt="PassMark" width="28" height="28" className="shrink-0 rounded-lg" />
+              <img src="/icon-192.jpg" alt="PassMark" width="28" height="28" className="shrink-0 rounded-lg" />
               <span>Pass<span className="text-[#22C55E]">Mark</span></span>
             </Link>
             <p className="text-xs text-slate-500 dark:text-[#64748B] leading-relaxed max-w-[240px]">

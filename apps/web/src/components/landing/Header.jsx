@@ -44,7 +44,7 @@ export default function Header() {
           
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 font-extrabold text-lg md:text-xl tracking-tight text-slate-900 dark:text-white active:scale-95 transition-transform">
-            <img src="/icon-192.png" alt="PassMark" width="28" height="28" className="shrink-0 rounded-lg" />
+            <img src="/icon-192.jpg" alt="PassMark" width="28" height="28" className="shrink-0 rounded-lg" />
             <span>Pass<span className="text-[#22C55E]">Mark</span></span>
           </Link>
 

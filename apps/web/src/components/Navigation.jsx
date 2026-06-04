@@ -26,7 +26,7 @@ export function Sidebar({ activeTab, setActiveTab }) {
   return (
     <div className="hidden lg:flex fixed top-0 left-0 h-screen w-[220px] xl:w-[260px] bg-white dark:bg-[#1E293B] border-r border-slate-200 dark:border-[#334155]/50 flex-col z-50">
       <div className="h-[64px] flex items-center px-4 gap-2 shrink-0">
-        <img src="/icon-192.png" alt="PassMark" width="28" height="28" className="shrink-0 rounded-lg" />
+        <img src="/icon-192.jpg" alt="PassMark" width="28" height="28" className="shrink-0 rounded-lg" />
         <span className="text-[20px] font-semibold tracking-tight text-slate-900 dark:text-white">PassMark</span>
       </div>
 
@@ -107,7 +107,7 @@ export function TopNav({ setActiveTab }) {
       <div className="h-[64px] flex items-center px-4 lg:px-8">
         {/* Mobile Logo */}
         <div className="flex lg:hidden items-center gap-2 flex-1">
-          <img src="/icon-192.png" alt="PassMark" width="26" height="26" className="shrink-0 rounded-lg" />
+          <img src="/icon-192.jpg" alt="PassMark" width="26" height="26" className="shrink-0 rounded-lg" />
           <span className="text-[18px] font-semibold text-slate-900 dark:text-white">PassMark</span>
         </div>
 
