@@ -72,6 +72,16 @@ export const UserProvider = ({ children }) => {
         saveUserToLocalStorage(userData);
         setStreak(checkAndUpdateStreak());
 
+        // Apply pending referral code (set during signup when email confirmation was required)
+        const pendingReferral = localStorage.getItem('pm_pending_referral');
+        if (pendingReferral) {
+          localStorage.removeItem('pm_pending_referral');
+          supabase.rpc('apply_referral', {
+            p_code: pendingReferral,
+            p_referred_id: session.user.id,
+          }).catch(() => {});
+        }
+
         // Load wallet then claim daily bonus (non-blocking)
         ensureWallet(session.user.id).then(async (balance) => {
           if (cancelled) return;

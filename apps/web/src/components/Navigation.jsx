@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { Home, BookOpen, GraduationCap, User, Search, Settings, Sun, Moon, Calculator as CalcIcon, WifiOff, CalendarDays, RotateCw, Download } from 'lucide-react';
+import { Home, BookOpen, GraduationCap, User, Search, Settings, Sun, Moon, Calculator as CalcIcon, WifiOff, CalendarDays, RotateCw, Download, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUser } from '@/contexts/UserContext';
@@ -18,8 +18,9 @@ export function Sidebar({ activeTab, setActiveTab }) {
     { id: "home",     icon: Home,         label: "Home" },
     { id: "papers",   icon: BookOpen,      label: "Past Papers" },
     { id: "tutor",    icon: GraduationCap, label: "AI Tutor" },
-    { id: "calendar", icon: CalendarDays,  label: "Calendar" },
-    { id: "profile",  icon: User,          label: "Profile" },
+    { id: "calendar",  icon: CalendarDays,  label: "Calendar" },
+    { id: "referrals", icon: Users,         label: "Referrals" },
+    { id: "profile",   icon: User,          label: "Profile" },
     { id: "settings", icon: Settings,      label: "Settings" },
   ];
 
@@ -223,6 +224,13 @@ export function TopNav({ setActiveTab }) {
                   >
                     <User size={15} className="text-slate-400 dark:text-[#64748B]" />
                     Profile
+                  </button>
+                  <button
+                    onClick={() => { setActiveTab('referrals'); setShowProfileMenu(false); }}
+                    className="flex items-center gap-2.5 w-full px-4 py-3 text-[13px] font-medium text-slate-700 dark:text-[#F1F5F9] hover:bg-slate-50 dark:hover:bg-white/5 transition-colors border-t border-slate-100 dark:border-[#334155]/50"
+                  >
+                    <Users size={15} className="text-[#A855F7]" />
+                    Referrals
                   </button>
                   <button
                     onClick={() => { toggleTheme(); setShowProfileMenu(false); }}

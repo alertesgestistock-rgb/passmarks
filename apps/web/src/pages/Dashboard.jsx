@@ -15,6 +15,7 @@ import QuizSetupScreen from './QuizSetupScreen';
 import QuizPlayScreen from './QuizPlayScreen';
 import QuizResultsScreen from './QuizResultsScreen';
 import CalendarPage from './CalendarPage';
+import ReferralPage from './ReferralPage';
 
 export default function Dashboard() {
   const [view, setView] = useState({ path: 'home', state: null });
@@ -57,6 +58,7 @@ export default function Dashboard() {
       case 'quiz-play':   return <QuizPlayScreen navigate={navigate} viewState={view.state} />;
       case 'quiz-results':return <QuizResultsScreen navigate={navigate} viewState={view.state} />;
       case 'calendar':    return <CalendarPage navigate={navigate} />;
+      case 'referrals':   return <ReferralPage navigate={navigate} />;
       default:            return <HomePage navigate={navigate} />;
     }
   };

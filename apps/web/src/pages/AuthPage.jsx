@@ -23,6 +23,7 @@ export default function AuthPage() {
   const [level, setLevel] = useState('A Level');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [referralCode, setReferralCode] = useState('');
 
   useEffect(() => {
     if (!isLoading && user) navigate('/app', { replace: true });
@@ -39,8 +40,17 @@ export default function AuthPage() {
     setLoading(false);
     if (signUpError) { setError(signUpError.message); return; }
     if (data.session) {
+      if (referralCode.trim()) {
+        await supabase.rpc('apply_referral', {
+          p_code: referralCode.trim(),
+          p_referred_id: data.session.user.id,
+        });
+      }
       navigate('/app');
     } else {
+      if (referralCode.trim()) {
+        localStorage.setItem('pm_pending_referral', referralCode.trim());
+      }
       setSuccess('Account created! Check your inbox to confirm, then sign in.');
     }
   };
@@ -258,9 +268,18 @@ export default function AuthPage() {
               </button>
             </div>
             
+            <input
+              className="ap-input"
+              type="text"
+              placeholder="Referral code (optional)"
+              value={referralCode}
+              onChange={e => setReferralCode(e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 6))}
+              autoComplete="off"
+            />
+
             {error && <div className="ap-error ap-error--err">{error}</div>}
             {success && <div className="ap-error ap-error--ok">{success}</div>}
-            
+
             {!success && (
               <button className="ap-btn-primary" onClick={handleSignUp} disabled={loading}>
                 {loading ? 'Creating account…' : 'Create my account →'}
