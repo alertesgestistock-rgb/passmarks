@@ -106,9 +106,9 @@ export function TopNav({ setActiveTab }) {
     <div className="fixed top-0 left-0 right-0 z-40 bg-white dark:bg-[#0F172A] lg:bg-white/90 dark:lg:bg-[#0F172A]/90 lg:backdrop-blur-sm border-b border-slate-200 dark:border-[#334155] lg:border-none">
       <div className="h-[64px] flex items-center px-4 lg:px-8">
         {/* Mobile Logo */}
-        <div className="flex lg:hidden items-center gap-2 flex-1">
+        <div className="flex lg:hidden items-center gap-2 shrink-0">
           <img src="/icon-192.jpg" alt="PassMark" width="26" height="26" className="shrink-0 rounded-lg" />
-          <span className="text-[18px] font-semibold text-slate-900 dark:text-white">PassMark</span>
+          <span className="text-[18px] font-semibold text-slate-900 dark:text-white hidden min-[390px]:inline-block">PassMark</span>
         </div>
 
         {/* Desktop sidebar placeholder */}
@@ -127,7 +127,7 @@ export function TopNav({ setActiveTab }) {
         </div>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-2 shrink-0 lg:ml-auto">
+        <div className="flex items-center gap-2 shrink-0 flex-1 justify-end">
           {/* Offline indicator — visible only when disconnected */}
           {isOffline && (
             <div
