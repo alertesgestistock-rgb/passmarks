@@ -109,7 +109,7 @@ function MarkdownText({ content, streaming }) {
 // ─────────────────────────────────────────────────────────────
 // Chat View
 // ─────────────────────────────────────────────────────────────
-function ChatView({ initConvId, initialMessage, initialPdfPath, initialPdfPage, initialPdfName, onBack, user, showBackButton, onConversationCreated }) {
+function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initialPdfPage, initialPdfName, onBack, user, showBackButton, onConversationCreated }) {
   const { updateUser, addRecentActivity, updateTokenBalance } = useUser();
 
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -591,7 +591,10 @@ function ChatView({ initConvId, initialMessage, initialPdfPath, initialPdfPage, 
                 <button
                   onClick={() => {
                     const el = document.querySelector(`[data-ai-message="${idx}"]`);
-                    if (el) downloadMessageAsPDF(el, `passmark-solution-${idx}.pdf`);
+                    if (el) {
+                      const base = (convTitle || 'passmark-solution').replace(/[^a-z0-9]/gi, '-').replace(/-+/g, '-').slice(0, 60).toLowerCase();
+                      downloadMessageAsPDF(el, `${base}.pdf`);
+                    }
                   }}
                   title="Download as PDF"
                   className="flex items-center gap-1 text-[10px] text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
@@ -1016,6 +1019,7 @@ export default function AITutorPage({ navigate, viewState }) {
           <ChatView
             key={activeConvId}
             initConvId={activeConvId}
+            convTitle={conversations.find(c => c.id === activeConvId)?.title || ''}
             initialMessage={pdfInitState.initialMessage}
             initialPdfPath={pdfInitState.initialPdfPath}
             initialPdfPage={pdfInitState.initialPdfPage}
