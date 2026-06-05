@@ -29,6 +29,19 @@ export default function AuthPage() {
     if (!isLoading && user) navigate('/app', { replace: true });
   }, [user, isLoading, navigate]);
 
+  // Pre-fill referral code from URL (?ref=CODE) or localStorage
+  useEffect(() => {
+    const urlRef = searchParams.get('ref');
+    if (urlRef) {
+      const clean = urlRef.replace(/[^a-zA-Z0-9]/g, '').slice(0, 6);
+      localStorage.setItem('pm_ref_code', clean);
+      setReferralCode(clean);
+    } else {
+      const stored = localStorage.getItem('pm_ref_code');
+      if (stored) setReferralCode(stored);
+    }
+  }, []);
+
   const handleSignUp = async () => {
     if (!name || !email || !password) return;
     if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
@@ -46,11 +59,13 @@ export default function AuthPage() {
           p_referred_id: data.session.user.id,
         });
       }
+      localStorage.removeItem('pm_ref_code');
       navigate('/app');
     } else {
       if (referralCode.trim()) {
         localStorage.setItem('pm_pending_referral', referralCode.trim());
       }
+      localStorage.removeItem('pm_ref_code');
       setSuccess('Account created! Check your inbox to confirm, then sign in.');
     }
   };

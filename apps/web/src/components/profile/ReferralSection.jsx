@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Gift, Copy, Check, Loader2, Users, AlertTriangle, Share2 } from 'lucide-react';
+import { Gift, Copy, Check, Loader2, Users, AlertTriangle, Share2, Link } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useUser } from '@/contexts/UserContext';
 
@@ -12,6 +12,7 @@ export default function ReferralSection() {
   const [confirmed, setConfirmed] = useState(false);
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -74,20 +75,30 @@ export default function ReferralSection() {
     }
   };
 
+  const referralLink = referralCode
+    ? `${window.location.origin}/auth?ref=${referralCode}`
+    : '';
+
   const handleCopy = async () => {
     await navigator.clipboard.writeText(referralCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleCopyLink = async () => {
+    await navigator.clipboard.writeText(referralLink);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
+
   const handleShare = () => {
-    const text = `Use my referral code ${referralCode} on PassMark and get 5 free tokens when you sign up! 🎓`;
+    const text = `Join me on PassMark — the GCE AI Tutor! Sign up with my link and get 5 free tokens 🎓\n${referralLink}`;
     if (navigator.share) {
-      navigator.share({ text });
+      navigator.share({ title: 'PassMark', text });
     } else {
       navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
     }
   };
 
@@ -210,7 +221,7 @@ export default function ReferralSection() {
       {referralCode && (
         <>
           {/* Code display */}
-          <div className="bg-[#A855F7]/8 dark:bg-[#A855F7]/10 border border-[#A855F7]/20 rounded-xl px-4 py-3 flex items-center justify-between mb-4">
+          <div className="bg-[#A855F7]/8 dark:bg-[#A855F7]/10 border border-[#A855F7]/20 rounded-xl px-4 py-3 flex items-center justify-between mb-3">
             <span className="text-[22px] font-mono font-bold tracking-[0.15em] text-[#A855F7] uppercase">
               {referralCode}
             </span>
@@ -219,7 +230,22 @@ export default function ReferralSection() {
               className="flex items-center gap-1.5 text-[12px] font-semibold text-[#A855F7] hover:text-[#9333EA] transition-colors"
             >
               {copied ? <Check size={14} /> : <Copy size={14} />}
-              {copied ? 'Copied!' : 'Copy'}
+              {copied ? 'Copied!' : 'Copy code'}
+            </button>
+          </div>
+
+          {/* Referral link */}
+          <div className="bg-slate-100 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl px-3 py-2.5 flex items-center gap-2 mb-4">
+            <Link size={13} className="text-slate-400 dark:text-[#64748B] shrink-0" />
+            <span className="text-[11px] text-slate-500 dark:text-[#94A3B8] font-mono truncate flex-1">
+              {referralLink}
+            </span>
+            <button
+              onClick={handleCopyLink}
+              className="flex items-center gap-1 text-[11px] font-semibold text-[#A855F7] hover:text-[#9333EA] transition-colors shrink-0"
+            >
+              {copiedLink ? <Check size={12} /> : <Copy size={12} />}
+              {copiedLink ? 'Copied!' : 'Copy'}
             </button>
           </div>
 
