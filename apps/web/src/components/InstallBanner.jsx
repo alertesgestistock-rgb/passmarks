@@ -9,17 +9,12 @@ export default function InstallBanner() {
   const [isIos, setIsIos] = useState(false);
 
   useEffect(() => {
-    // Detect if running as standalone PWA
-    const isStandalone = 
+    const isStandalone =
       window.matchMedia('(display-mode: standalone)').matches ||
       window.navigator.standalone === true;
 
-    if (isStandalone) {
-      setShowBanner(false);
-      return;
-    }
+    if (isStandalone) return;
 
-    // Detect if platform is iOS (iPhone/iPad)
     const ua = window.navigator.userAgent.toLowerCase();
     const detectIos = /iphone|ipad|ipod/.test(ua);
     setIsIos(detectIos);
@@ -27,18 +22,15 @@ export default function InstallBanner() {
     const isDismissed = localStorage.getItem('installBannerDismissed') === 'true';
 
     if (detectIos) {
-      // iOS doesn't support 'beforeinstallprompt', we show the banner manually if not dismissed
-      if (!isDismissed) {
-        setShowBanner(true);
-      }
-    } else {
-    // Android / Desktop Chrome support 'beforeinstallprompt'
+      if (!isDismissed) setShowBanner(true);
+      return;
+    }
+
+    // Android / Desktop: capture the native install prompt
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      if (!isDismissed) {
-        setShowBanner(true);
-      }
+      if (!isDismissed) setShowBanner(true);
     };
 
     const handleAppInstalled = () => {
