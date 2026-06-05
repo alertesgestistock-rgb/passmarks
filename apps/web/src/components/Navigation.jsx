@@ -79,11 +79,12 @@ function getInitials(name) {
 }
 
 export function TopNav({ setActiveTab }) {
-  const { theme, toggleTheme } = useTheme();
   const { user, tokenBalance } = useUser();
+  const { theme, toggleTheme } = useTheme();
   const [showCalc, setShowCalc] = useState(false);
   const [showTokenShop, setShowTokenShop] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   // True only when running as an installed PWA (standalone mode)
   const isPWA =
@@ -173,11 +174,11 @@ export function TopNav({ setActiveTab }) {
             <CalcIcon size={17} />
           </button>
 
-          {/* Theme toggle */}
+          {/* Theme toggle — desktop only */}
           <button
             onClick={toggleTheme}
             aria-label="Toggle theme"
-            className="w-[36px] h-[36px] rounded-full bg-slate-100 dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 flex items-center justify-center text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-[#334155] transition-colors"
+            className="hidden lg:flex w-[36px] h-[36px] rounded-full bg-slate-100 dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 items-center justify-center text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-[#334155] transition-colors"
           >
             {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
           </button>
@@ -189,16 +190,53 @@ export function TopNav({ setActiveTab }) {
             document.body
           )}
 
-          <button
-            onClick={() => setActiveTab('profile')}
-            className="w-[36px] h-[36px] rounded-full overflow-hidden bg-gradient-to-br from-[#22C55E] to-[#16A34A] flex items-center justify-center text-white text-[14px] font-bold shadow-md hover:brightness-110 scale-on-click shrink-0"
-          >
-            {user?.avatarUrl ? (
-              <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
-            ) : (
-              getInitials(user?.name)
+          {/* Avatar — desktop: navigate directly; mobile: mini popover */}
+          <div className="relative shrink-0">
+            <button
+              onClick={() => {
+                if (window.innerWidth >= 1024) {
+                  setActiveTab('profile');
+                } else {
+                  setShowProfileMenu(v => !v);
+                }
+              }}
+              className="w-[36px] h-[36px] rounded-full overflow-hidden bg-gradient-to-br from-[#22C55E] to-[#16A34A] flex items-center justify-center text-white text-[14px] font-bold shadow-md hover:brightness-110 scale-on-click"
+            >
+              {user?.avatarUrl ? (
+                <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+              ) : (
+                getInitials(user?.name)
+              )}
+            </button>
+
+            {showProfileMenu && (
+              <>
+                {/* Backdrop to close on outside click */}
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowProfileMenu(false)}
+                />
+                <div className="absolute right-0 top-[44px] z-50 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/80 rounded-xl shadow-xl overflow-hidden min-w-[150px] fade-in">
+                  <button
+                    onClick={() => { setActiveTab('profile'); setShowProfileMenu(false); }}
+                    className="flex items-center gap-2.5 w-full px-4 py-3 text-[13px] font-medium text-slate-700 dark:text-[#F1F5F9] hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+                  >
+                    <User size={15} className="text-slate-400 dark:text-[#64748B]" />
+                    Profile
+                  </button>
+                  <button
+                    onClick={() => { toggleTheme(); setShowProfileMenu(false); }}
+                    className="flex items-center gap-2.5 w-full px-4 py-3 text-[13px] font-medium text-slate-700 dark:text-[#F1F5F9] hover:bg-slate-50 dark:hover:bg-white/5 transition-colors border-t border-slate-100 dark:border-[#334155]/50"
+                  >
+                    {theme === 'dark'
+                      ? <Sun size={15} className="text-amber-400" />
+                      : <Moon size={15} className="text-slate-400" />}
+                    {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+                  </button>
+                </div>
+              </>
             )}
-          </button>
+          </div>
         </div>
       </div>
       <InstallBanner />
