@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { Home, BookOpen, GraduationCap, User, Search, Settings, Sun, Moon, Calculator as CalcIcon, WifiOff, CalendarDays, RotateCw } from 'lucide-react';
+import { Home, BookOpen, GraduationCap, User, Search, Settings, Sun, Moon, Calculator as CalcIcon, WifiOff, CalendarDays, RotateCw, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUser } from '@/contexts/UserContext';
@@ -148,6 +148,18 @@ export function TopNav({ setActiveTab }) {
               className="w-[36px] h-[36px] rounded-full bg-slate-100 dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 flex items-center justify-center text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-[#334155] transition-colors active:rotate-180 duration-300"
             >
               <RotateCw size={16} />
+            </button>
+          )}
+
+          {/* PWA Install trigger button — visible only on browser (not installed yet) */}
+          {!isPWA && (
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('passmark_trigger_install'))}
+              aria-label="Install app"
+              title="Install PassMark"
+              className="w-[36px] h-[36px] rounded-full bg-[#22C55E]/10 border border-[#22C55E]/20 flex items-center justify-center text-[#22C55E] hover:bg-[#22C55E] hover:text-white transition-all scale-on-click"
+            >
+              <Download size={16} className="animate-pulse" />
             </button>
           )}
 
