@@ -138,19 +138,9 @@ export default function AuthPage() {
         
         .ap-logo { display: flex; flex-direction: column; align-items: center; margin-bottom: 28px; gap: 8px; }
         .ap-logo-icon {
-          color: #22C55E;
-          background: rgba(34, 197, 94, 0.1);
-          padding: 12px;
-          border-radius: 16px;
-          border: 1px solid rgba(34, 197, 94, 0.2);
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 0 20px rgba(34,197,94,0.15);
-        }
-        .light .ap-logo-icon {
-          background: rgba(34, 197, 94, 0.08);
-          box-shadow: 0 0 15px rgba(34,197,94,0.1);
         }
         .ap-logo-title { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; color: #FFFFFF; margin-top: 4px; }
         .light .ap-logo-title { color: #0F172A; }
@@ -246,10 +236,7 @@ export default function AuthPage() {
       <div className="ap-card">
         <div className="ap-logo">
           <div className="ap-logo-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-              <path d="M3 12L9 18L21 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M12 2L22 12L12 22L2 12L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            <img src="/icon-192.jpg" alt="PassMark" width="56" height="56" style={{ borderRadius: '14px' }} />
           </div>
           <div className="ap-logo-title">PassMark</div>
           <div className="ap-logo-sub">GCE AI Tutor · Free</div>
