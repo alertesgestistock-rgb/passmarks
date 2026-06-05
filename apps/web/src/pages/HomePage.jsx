@@ -92,7 +92,7 @@ export default function HomePage({ navigate }) {
             <span className="text-[11px] md:text-[12px] text-slate-500 dark:text-[#94A3B8] font-medium leading-tight">Papers read</span>
           </div>
           <button
-            onClick={() => navigate('profile')}
+            onClick={() => navigate('referrals')}
             className="flex-1 md:flex-none bg-white dark:bg-[#1E293B] rounded-2xl p-5 border-l-[4px] border-[#A855F7] shadow-sm flex flex-col justify-center border border-slate-200 dark:border-[#334155]/50 border-l-[#A855F7] hover:border-[#A855F7]/40 hover:-translate-y-0.5 transition-all text-left"
           >
             <span className="text-[24px] md:text-[26px] lg:text-[28px] font-bold text-slate-900 dark:text-white mb-0.5 tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
