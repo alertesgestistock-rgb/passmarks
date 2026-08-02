@@ -460,11 +460,14 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
           if (!res2.ok) return;
           const reader2 = res2.body.getReader();
           const decoder2 = new TextDecoder('utf-8');
+          let buffer2 = '';
           while (true) {
             const { value, done } = await reader2.read();
             if (done) break;
-            const chunk = decoder2.decode(value, { stream: true });
-            for (const line of chunk.split('\n')) {
+            buffer2 += decoder2.decode(value, { stream: true });
+            const lines2 = buffer2.split('\n');
+            buffer2 = lines2.pop(); // ligne potentiellement incomplète — gardée pour le prochain chunk
+            for (const line of lines2) {
               const clean = line.trim();
               if (!clean || clean === 'data: [DONE]' || !clean.startsWith('data: ')) continue;
               try {
@@ -480,25 +483,35 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
       };
 
       try {
+        // Les événements SSE ('data: {...}\n\n') peuvent arriver découpés sur
+        // plusieurs lectures réseau (surtout sur mobile, paquets plus petits).
+        // On ne traite que les lignes complètes et on garde le reliquat pour
+        // la prochaine lecture — sinon une ligne coupée en deux échoue à parser
+        // des deux côtés et le morceau de réponse correspondant est perdu en silence.
+        let buffer = '';
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
 
-          const chunk = decoder.decode(value, { stream: true });
-          for (const line of chunk.split('\n')) {
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop();
+          for (const line of lines) {
             const clean = line.trim();
             if (!clean || clean === 'data: [DONE]') continue;
             if (!clean.startsWith('data: ')) continue;
+            let json;
             try {
-              const json = JSON.parse(clean.slice(6));
-              // Événement de solde envoyé après déduction réussie
-              if (typeof json.b === 'number') { updateTokenBalance(json.b); receivedBalanceEvent = true; continue; }
-              // Événement d'erreur envoyé par l'EF (ex: timeout OpenRouter)
-              if (json.error) throw new Error(json.error);
-              const token = json.choices?.[0]?.delta?.content || '';
-              if (!token) continue;
-              appendToken(token);
-            } catch { /* chunk partiel — ignoré */ }
+              json = JSON.parse(clean.slice(6));
+            } catch { continue; /* ligne malformée — ne devrait plus arriver grâce au buffer ci-dessus */ }
+            // Événement de solde envoyé après déduction réussie
+            if (typeof json.b === 'number') { updateTokenBalance(json.b); receivedBalanceEvent = true; continue; }
+            // Événement d'erreur envoyé par l'EF (ex: timeout OpenRouter) — doit
+            // remonter jusqu'au catch(streamErr) plus bas, pas être avalé ici.
+            if (json.error) throw new Error(json.error);
+            const token = json.choices?.[0]?.delta?.content || '';
+            if (!token) continue;
+            appendToken(token);
           }
         }
 
