@@ -369,18 +369,17 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const chatUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
+      const requestMessages = buildClaudeMessages(messages, text, image, pdf);
+      const pdfContext = pdf?.pdfPath ? { pdfPath: pdf.pdfPath, currentPage: pdf.currentPage }
+        : sessionPdfRef.current ? { pdfPath: sessionPdfRef.current.pdfPath, currentPage: sessionPdfRef.current.currentPage }
+        : {};
       const response = await fetch(chatUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
         },
-        body: JSON.stringify({
-          messages: buildClaudeMessages(messages, text, image, pdf),
-          ...(pdf?.pdfPath ? { pdfPath: pdf.pdfPath, currentPage: pdf.currentPage }
-            : sessionPdfRef.current ? { pdfPath: sessionPdfRef.current.pdfPath, currentPage: sessionPdfRef.current.currentPage }
-            : {}),
-        }),
+        body: JSON.stringify({ messages: requestMessages, ...pdfContext }),
         signal: abortCtrl.signal,
       });
 
@@ -400,7 +399,85 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
       const decoder = new TextDecoder('utf-8');
       let fullContent = '';
       let streamingStarted = false;
+      // L'EF envoie toujours un événement {b: <solde>} juste après la fin réelle
+      // du stream upstream. Si on ne le reçoit jamais, la connexion a été coupée
+      // en cours de route (mobile mis en arrière-plan, écran verrouillé, réseau
+      // coupé) et la réponse est tronquée, même si reader.read() renvoie done.
+      let receivedBalanceEvent = false;
       const msgTimestamp = new Date().toISOString();
+
+      const appendToken = (token) => {
+        fullContent += token;
+        if (!streamingStarted) {
+          streamingStarted = true;
+          streamingStartedRef.current = true;
+          setIsLoading(false);
+          setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: fullContent,
+            isStreaming: true,
+            timestamp: msgTimestamp,
+          }]);
+        } else {
+          setMessages(prev => {
+            const updated = [...prev];
+            updated[updated.length - 1] = { ...updated[updated.length - 1], content: fullContent };
+            return updated;
+          });
+        }
+      };
+
+      // Reprend une réponse coupée en cours de route: attend que le téléphone
+      // soit de nouveau au premier plan puis redemande la suite au modèle,
+      // en ajoutant la réponse partielle au fil de la conversation.
+      const continueTruncated = async () => {
+        if (typeof document !== 'undefined' && document.visibilityState !== 'visible') {
+          await new Promise(resolve => {
+            const resume = () => {
+              if (document.visibilityState !== 'visible') return;
+              document.removeEventListener('visibilitychange', resume);
+              setTimeout(resolve, 150);
+            };
+            document.addEventListener('visibilitychange', resume);
+          });
+        }
+        try {
+          const { data: { session: resumedSession } } = await supabase.auth.getSession();
+          const continueMessages = [
+            ...requestMessages,
+            { role: 'assistant', content: fullContent },
+            { role: 'user', content: 'Continue your previous answer exactly from where it stopped. Do not repeat anything you already wrote — just continue seamlessly.' },
+          ];
+          const res2 = await fetch(chatUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(resumedSession?.access_token ? { Authorization: `Bearer ${resumedSession.access_token}` } : {}),
+            },
+            body: JSON.stringify({ messages: continueMessages }),
+            signal: abortCtrl.signal,
+          });
+          if (!res2.ok) return;
+          const reader2 = res2.body.getReader();
+          const decoder2 = new TextDecoder('utf-8');
+          while (true) {
+            const { value, done } = await reader2.read();
+            if (done) break;
+            const chunk = decoder2.decode(value, { stream: true });
+            for (const line of chunk.split('\n')) {
+              const clean = line.trim();
+              if (!clean || clean === 'data: [DONE]' || !clean.startsWith('data: ')) continue;
+              try {
+                const json = JSON.parse(clean.slice(6));
+                if (typeof json.b === 'number') { updateTokenBalance(json.b); continue; }
+                if (json.error) continue;
+                const token = json.choices?.[0]?.delta?.content || '';
+                if (token) appendToken(token);
+              } catch { /* chunk partiel — ignoré */ }
+            }
+          }
+        } catch { /* on garde ce qu'on a déjà — mieux qu'une erreur totale */ }
+      };
 
       try {
         while (true) {
@@ -415,32 +492,18 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
             try {
               const json = JSON.parse(clean.slice(6));
               // Événement de solde envoyé après déduction réussie
-              if (typeof json.b === 'number') { updateTokenBalance(json.b); continue; }
+              if (typeof json.b === 'number') { updateTokenBalance(json.b); receivedBalanceEvent = true; continue; }
               // Événement d'erreur envoyé par l'EF (ex: timeout OpenRouter)
               if (json.error) throw new Error(json.error);
               const token = json.choices?.[0]?.delta?.content || '';
               if (!token) continue;
-              fullContent += token;
-
-              if (!streamingStarted) {
-                streamingStarted = true;
-                streamingStartedRef.current = true;
-                setIsLoading(false);
-                setMessages(prev => [...prev, {
-                  role: 'assistant',
-                  content: fullContent,
-                  isStreaming: true,
-                  timestamp: msgTimestamp,
-                }]);
-              } else {
-                setMessages(prev => {
-                  const updated = [...prev];
-                  updated[updated.length - 1] = { ...updated[updated.length - 1], content: fullContent };
-                  return updated;
-                });
-              }
+              appendToken(token);
             } catch { /* chunk partiel — ignoré */ }
           }
+        }
+
+        if (!receivedBalanceEvent && fullContent && !userCancelledRef.current) {
+          await continueTruncated();
         }
 
         // Stream terminé — retirer le curseur
@@ -453,12 +516,15 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
         });
 
       } catch (streamErr) {
+        if (fullContent && !userCancelledRef.current) {
+          await continueTruncated();
+        }
         // Nettoyer le message partiel si le stream échoue en cours de route
         setMessages(prev => {
           const updated = [...prev];
           if (updated[updated.length - 1]?.isStreaming) {
             if (fullContent.length > 0) {
-              // Garder le contenu partiel mais retirer le curseur
+              // Garder le contenu partiel (+ reprise éventuelle) mais retirer le curseur
               updated[updated.length - 1] = { ...updated[updated.length - 1], isStreaming: false };
             } else {
               // Aucun contenu reçu — supprimer le message vide
@@ -467,7 +533,7 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
           }
           return updated;
         });
-        throw streamErr;
+        if (!fullContent) throw streamErr;
       }
 
       // Sauvegarde en DB
