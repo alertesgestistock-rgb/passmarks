@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Search, ChevronRight, ArrowLeft, FileText, Lock, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
+import { runMobileSafeRequest } from '@/lib/mobileRequest';
 import { useUser } from '@/contexts/UserContext';
 import PDFViewer from '@/components/PDFViewer';
 
@@ -58,19 +59,14 @@ export default function PastPapersPage({ navigate }) {
 
     // 2. Rafraîchir depuis Supabase en arrière-plan
     const fetchSubjects = async () => {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000); // 12 seconds timeout
-
       try {
-        const { data, error } = await supabase
+        const { data, error } = await runMobileSafeRequest(signal => supabase
           .from('gce_papers')
           .select('subject, subject_code, level, category')
           .eq('source', 'GCE_BOARD')
           .eq('year', 2024)
           .eq('is_active', true)
-          .abortSignal(controller.signal);
-
-        clearTimeout(timeoutId);
+          .abortSignal(signal));
 
         if (cancelled || error || !data) return;
 
@@ -86,7 +82,6 @@ export default function PastPapersPage({ navigate }) {
         setSubjects(unique);
         setError(null);
       } catch (err) {
-        clearTimeout(timeoutId);
         console.error('[PastPapersPage] fetchSubjects failed:', err);
       } finally {
         if (!cancelled) setLoadingSubjects(false);
@@ -121,15 +116,16 @@ export default function PastPapersPage({ navigate }) {
     setLoadingPapers(true);
     setPapers([]);
 
-    supabase
+    runMobileSafeRequest(signal => supabase
       .from('gce_papers')
-      .select('year, paper_number, pdf_url')
+      .select('id, year, paper_number, pdf_url')
       .eq('subject_code', selectedSubject.subject_code)
       .eq('level', selectedSubject.level)
       .eq('source', selectedSource)
       .eq('is_active', true)
       .order('year', { ascending: false })
       .order('paper_number', { ascending: true })
+      .abortSignal(signal))
       .then(({ data, error }) => {
         if (cancelled) return;
         if (!error && data) setPapers(data);
@@ -146,7 +142,7 @@ export default function PastPapersPage({ navigate }) {
     const map = {};
     papers.forEach(p => {
       if (!map[p.year]) map[p.year] = {};
-      map[p.year][p.paper_number] = p.pdf_url;
+      map[p.year][p.paper_number] = { url: p.pdf_url, id: p.id };
     });
     return map;
   }, [papers]);
@@ -175,6 +171,12 @@ export default function PastPapersPage({ navigate }) {
   const pdfPath = selectedPaper?.url
     ? (selectedPaper.url.split('/object/public/past-papers/')[1] ?? null)
     : null;
+
+  const openPaper = (paper) => {
+    setSelectedPaper(paper);
+    setView('reader');
+    if (paper.id) supabase.rpc('log_paper_view', { p_paper_id: paper.id }).catch(() => {});
+  };
 
   const handleOpenSubject = (sub) => {
     setSelectedSubject(sub);
@@ -321,12 +323,13 @@ export default function PastPapersPage({ navigate }) {
                 >
                   <span className="text-[13px] font-medium text-slate-700 dark:text-[#F1F5F9]">{year}</span>
                   {paperCols.map(pn => {
-                    const url = papersByYear[year]?.[pn];
+                    const entry = papersByYear[year]?.[pn];
+                    const url = entry?.url;
                     return (
                       <div key={pn} className="flex justify-center">
                         {url ? (
                           <button
-                            onClick={() => { setSelectedPaper({ url, year, paper_number: pn }); setView('reader'); }}
+                            onClick={() => { openPaper({ url, year, paper_number: pn, id: entry.id }); }}
                             className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-green-100 dark:bg-[#14532D] text-green-700 dark:text-[#22C55E] text-[11px] font-medium hover:bg-green-200 dark:hover:bg-[#166534] transition-colors"
                           >
                             <FileText size={11} />

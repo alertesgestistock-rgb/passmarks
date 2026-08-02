@@ -10,6 +10,7 @@ import NotificationCenter from './NotificationCenter';
 import Calculator from './Calculator';
 import TokenBalance from './TokenBalance';
 import TokenShopModal from './TokenShopModal';
+import { OnboardingRewardsBanner } from './onboarding/OnboardingRewardsBanner';
 
 export function Sidebar({ activeTab, setActiveTab }) {
   const { tokenBalance } = useUser();
@@ -287,43 +288,9 @@ export function BottomNav({ activeTab, setActiveTab }) {
   );
 }
 
-function DailyBonusToast() {
-  const { dailyBonus, dismissDailyBonus } = useUser();
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    if (dailyBonus > 0) {
-      const show = setTimeout(() => setVisible(true), 800);
-      const hide = setTimeout(() => { setVisible(false); setTimeout(dismissDailyBonus, 400); }, 4000);
-      return () => { clearTimeout(show); clearTimeout(hide); };
-    }
-  }, [dailyBonus]);
-
-  if (!dailyBonus) return null;
-
-  return (
-    <div
-      onClick={() => { setVisible(false); setTimeout(dismissDailyBonus, 400); }}
-      style={{
-        position: 'fixed', bottom: 80, left: '50%',
-        transform: `translateX(-50%) translateY(${visible ? 0 : 20}px)`,
-        opacity: visible ? 1 : 0,
-        transition: 'opacity 0.3s ease, transform 0.3s ease',
-        background: '#22C55E', color: '#052e16',
-        borderRadius: 12, padding: '10px 18px',
-        fontWeight: 700, fontSize: 14,
-        boxShadow: '0 4px 20px rgba(34,197,94,0.4)',
-        zIndex: 9999, cursor: 'pointer', userSelect: 'none',
-        display: 'flex', alignItems: 'center', gap: 8,
-        whiteSpace: 'nowrap',
-      }}
-    >
-      🎁 +{dailyBonus} free tokens today!
-    </div>
-  );
-}
-
 export function MainLayout({ children, activeTab, setActiveTab }) {
+  const [hasBanner, setHasBanner] = useState(false);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.ctrlKey) {
@@ -344,11 +311,16 @@ export function MainLayout({ children, activeTab, setActiveTab }) {
     <div className="min-h-screen bg-slate-50 dark:bg-[#0F172A] flex flex-col overflow-x-hidden">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       <TopNav setActiveTab={setActiveTab} />
-      <main className="flex-1 mt-[64px] mb-[64px] md:mb-[72px] lg:mb-0 lg:ml-[220px] xl:ml-[260px] p-4 lg:p-8 min-w-0 overflow-hidden slide-transition fade-in">
+      <OnboardingRewardsBanner onVisibleChange={setHasBanner} />
+      <main
+        className={cn(
+          "flex-1 mt-[64px] mb-[64px] md:mb-[72px] lg:mb-0 lg:ml-[220px] xl:ml-[260px] px-4 lg:px-8 pb-4 lg:pb-8 min-w-0 overflow-hidden slide-transition fade-in",
+          hasBanner ? "pt-[60px] lg:pt-[76px]" : "pt-4 lg:pt-8"
+        )}
+      >
         {children}
       </main>
       <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
-      <DailyBonusToast />
     </div>
   );
 }

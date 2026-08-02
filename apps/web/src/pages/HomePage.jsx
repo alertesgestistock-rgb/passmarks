@@ -3,6 +3,7 @@ import { MessageSquare, Camera, FileText, Award, CalendarDays, Users } from 'luc
 import { useUser } from '@/contexts/UserContext';
 import { supabase } from '@/lib/supabase';
 import { getTimeGreeting, calculateDaysToExam, getStreakColor } from '@/lib/userStorage';
+import OnboardingRewardsWidget from '@/components/onboarding/OnboardingRewardsWidget';
 
 export default function HomePage({ navigate }) {
   const { user, streak, isLoading } = useUser();
@@ -104,6 +105,9 @@ export default function HomePage({ navigate }) {
           </button>
         </div>
       </div>
+
+      {/* Welcome rewards */}
+      <OnboardingRewardsWidget navigate={navigate} dismissible={false} />
 
       {/* Quick Actions */}
       <div>
