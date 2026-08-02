@@ -18,12 +18,16 @@ import CalendarPage from './CalendarPage';
 import ReferralPage from './ReferralPage';
 
 export default function Dashboard() {
-  const [view, setView] = useState({ path: 'home', state: null });
+  const [view, setView] = useState(() => {
+    const path = sessionStorage.getItem('passmark_last_view') || 'home';
+    return { path, state: null };
+  });
   const [showTokenShop, setShowTokenShop] = useState(false);
   const [searchParams] = useSearchParams();
   const { refreshTokenBalance } = useUser();
 
   const navigate = (path, state = null) => {
+    sessionStorage.setItem('passmark_last_view', path);
     setView({ path, state });
   };
 

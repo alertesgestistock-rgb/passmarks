@@ -37,10 +37,28 @@ if (typeof window !== 'undefined') {
     }).catch(err => console.warn('[Supabase] Reconnection refresh skipped:', err));
   };
 
+  const isIosPwa = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    && (navigator.standalone === true || window.matchMedia?.('(display-mode: standalone)').matches);
+  let hiddenAt = 0;
+  let recoveryScheduled = false;
+
   window.addEventListener('online', triggerReconnection);
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      triggerReconnection();
+    if (document.visibilityState !== 'visible') {
+      hiddenAt = Date.now();
+      return;
+    }
+
+    triggerReconnection();
+
+    // iOS standalone PWAs can keep HTTP/SSE requests permanently frozen after
+    // backgrounding. A normal JS retry cannot recover a promise that never
+    // settles, while a page reload reliably creates fresh network connections.
+    if (isIosPwa && hiddenAt && Date.now() - hiddenAt > 1000 && !recoveryScheduled) {
+      recoveryScheduled = true;
+      window.setTimeout(() => {
+        if (document.visibilityState === 'visible') window.location.reload();
+      }, 250);
     }
   });
   window.addEventListener('focus', triggerReconnection);
