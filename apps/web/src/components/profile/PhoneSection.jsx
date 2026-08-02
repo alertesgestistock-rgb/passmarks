@@ -49,18 +49,18 @@ export default function PhoneSection() {
     setSaving(true);
     setError('');
     try {
-      const { data: { session } } = await supabase.auth.getSession();
       const { data, error: rpcError } = await supabase.rpc('claim_phone_bonus', {
-        p_user_id:       session.user.id,
         p_phone:         phone,
         p_phone_country: countryCode,
       });
 
       if (rpcError) throw rpcError;
-      if (data?.error === 'already_claimed') {
-        // Phone already saved, just update profile silently
-        await supabase.from('profiles').update({ phone, phone_country: countryCode }).eq('id', session.user.id);
-        setClaimed(true);
+      if (data?.success === false) {
+        if (data.reason === 'already_claimed') {
+          setClaimed(true);
+        } else {
+          setError('Something went wrong. Please try again.');
+        }
         return;
       }
       if (data?.success) {
@@ -89,7 +89,7 @@ export default function PhoneSection() {
             <div className="flex items-center gap-1 mt-0.5">
               <Gift size={11} className="text-[#F97316]" />
               <span className="text-[11px] text-[#F97316] font-medium">
-                Add your number → get 20 free tokens
+                Add your number → get 2 free tokens
               </span>
             </div>
           )}
@@ -192,7 +192,7 @@ export default function PhoneSection() {
           ? <Loader2 size={16} className="animate-spin" />
           : claimed
           ? '✓ Number saved'
-          : <><Gift size={15} /> Confirm and get 20 free tokens</>}
+          : <><Gift size={15} /> Confirm and get 2 free tokens</>}
       </button>
     </div>
   );
