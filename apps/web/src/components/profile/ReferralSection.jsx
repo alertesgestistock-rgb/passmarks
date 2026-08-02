@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Gift, Copy, Check, Loader2, Users, AlertTriangle, Share2, Link } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { runMobileSafeRequest } from '@/lib/mobileRequest';
 import { useUser } from '@/contexts/UserContext';
 
 export default function ReferralSection() {
@@ -21,16 +22,18 @@ export default function ReferralSection() {
     let cancelled = false;
 
     const load = async () => {
-      const { data: profile } = await supabase
+      const { data: profile } = await runMobileSafeRequest(signal => supabase
         .from('profiles')
         .select('referral_code')
         .eq('id', user.id)
-        .single();
+        .single()
+        .abortSignal(signal));
 
-      const { count } = await supabase
+      const { count } = await runMobileSafeRequest(signal => supabase
         .from('referrals')
         .select('*', { count: 'exact', head: true })
-        .eq('referrer_id', user.id);
+        .eq('referrer_id', user.id)
+        .abortSignal(signal));
 
       if (!cancelled) {
         setReferralCode(profile?.referral_code || null);

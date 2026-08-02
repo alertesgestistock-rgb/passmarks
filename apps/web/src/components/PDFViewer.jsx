@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { runMobileSafeRequest } from '@/lib/mobileRequest';
 
 const SUPABASE_URL  = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -20,20 +21,15 @@ function PDFPage({ pageNum, pdfPath, watermark, token, onVisible }) {
     fetchedRef.current = true;
     setState('loading');
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout per page load
-
     try {
       const url = `${EF_BASE}?path=${encodeURIComponent(pdfPath)}&page=${pageNum}`;
-      const res = await fetch(url, {
-        signal: controller.signal,
+      const res = await runMobileSafeRequest(signal => fetch(url, {
+        signal,
         headers: {
           'Authorization': `Bearer ${token}`,
           'apikey': SUPABASE_ANON,
         },
-      });
-
-      clearTimeout(timeoutId);
+      }), { timeoutMs: 15000 });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
@@ -85,7 +81,6 @@ function PDFPage({ pageNum, pdfPath, watermark, token, onVisible }) {
 
       setState('done');
     } catch (err) {
-      clearTimeout(timeoutId);
       console.error(`[PDFViewer] page ${pageNum} error:`, err);
       fetchedRef.current = false; // allow retry
       setState('error');
@@ -203,13 +198,13 @@ export default function PDFViewer({ pdfPath, pdfUrl, watermark, onPageChange }) 
     const timeoutId = setTimeout(() => controller.abort(), 12000); // 12 seconds timeout
 
     const url = `${EF_BASE}?path=${encodeURIComponent(pdfPath)}&page=meta`;
-    fetch(url, {
-      signal: controller.signal,
+    runMobileSafeRequest(signal => fetch(url, {
+      signal,
       headers: {
         'Authorization': `Bearer ${token}`,
         'apikey': SUPABASE_ANON,
       },
-    })
+    }), { timeoutMs: 12000 })
       .then(r => r.json())
       .then(data => {
         clearTimeout(timeoutId);

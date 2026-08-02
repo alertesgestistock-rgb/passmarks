@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import {
   ChevronLeft, ChevronRight, Plus, X, Trash2, Clock, BookOpen,
@@ -309,6 +309,9 @@ export default function CalendarPage() {
   const [showModal,    setShowModal]    = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [modalDate,    setModalDate]    = useState(null);
+  const requestControllerRef = useRef(null);
+  const requestIdRef = useRef(0);
+  const retryTimerRef = useRef(null);
 
   const subjects = user?.subjects || [];
 
@@ -320,11 +323,14 @@ export default function CalendarPage() {
       setLoading(false);
       return;
     }
+    requestControllerRef.current?.abort();
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     const startDate = toDateStr(currentYear, currentMonth, 1);
     const endDate   = toDateStr(currentYear, currentMonth, getDaysInMonth(currentYear, currentMonth));
 
     const controller = new AbortController();
+    requestControllerRef.current = controller;
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
 
     try {
@@ -340,33 +346,46 @@ export default function CalendarPage() {
 
       clearTimeout(timeoutId);
 
+      if (requestId !== requestIdRef.current) return;
       if (!error && data) setEvents(data);
       else setEvents([]);
     } catch (err) {
       clearTimeout(timeoutId);
-      console.error('[CalendarPage] loadEvents failed:', err);
+      if (requestId !== requestIdRef.current) return;
+      if (err?.name !== 'AbortError') console.error('[CalendarPage] loadEvents failed:', err);
       setEvents([]);
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) {
+        requestControllerRef.current = null;
+        setLoading(false);
+      }
     }
   }, [user?.id, currentYear, currentMonth]);
 
   useEffect(() => { loadEvents(); }, [loadEvents, retryKey]);
 
-  // Retry on connection recovery and app visibility (coming back from background on mobile)
+  // Retry on connection recovery and app visibility (coming back from background on mobile).
+  // A short delay gives Supabase Auth time to restore/refresh its session first.
   useEffect(() => {
-    const handleOnline = () => {
-      setRetryKey(k => k + 1);
+    const retryAfterReconnect = () => {
+      requestControllerRef.current?.abort();
+      clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = setTimeout(() => setRetryKey(k => k + 1), 150);
     };
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        setRetryKey(k => k + 1);
-      }
+      if (document.visibilityState === 'visible') retryAfterReconnect();
+      else requestControllerRef.current?.abort();
     };
-    window.addEventListener('online', handleOnline);
+    window.addEventListener('online', retryAfterReconnect);
+    window.addEventListener('focus', retryAfterReconnect);
+    window.addEventListener('pageshow', retryAfterReconnect);
     document.addEventListener('visibilitychange', handleVisibility);
     return () => {
-      window.removeEventListener('online', handleOnline);
+      requestControllerRef.current?.abort();
+      clearTimeout(retryTimerRef.current);
+      window.removeEventListener('online', retryAfterReconnect);
+      window.removeEventListener('focus', retryAfterReconnect);
+      window.removeEventListener('pageshow', retryAfterReconnect);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, []);

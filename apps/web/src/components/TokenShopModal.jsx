@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Coins, Zap, Star, Trophy, Flame } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { supabase } from '@/lib/supabase';
+import { runMobileSafeRequest } from '@/lib/mobileRequest';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -12,11 +13,12 @@ const PACK_COLORS = ['#3B82F6', '#22C55E', '#F97316', '#A855F7'];
 let _cachedPackages = null;
 async function getPackages() {
   if (_cachedPackages) return _cachedPackages;
-  const { data } = await supabase
+  const { data } = await runMobileSafeRequest(signal => supabase
     .from('token_packages')
     .select('*')
     .eq('is_active', true)
-    .order('tokens', { ascending: true });
+    .order('tokens', { ascending: true })
+    .abortSignal(signal));
   _cachedPackages = data || [];
   return _cachedPackages;
 }
