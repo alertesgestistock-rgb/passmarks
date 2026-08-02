@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { runMobileSafeRequest } from '@/lib/mobileRequest';
 import { loadUserFromLocalStorage, saveUserToLocalStorage, clearUserData, checkAndUpdateStreak } from '@/lib/userStorage';
 
 const UserContext = createContext(null);
@@ -40,16 +41,16 @@ export const UserProvider = ({ children }) => {
   const [streak, setStreak] = useState(() => cached ? checkAndUpdateStreak() : { current: 0, lastActive: null });
   const [isLoading, setIsLoading] = useState(!cached);
   const [tokenBalance, setTokenBalance] = useState(null);
-  const [dailyBonus, setDailyBonus] = useState(0);
 
   const ensureWallet = async (userId) => {
     // Wallet is created automatically by the handle_new_profile_wallet DB trigger.
     // We only read here — never write from the browser (security: prevents F12 abuse).
-    const { data: wallet } = await supabase
+    const { data: wallet } = await runMobileSafeRequest(signal => supabase
       .from('token_wallets')
       .select('balance')
       .eq('user_id', userId)
-      .maybeSingle();
+      .maybeSingle()
+      .abortSignal(signal));
     return wallet?.balance ?? 0;
   };
 
@@ -59,11 +60,12 @@ export const UserProvider = ({ children }) => {
 
     const loadFromSession = async (session) => {
       if (!session) return false;
-      const { data: profile } = await supabase
+      const { data: profile } = await runMobileSafeRequest(signal => supabase
         .from('profiles')
         .select('*')
         .eq('id', session.user.id)
-        .single();
+        .single()
+        .abortSignal(signal));
 
       if (cancelled) return false;
       if (profile) {
@@ -82,18 +84,17 @@ export const UserProvider = ({ children }) => {
           }).catch(() => {});
         }
 
-        // Load wallet then claim daily bonus (non-blocking)
-        ensureWallet(session.user.id).then(async (balance) => {
-          if (cancelled) return;
-          setTokenBalance(balance);
-          try {
-            const { data } = await supabase.rpc('claim_daily_tokens', { p_user_id: session.user.id });
-            if (!cancelled && data?.tokens_added > 0) {
-              setTokenBalance(data.balance);
-              setDailyBonus(data.tokens_added);
-            }
-          } catch (_) { /* silent — daily bonus failure must never block the app */ }
+        // Load wallet balance (non-blocking)
+        ensureWallet(session.user.id).then((balance) => {
+          if (!cancelled) setTokenBalance(balance);
         });
+
+        // Record the browser's timezone once per session so the onboarding
+        // rewards streak/day math uses the user's local calendar day.
+        try {
+          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          if (tz) supabase.rpc('set_onboarding_timezone', { p_timezone: tz }).catch(() => {});
+        } catch (_) { /* silent — non-critical */ }
 
         return true;
       }
@@ -120,7 +121,6 @@ export const UserProvider = ({ children }) => {
         setUser(null);
         setStreak({ current: 0, lastActive: null });
         setTokenBalance(null);
-        setDailyBonus(0);
       }
     });
 
@@ -212,10 +212,9 @@ export const UserProvider = ({ children }) => {
 
   return (
     <UserContext.Provider value={{
-      user, streak, isLoading, tokenBalance, dailyBonus,
+      user, streak, isLoading, tokenBalance,
       updateUser, initializeNewUser, addRecentActivity, clearUser,
       updateTokenBalance, refreshTokenBalance,
-      dismissDailyBonus: () => setDailyBonus(0),
     }}>
       {children}
     </UserContext.Provider>
