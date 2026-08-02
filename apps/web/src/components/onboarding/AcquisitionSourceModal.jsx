@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ReactDOM from 'react-dom';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/lib/supabase';
@@ -53,10 +54,10 @@ export default function AcquisitionSourceModal({ onClose, onClaimed }) {
     onClose();
   };
 
-  return (
+  return ReactDOM.createPortal(
     <div className="fixed inset-0 z-[9999] flex items-end md:items-center justify-center bg-black/70 backdrop-blur-sm" onClick={handleDismiss}>
       <div
-        className="w-full max-w-[420px] mx-auto bg-white dark:bg-[#1E293B] rounded-t-[20px] md:rounded-[20px] border border-slate-200 dark:border-white/8 max-h-[92dvh] overflow-y-auto pb-safe"
+        className="w-full max-w-[420px] mx-auto bg-white dark:bg-[#1E293B] rounded-t-[20px] md:rounded-[20px] border border-slate-200 dark:border-white/10 max-h-[85dvh] overflow-y-auto pb-6"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 pt-5 pb-2">
@@ -65,7 +66,7 @@ export default function AcquisitionSourceModal({ onClose, onClaimed }) {
           </div>
           <button
             onClick={handleDismiss}
-            className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-white/6 text-slate-400 dark:text-[#94A3B8] hover:text-slate-700 dark:hover:text-white transition-colors shrink-0"
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-white/10 text-slate-400 dark:text-[#94A3B8] hover:text-slate-700 dark:hover:text-white transition-colors shrink-0"
           >
             <X size={18} />
           </button>
@@ -80,7 +81,7 @@ export default function AcquisitionSourceModal({ onClose, onClaimed }) {
                 'text-left px-4 py-3 rounded-xl text-[14px] font-medium border transition-all',
                 source === s.key
                   ? 'bg-[#22C55E]/10 border-[#22C55E] text-[#22C55E]'
-                  : 'bg-slate-50 dark:bg-white/4 border-transparent text-slate-700 dark:text-[#F1F5F9] hover:border-slate-300 dark:hover:border-white/20'
+                  : 'bg-slate-50 dark:bg-white/5 border-transparent text-slate-700 dark:text-[#F1F5F9] hover:border-slate-300 dark:hover:border-white/20'
               )}
             >
               {lang === 'fr' ? s.fr : s.en}
@@ -111,6 +112,7 @@ export default function AcquisitionSourceModal({ onClose, onClaimed }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

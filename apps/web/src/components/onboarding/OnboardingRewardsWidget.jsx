@@ -146,7 +146,7 @@ export default function OnboardingRewardsWidget({ navigate, dismissible = false 
                     'rounded-xl p-3.5 border transition-all',
                     state.claimed
                       ? 'bg-[#22C55E]/5 border-[#22C55E]/30'
-                      : 'bg-slate-50 dark:bg-white/4 border-transparent'
+                      : 'bg-slate-50 dark:bg-white/5 border-transparent'
                   )}
                 >
                   <div className="flex items-start gap-3">
@@ -180,7 +180,7 @@ export default function OnboardingRewardsWidget({ navigate, dismissible = false 
                         ? 'bg-transparent text-[#22C55E] cursor-default'
                         : state.eligible
                           ? 'bg-[#22C55E] text-[#052e16] hover:brightness-105'
-                          : 'bg-slate-100 dark:bg-white/6 text-slate-600 dark:text-[#94A3B8] hover:bg-slate-200 dark:hover:bg-white/10'
+                          : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-[#94A3B8] hover:bg-slate-200 dark:hover:bg-white/20'
                     )}
                   >
                     {state.claimed

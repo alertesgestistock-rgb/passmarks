@@ -74,7 +74,7 @@ export default function TokenShopModal({ onClose }) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-[520px] mx-auto bg-white dark:bg-[#1E293B] rounded-t-[20px] border border-slate-200 dark:border-white/8 max-h-[92dvh] overflow-y-auto pb-safe"
+        className="w-full max-w-[520px] mx-auto bg-white dark:bg-[#1E293B] rounded-t-[20px] border border-slate-200 dark:border-white/10 max-h-[92dvh] overflow-y-auto pb-safe"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -90,7 +90,7 @@ export default function TokenShopModal({ onClose }) {
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-white/6 text-slate-400 dark:text-[#94A3B8] hover:text-slate-700 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-white/10 text-slate-400 dark:text-[#94A3B8] hover:text-slate-700 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
           >
             <X size={18} />
           </button>
@@ -115,7 +115,7 @@ export default function TokenShopModal({ onClose }) {
                   'bg-slate-50 dark:bg-white/4',
                   pkg.is_popular
                     ? 'border-[1.5px]'
-                    : 'border border-slate-200 dark:border-white/8 hover:border-slate-300 dark:hover:border-white/20'
+                    : 'border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'
                 )}
                 style={pkg.is_popular ? { borderColor: color } : {}}
               >

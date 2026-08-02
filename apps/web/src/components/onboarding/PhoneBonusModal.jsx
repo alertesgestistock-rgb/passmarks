@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ReactDOM from 'react-dom';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/lib/supabase';
@@ -33,10 +34,10 @@ export default function PhoneBonusModal({ onClose, onClaimed }) {
     }
   };
 
-  return (
+  return ReactDOM.createPortal(
     <div className="fixed inset-0 z-[9999] flex items-end md:items-center justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="w-full max-w-[380px] mx-auto bg-white dark:bg-[#1E293B] rounded-t-[20px] md:rounded-[20px] border border-slate-200 dark:border-white/8 pb-safe"
+        className="w-full max-w-[380px] mx-auto bg-white dark:bg-[#1E293B] rounded-t-[20px] md:rounded-[20px] border border-slate-200 dark:border-white/10 max-h-[85dvh] overflow-y-auto pb-6"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 pt-5 pb-2">
@@ -45,7 +46,7 @@ export default function PhoneBonusModal({ onClose, onClaimed }) {
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-white/6 text-slate-400 dark:text-[#94A3B8] hover:text-slate-700 dark:hover:text-white transition-colors shrink-0"
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-white/10 text-slate-400 dark:text-[#94A3B8] hover:text-slate-700 dark:hover:text-white transition-colors shrink-0"
           >
             <X size={18} />
           </button>
@@ -80,6 +81,7 @@ export default function PhoneBonusModal({ onClose, onClaimed }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
