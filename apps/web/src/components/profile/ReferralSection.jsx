@@ -1,14 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Gift, Copy, Check, Loader2, Users, AlertTriangle, Share2, Link } from 'lucide-react';
+import { Gift, Copy, Check, Loader2, Users, AlertTriangle, Share2, Link, ShoppingBag, UserPlus } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { runMobileSafeRequest } from '@/lib/mobileRequest';
 import { useUser } from '@/contexts/UserContext';
+
+function timeAgo(dateStr) {
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const days = Math.floor(diffMs / 86400000);
+  if (days <= 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  return `${months}mo ago`;
+}
 
 export default function ReferralSection() {
   const { user, updateTokenBalance } = useUser();
 
   const [referralCode, setReferralCode] = useState(null);
   const [referralCount, setReferralCount] = useState(0);
+  const [friends, setFriends] = useState([]);
   const [codeInput, setCodeInput] = useState('');
   const [confirmed, setConfirmed] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -29,15 +40,13 @@ export default function ReferralSection() {
         .single()
         .abortSignal(signal));
 
-      const { count } = await runMobileSafeRequest(signal => supabase
-        .from('referrals')
-        .select('*', { count: 'exact', head: true })
-        .eq('referrer_id', user.id)
-        .abortSignal(signal));
+      const { data: details } = await supabase.rpc('get_referral_details');
 
       if (!cancelled) {
         setReferralCode(profile?.referral_code || null);
-        setReferralCount(count || 0);
+        const friendsList = details?.friends || [];
+        setFriends(friendsList);
+        setReferralCount(friendsList.length);
         setLoading(false);
       }
     };
@@ -45,6 +54,8 @@ export default function ReferralSection() {
     load();
     return () => { cancelled = true; };
   }, [user?.id]);
+
+  const convertedCount = friends.filter(f => f.converted).length;
 
   const isValidFormat = /^[a-zA-Z0-9]{6}$/.test(codeInput);
 
@@ -224,19 +235,27 @@ export default function ReferralSection() {
       {referralCode && (
         <>
           {/* Stats row */}
-          <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="grid grid-cols-3 gap-3 mb-4">
             <div className="bg-[#A855F7] rounded-xl p-4 text-white">
               <div className="text-[22px] font-bold tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
                 {referralCount * 10}
               </div>
               <div className="text-[11px] font-medium text-white/80 mt-0.5">Tokens earned</div>
             </div>
-            <div className="bg-slate-50 dark:bg-white/4 rounded-xl p-4">
+            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-4">
               <div className="text-[22px] font-bold text-slate-900 dark:text-white tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
                 {referralCount}
               </div>
               <div className="text-[11px] font-medium text-slate-500 dark:text-[#94A3B8] mt-0.5">
                 {referralCount === 1 ? 'Friend invited' : 'Friends invited'}
+              </div>
+            </div>
+            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-4">
+              <div className="text-[22px] font-bold text-[#22C55E] tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                {convertedCount}
+              </div>
+              <div className="text-[11px] font-medium text-slate-500 dark:text-[#94A3B8] mt-0.5">
+                {convertedCount === 1 ? 'Bought tokens' : 'Bought tokens'}
               </div>
             </div>
           </div>
@@ -271,11 +290,11 @@ export default function ReferralSection() {
           </div>
 
           {/* Rewards breakdown */}
-          <div className="bg-slate-50 dark:bg-white/4 rounded-xl p-3.5 mb-4">
+          <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3.5 mb-4">
             <div className="text-[11px] font-semibold text-slate-500 dark:text-[#94A3B8] uppercase tracking-wide mb-2">
               Rewards
             </div>
-            <div className="flex items-center justify-between py-1.5 border-b border-slate-200 dark:border-white/8">
+            <div className="flex items-center justify-between py-1.5 border-b border-slate-200 dark:border-white/10">
               <span className="text-[12px] text-slate-600 dark:text-[#94A3B8]">You receive</span>
               <span className="text-[13px] font-bold text-[#A855F7]">+10 tokens</span>
             </div>
@@ -287,6 +306,48 @@ export default function ReferralSection() {
               Tokens are credited automatically as soon as your friend signs up with your link.
             </p>
           </div>
+
+          {/* Friends list */}
+          {friends.length > 0 && (
+            <div className="mb-4">
+              <div className="text-[11px] font-semibold text-slate-500 dark:text-[#94A3B8] uppercase tracking-wide mb-2">
+                Your friends ({friends.length})
+              </div>
+              <div className="flex flex-col gap-2 max-h-[280px] overflow-y-auto pr-0.5">
+                {friends.map((f, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 bg-slate-50 dark:bg-white/5 rounded-xl p-3"
+                  >
+                    {f.avatar_url ? (
+                      <img src={f.avatar_url} alt={f.name} className="w-9 h-9 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-[#A855F7]/15 text-[#A855F7] flex items-center justify-center font-bold text-[13px] shrink-0">
+                        {(f.name || '?').charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-semibold text-slate-900 dark:text-white truncate">
+                        {f.name || 'Student'}
+                      </div>
+                      <div className="text-[11px] text-slate-400 dark:text-[#64748B]">
+                        Joined {timeAgo(f.joined_at)}
+                      </div>
+                    </div>
+                    {f.converted ? (
+                      <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-[#22C55E]/10 text-[#22C55E] text-[10px] font-bold shrink-0">
+                        <ShoppingBag size={11} /> Purchased
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-[#94A3B8] text-[10px] font-bold shrink-0">
+                        <UserPlus size={11} /> Signed up
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Share button */}
           <button
