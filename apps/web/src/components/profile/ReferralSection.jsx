@@ -223,6 +223,24 @@ export default function ReferralSection() {
       {/* Code already set — share view */}
       {referralCode && (
         <>
+          {/* Stats row */}
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="bg-[#A855F7] rounded-xl p-4 text-white">
+              <div className="text-[22px] font-bold tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                {referralCount * 10}
+              </div>
+              <div className="text-[11px] font-medium text-white/80 mt-0.5">Tokens earned</div>
+            </div>
+            <div className="bg-slate-50 dark:bg-white/4 rounded-xl p-4">
+              <div className="text-[22px] font-bold text-slate-900 dark:text-white tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                {referralCount}
+              </div>
+              <div className="text-[11px] font-medium text-slate-500 dark:text-[#94A3B8] mt-0.5">
+                {referralCount === 1 ? 'Friend invited' : 'Friends invited'}
+              </div>
+            </div>
+          </div>
+
           {/* Code display */}
           <div className="bg-[#A855F7]/8 dark:bg-[#A855F7]/10 border border-[#A855F7]/20 rounded-xl px-4 py-3 flex items-center justify-between mb-3">
             <span className="text-[22px] font-mono font-bold tracking-[0.15em] text-[#A855F7] uppercase">
@@ -252,16 +270,22 @@ export default function ReferralSection() {
             </button>
           </div>
 
-          {/* Stats */}
-          <div className="flex items-center gap-2 mb-4 text-[12px] text-slate-500 dark:text-[#94A3B8]">
-            <Users size={13} className="text-[#A855F7]" />
-            <span>
-              <span className="font-bold text-slate-800 dark:text-[#F1F5F9]">{referralCount}</span>
-              {referralCount === 1 ? ' friend invited' : ' friends invited'}
-              {referralCount > 0 && (
-                <span className="text-[#A855F7] font-semibold"> · {referralCount * 10} tokens earned</span>
-              )}
-            </span>
+          {/* Rewards breakdown */}
+          <div className="bg-slate-50 dark:bg-white/4 rounded-xl p-3.5 mb-4">
+            <div className="text-[11px] font-semibold text-slate-500 dark:text-[#94A3B8] uppercase tracking-wide mb-2">
+              Rewards
+            </div>
+            <div className="flex items-center justify-between py-1.5 border-b border-slate-200 dark:border-white/8">
+              <span className="text-[12px] text-slate-600 dark:text-[#94A3B8]">You receive</span>
+              <span className="text-[13px] font-bold text-[#A855F7]">+10 tokens</span>
+            </div>
+            <div className="flex items-center justify-between py-1.5">
+              <span className="text-[12px] text-slate-600 dark:text-[#94A3B8]">Your friend receives</span>
+              <span className="text-[13px] font-bold text-[#A855F7]">+5 tokens</span>
+            </div>
+            <p className="text-[11px] text-slate-400 dark:text-[#64748B] mt-2 leading-relaxed">
+              Tokens are credited automatically as soon as your friend signs up with your link.
+            </p>
           </div>
 
           {/* Share button */}
