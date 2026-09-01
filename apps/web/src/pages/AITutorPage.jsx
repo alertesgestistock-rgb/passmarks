@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/contexts/UserContext';
-import { supabase } from '@/lib/supabase';
+import { supabase, getSessionSafe } from '@/lib/supabase';
 import { InsufficientTokensError } from '@/lib/apiServerClient';
 import InsufficientTokensAlert from '@/components/InsufficientTokensAlert';
 import TokenShopModal from '@/components/TokenShopModal';
@@ -190,7 +190,7 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
 
   const getOrCreateConversation = async (firstText, onCreated) => {
     if (conversationId) return conversationId;
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await getSessionSafe();
     if (!session) return null;
     const title = (firstText || 'Conversation').substring(0, 60);
     const { data: conv } = await supabase
@@ -254,7 +254,7 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
     try {
       // ── Envoi du PDF à l'Edge Function pdf-upload (mupdf côté serveur) ──
       // Fonctionne sur iOS, Android, tous navigateurs — pas de pdfjs-dist local.
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await getSessionSafe();
       if (!session) throw new Error('Not authenticated');
 
       const form = new FormData();
@@ -313,8 +313,40 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
   };
 
 
+  // Budget en caractères plutôt qu'un nombre fixe de messages (façon Raconty) :
+  // une conversation faite de messages courts se souvient de bien plus loin
+  // (quasi gratuit à renvoyer), tandis qu'une conversation avec de longs
+  // messages colle plafonne plus tôt — le vrai risque de coût (la taille du
+  // texte) est contrôlé directement, au lieu d'un nombre de messages aveugle
+  // à leur contenu. Voir MAX_HISTORY_CHARS dans chat-assistant/index.ts (Raconty).
+  const MAX_HISTORY_CHARS = 20000;
+
+  const messageContentLength = (content) => {
+    if (typeof content === 'string') return content.length;
+    if (Array.isArray(content)) {
+      // Les messages passés (déjà envoyés) ne portent que des placeholders texte
+      // ("📷 Image", nom du fichier) — jamais les données base64 réelles, qui ne
+      // sont jointes qu'au tout dernier message. On les compte quand même au cas
+      // où, avec un poids forfaitaire pour les blocs non textuels.
+      return content.reduce((sum, part) => sum + (part?.text?.length || (part?.type ? 200 : 0)), 0);
+    }
+    return 0;
+  };
+
   const buildClaudeMessages = (history, newText, image, pdf) => {
-    const past = history.filter((_, i) => i !== 0).slice(-18).map(m => ({ role: m.role, content: m.content }));
+    const candidates = history.filter((_, i) => i !== 0);
+    const past = [];
+    let budget = 0;
+    // Du plus récent au plus ancien, on garde tant que le budget le permet —
+    // les messages les plus anciens sautent en premier si la limite est dépassée,
+    // jamais les plus récents.
+    for (let i = candidates.length - 1; i >= 0; i--) {
+      const m = candidates[i];
+      const len = messageContentLength(m.content);
+      if (budget + len > MAX_HISTORY_CHARS) break;
+      past.unshift({ role: m.role, content: m.content });
+      budget += len;
+    }
     let newContent;
     if (pdf?.pdfPath) {
       // Past paper depuis le cache serveur — les images sont injectées par l'EF chat
@@ -367,7 +399,7 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
     const abortTimer = setTimeout(() => abortCtrl.abort(), 140000);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await getSessionSafe();
       const chatUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
       const requestMessages = buildClaudeMessages(messages, text, image, pdf);
       const pdfContext = pdf?.pdfPath ? { pdfPath: pdf.pdfPath, currentPage: pdf.currentPage }
@@ -442,7 +474,7 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
           });
         }
         try {
-          const { data: { session: resumedSession } } = await supabase.auth.getSession();
+          const { data: { session: resumedSession } } = await getSessionSafe();
           const continueMessages = [
             ...requestMessages,
             { role: 'assistant', content: fullContent },

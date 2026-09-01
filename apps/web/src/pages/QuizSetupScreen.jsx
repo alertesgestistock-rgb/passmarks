@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Sparkles, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import apiServerClient, { InsufficientTokensError } from '@/lib/apiServerClient';
+import { InsufficientTokensError } from '@/lib/apiServerClient';
+import { supabase, getSessionSafe } from '@/lib/supabase';
 import { useUser } from '@/contexts/UserContext';
 import InsufficientTokensAlert from '@/components/InsufficientTokensAlert';
 import TokenShopModal from '@/components/TokenShopModal';
@@ -26,11 +27,30 @@ export default function QuizSetupScreen({ navigate, viewState }) {
     setError(null);
     setNoTokens(false);
     try {
-      const data = await apiServerClient.json('/quiz/generate', {
+      // Edge function Supabase (plus l'ancienne route Vercel /api/quiz/generate,
+      // migrée pour la même raison que /chat : clé service_role déjà en place
+      // côté Supabase, un seul endroit pour les secrets IA).
+      const { data: { session } } = await getSessionSafe();
+      const quizUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/quiz`;
+      const res = await fetch(quizUrl, {
         method: 'POST',
-        body: { subject, difficulty: level, count: numQuestions },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ subject, difficulty: level, count: numQuestions }),
       });
 
+      if (res.status === 402) {
+        const errData = await res.json().catch(() => ({}));
+        throw new InsufficientTokensError(errData.balance ?? 0);
+      }
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Request failed (${res.status})`);
+      }
+
+      const data = await res.json();
       if (typeof data.balance_after === 'number') updateTokenBalance(data.balance_after);
 
       const questions = data.questions;
@@ -147,7 +167,7 @@ export default function QuizSetupScreen({ navigate, viewState }) {
           {isLoading ? (
             <div className="w-5 h-5 border-2 border-[#052e16] border-t-transparent rounded-full animate-spin" />
           ) : (
-            <>Generate Quiz <Sparkles size={18} /><span className="text-[12px] opacity-70 font-medium ml-1">(2 tokens)</span></>
+            <>Generate Quiz <Sparkles size={18} /><span className="text-[12px] opacity-70 font-medium ml-1">(~{numQuestions <= 5 ? 1 : numQuestions <= 10 ? 2 : 3} token{numQuestions <= 5 ? '' : 's'})</span></>
           )}
         </button>
       </div>

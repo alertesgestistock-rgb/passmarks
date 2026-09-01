@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Gift, Copy, Check, Loader2, Users, AlertTriangle, Share2, Link, ShoppingBag, UserPlus } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase, getSessionSafe } from '@/lib/supabase';
 import { runMobileSafeRequest } from '@/lib/mobileRequest';
 import { useUser } from '@/contexts/UserContext';
 
@@ -71,7 +71,7 @@ export default function ReferralSection() {
     setSaving(true);
     setError('');
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await getSessionSafe();
       const { data, error: rpcError } = await supabase.rpc('set_referral_code', {
         p_user_id: session.user.id,
         p_code: codeInput,

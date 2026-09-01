@@ -26,11 +26,28 @@ export const supabase = createClient(
   }
 );
 
+// ── getSession() avec timeout ──────────────────────────────────────────
+// supabase-js sérialise ses appels d'auth (refresh de token, getSession(), …)
+// via un verrou interne. Si un refresh part en requête réseau qui ne répond
+// jamais (device en veille, PWA backgroundée sur iOS, coupure réseau
+// mi-requête), le verrou reste tenu et TOUT getSession() suivant — y compris
+// celui-ci — attend indéfiniment, sans jamais lever d'erreur. Ça bloque
+// silencieusement l'UI (ex: barre de progression figée, app qui ne sort
+// jamais du loading screen). On fait donc courir getSession() contre un
+// timeout pour être garanti de retomber dans un catch/finally.
+export const getSessionSafe = (timeoutMs = 8000) =>
+  Promise.race([
+    supabase.auth.getSession(),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('auth_session_timeout')), timeoutMs)
+    ),
+  ]);
+
 // Rendre le client Supabase résilient au réseau lors de la sortie de veille sur mobile / PWA
 if (typeof window !== 'undefined') {
   const triggerReconnection = () => {
     console.log('[Supabase] App active/online. Re-evaluating network session...');
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    getSessionSafe().then(({ data: { session } }) => {
       if (session) {
         supabase.auth.startAutoRefresh?.();
       }

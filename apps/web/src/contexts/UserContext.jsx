@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, getSessionSafe } from '@/lib/supabase';
 import { runMobileSafeRequest } from '@/lib/mobileRequest';
 import { loadUserFromLocalStorage, saveUserToLocalStorage, clearUserData, checkAndUpdateStreak } from '@/lib/userStorage';
 
@@ -102,10 +102,19 @@ export const UserProvider = ({ children }) => {
     };
 
     const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      await loadFromSession(session);
-      initialized = true;
-      if (!cancelled) setIsLoading(false);
+      // getSessionSafe() garantit qu'on ne reste jamais bloqué ici (verrou
+      // d'auth interne à supabase-js qui peut pendre indéfiniment côté
+      // mobile/PWA) — sans quoi setIsLoading(false) n'est jamais atteint et
+      // toute l'app reste figée sur l'écran de chargement.
+      try {
+        const { data: { session } } = await getSessionSafe();
+        await loadFromSession(session);
+      } catch (err) {
+        console.warn('[UserContext] init() session fetch failed:', err);
+      } finally {
+        initialized = true;
+        if (!cancelled) setIsLoading(false);
+      }
     };
 
     init();
@@ -138,7 +147,7 @@ export const UserProvider = ({ children }) => {
       return newUser;
     });
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await getSessionSafe();
     if (session) {
       const dbUpdates = userToProfile(updates);
       if (Object.keys(dbUpdates).length > 0) {
@@ -148,7 +157,7 @@ export const UserProvider = ({ children }) => {
   };
 
   const initializeNewUser = async (name, level, subjects, examMonth, examYear) => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await getSessionSafe();
     const newUser = {
       id: session?.user?.id || null,
       email: session?.user?.email || null,
@@ -177,11 +186,11 @@ export const UserProvider = ({ children }) => {
       const newActivity = [{ ...activity, id: Date.now() }, ...(prev.recentActivity || [])].slice(0, 10);
       const newUser = { ...prev, recentActivity: newActivity };
       saveUserToLocalStorage(newUser);
-      supabase.auth.getSession().then(({ data: { session } }) => {
+      getSessionSafe().then(({ data: { session } }) => {
         if (session) {
           supabase.from('profiles').update({ recent_activity: newActivity }).eq('id', session.user.id);
         }
-      });
+      }).catch(() => {});
       return newUser;
     });
   };
@@ -193,14 +202,18 @@ export const UserProvider = ({ children }) => {
 
   // Reload balance from DB (e.g. after returning from Chariow payment)
   const refreshTokenBalance = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-    const { data: wallet } = await supabase
-      .from('token_wallets')
-      .select('balance')
-      .eq('user_id', session.user.id)
-      .maybeSingle();
-    if (wallet) setTokenBalance(wallet.balance);
+    try {
+      const { data: { session } } = await getSessionSafe();
+      if (!session) return;
+      const { data: wallet } = await supabase
+        .from('token_wallets')
+        .select('balance')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+      if (wallet) setTokenBalance(wallet.balance);
+    } catch (err) {
+      console.warn('[UserContext] refreshTokenBalance failed:', err);
+    }
   };
 
   const clearUser = async () => {

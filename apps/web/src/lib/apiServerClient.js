@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { getSessionSafe } from './supabase';
 
 const API_SERVER_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -12,7 +12,7 @@ export class InsufficientTokensError extends Error {
 
 const apiServerClient = {
     fetch: async (url, options = {}) => {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await getSessionSafe();
         const headers = {
             'Content-Type': 'application/json',
             ...(options.headers || {}),

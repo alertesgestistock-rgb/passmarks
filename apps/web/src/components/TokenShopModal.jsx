@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Coins, Zap, Star, Trophy, Flame } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
-import { supabase } from '@/lib/supabase';
+import { supabase, getSessionSafe } from '@/lib/supabase';
 import { runMobileSafeRequest } from '@/lib/mobileRequest';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
@@ -45,7 +45,7 @@ export default function TokenShopModal({ onClose }) {
   const handleBuy = async (pkg) => {
     setBuying(pkg.id);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await getSessionSafe();
       if (!session) throw new Error('Not authenticated');
 
       const EF_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/checkout`;

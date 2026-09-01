@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, getSessionSafe } from '@/lib/supabase';
 import { runMobileSafeRequest } from '@/lib/mobileRequest';
 
 const SUPABASE_URL  = import.meta.env.VITE_SUPABASE_URL;
@@ -169,11 +169,13 @@ export default function PDFViewer({ pdfPath, pdfUrl, watermark, onPageChange }) 
     let active = true;
     
     // Initial fetch
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    getSessionSafe().then(({ data: { session } }) => {
       if (active) {
         if (session?.access_token) setToken(session.access_token);
         else setStatus('error');
       }
+    }).catch(() => {
+      if (active) setStatus('error');
     });
 
     // Listen to token changes and refresh events
