@@ -20,17 +20,17 @@ export default function ShareSheet({ isOpen, onClose, shareType = 'general', qui
 
   const getMessage = () => {
     if (shareType === 'quiz' && quizData) {
-      return `🎯 I just scored ${quizData.score}/${quizData.totalQuestions} on a GCE ${quizData.subject} quiz on PassMark! The AI tutor is 🔥 Try it free → passmark.app #GCE #Cameroon #PassMark`;
+      return `🎯 I just scored ${quizData.score}/${quizData.totalQuestions} on a GCE ${quizData.subject} quiz on PassMark! The AI tutor is 🔥 Try it free → passmarks.vercel.app #GCE #Cameroon #PassMark`;
     }
     if (shareType === 'solution' && solutionText) {
-      return `Check out this step-by-step solution from PassMark AI:\n\n${solutionText.substring(0, 150)}...\n\nSee full solution at passmark.app 📚`;
+      return `Check out this step-by-step solution from PassMark AI:\n\n${solutionText.substring(0, 150)}...\n\nSee full solution at passmarks.vercel.app 📚`;
     }
-    return '📚 Found the best GCE revision app! PassMark has AI that solves past paper questions step by step — even from photos! Free to use → passmark.app #GCECameroon #ALevels #OLevels';
+    return '📚 Found the best GCE revision app! PassMark has AI that solves past paper questions step by step — even from photos! Free to use → passmarks.vercel.app #GCECameroon #ALevels #OLevels';
   };
 
   const shareMessage = getMessage();
   const encodedMessage = encodeURIComponent(shareMessage);
-  const shareUrl = 'https://passmark.app';
+  const shareUrl = 'https://passmarks.vercel.app';
 
   const copyToClipboard = async (text, isLink = false) => {
     try {

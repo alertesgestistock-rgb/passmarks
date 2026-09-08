@@ -1,11 +1,22 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useTelegram } from '@/hooks/useTelegram';
 
 const ThemeContext = createContext(null);
 
 export const ThemeProvider = ({ children }) => {
+  const { isTelegram, colorScheme } = useTelegram();
+
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('pm_theme') || 'dark';
   });
+
+  // Inside Telegram, follow Telegram's own light/dark setting instead of the
+  // stored web preference — matches the host app, as Telegram Mini Apps do.
+  useEffect(() => {
+    if (isTelegram && colorScheme) {
+      setTheme(colorScheme);
+    }
+  }, [isTelegram, colorScheme]);
 
   useEffect(() => {
     const root = window.document.documentElement;
