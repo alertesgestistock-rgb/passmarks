@@ -38,6 +38,17 @@ comment on column public.token_wallets.pending_cost_usd is
 -- 2. Nouveau type d'action pour la génération de quiz (jamais facturée avant).
 alter type token_action_type add value if not exists 'quiz_generation';
 
+-- 2b. 'message_with_context' était déjà utilisé par detectCost() dans
+--     chat/index.ts (cas d'un message de suivi dans une conversation qui a
+--     déjà un PDF/image en contexte) MAIS n'avait jamais été ajouté à
+--     l'enum — bug préexistant, indépendant de cette migration, repéré et
+--     corrigé le 2026-09-08 : chaque suivi de question sur un PDF/image
+--     faisait échouer silencieusement deduct_tokens/settle_ai_usage_cost
+--     (erreur Postgres avalée sans log ni erreur visible côté élève), donc
+--     zéro jeton débité sur ce chemin. Confirmé et appliqué en base le
+--     2026-09-08 (avant cette date, cette ligne n'existait pas encore ici).
+alter type token_action_type add value if not exists 'message_with_context';
+
 -- 3. settle_ai_usage_cost — appelée APRÈS un appel IA réussi, avec le coût
 --    réel en dollars calculé côté edge function à partir de la réponse
 --    OpenRouter (usage.prompt_tokens / usage.completion_tokens réels, jamais
