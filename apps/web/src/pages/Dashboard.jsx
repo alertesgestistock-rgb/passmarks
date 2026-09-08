@@ -68,7 +68,7 @@ export default function Dashboard() {
   };
 
   const getActiveTab = () => {
-    if (view.path.startsWith('quiz')) return 'home';
+    if (view.path.startsWith('quiz')) return 'quiz-setup';
     return view.path;
   };
 

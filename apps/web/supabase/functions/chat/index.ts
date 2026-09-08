@@ -6,6 +6,14 @@ import { SYSTEM_PROMPT } from './systemPrompt.ts';
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const MODEL = 'anthropic/claude-sonnet-4-5';
 
+// Prix réel Anthropic (repris de Raconty, qui utilise le même modèle) — $/1M tokens.
+// Sert à calculer le vrai coût de chaque appel à partir de usage.prompt_tokens /
+// usage.completion_tokens renvoyés par OpenRouter, au lieu du forfait fixe (1/2/4)
+// qui ne reflète pas la vraie taille du message. Le forfait reste utilisé comme
+// réserve prudente AVANT l'appel (voir detectCost plus bas) ; la vraie facturation
+// se fait APRÈS, via settle_ai_usage_cost (cf. migration 013_real_usage_billing.sql).
+const MODEL_PRICING_USD_PER_MTOK = { input: 3, output: 15 };
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function jsonError(corsHeaders: Record<string, string>, message: string, status: number, extra = {}) {
@@ -53,7 +61,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 }
 
 function toOpenAIMessages(messages: unknown[]) {
-  const result: unknown[] = [
+  const result: any[] = [
     {
       role: 'system',
       content: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
@@ -76,6 +84,24 @@ function toOpenAIMessages(messages: unknown[]) {
       result.push({ role: msg.role, content: parts });
     }
   }
+
+  // Cache breakpoint sur le dernier message de l'HISTORIQUE (donc juste avant le
+  // nouveau message utilisateur, toujours le dernier élément de `result`) — tout
+  // ce qui précède ce point (system prompt + tour(s) précédents) est alors lu
+  // depuis le cache Anthropic (~10% du prix) au lieu d'être refacturé en entier
+  // à chaque nouveau message de la conversation. Sans ça, seul le system prompt
+  // profitait du cache. Pas de breakpoint à poser si la conversation vient de
+  // commencer (result.length <= 2 : system + le tout premier message user).
+  if (result.length > 2) {
+    const lastHistoryMsg = result[result.length - 2];
+    if (typeof lastHistoryMsg.content === 'string') {
+      lastHistoryMsg.content = [{ type: 'text', text: lastHistoryMsg.content, cache_control: { type: 'ephemeral' } }];
+    } else if (Array.isArray(lastHistoryMsg.content) && lastHistoryMsg.content.length > 0) {
+      const lastPart = lastHistoryMsg.content[lastHistoryMsg.content.length - 1];
+      if (lastPart && typeof lastPart === 'object') lastPart.cache_control = { type: 'ephemeral' };
+    }
+  }
+
   return result;
 }
 
@@ -190,6 +216,11 @@ serve(async (req: Request) => {
         model: MODEL,
         max_tokens: 4000,
         stream: true,
+        // Demande à OpenRouter d'envoyer un dernier chunk avec le vrai usage
+        // (prompt_tokens/completion_tokens) juste avant [DONE] — nécessaire pour
+        // facturer au coût réel au lieu du forfait. Voir doc OpenRouter streaming :
+        // https://openrouter.ai/docs/api_reference/streaming
+        stream_options: { include_usage: true },
         messages: toOpenAIMessages(finalMessages),
       }),
       signal: ac.signal,
@@ -220,13 +251,56 @@ serve(async (req: Request) => {
 
       const reader = upstream.body!.getReader();
       const dec = new TextDecoder();
-      let deductPromise: Promise<{ data: unknown; error: unknown }> | null = null;
+      let started = false;
+      let usage: { prompt_tokens: number; completion_tokens: number } | null = null;
+
+      // Règlement de la facturation — appelée à la fin normale du stream ET en
+      // cas d'interruption (abort/erreur en cours de route) dès que l'IA avait
+      // commencé à répondre, pour ne jamais perdre la facturation d'un appel
+      // déjà payé chez OpenRouter.
+      const settleAndNotify = async () => {
+        if (!started) return;
+        let settleResult: { data: unknown; error: unknown } | null = null;
+        if (usage) {
+          const providerCostUsd =
+            (usage.prompt_tokens * MODEL_PRICING_USD_PER_MTOK.input +
+              usage.completion_tokens * MODEL_PRICING_USD_PER_MTOK.output) / 1_000_000;
+          // Plancher conservé pour pdf/image/message_with_context (paiement déjà
+          // réservé sur cette base) ; laissé à 0 pour un message texte simple afin
+          // que l'accumulateur de reliquat joue pleinement son rôle.
+          const minTokens = actionType === 'message' ? 0 : cost;
+          settleResult = await supabase.rpc('settle_ai_usage_cost', {
+            p_user_id: user.id,
+            p_provider_cost_usd: providerCostUsd,
+            p_action: actionType,
+            p_min_tokens: minTokens,
+          });
+        } else {
+          // Pas de chunk d'usage reçu (stream coupé avant la fin, ou OpenRouter
+          // n'a pas renvoyé le chunk attendu) → repli sur le forfait, comme avant.
+          settleResult = await supabase.rpc('deduct_tokens', {
+            p_user_id: user.id,
+            p_cost: cost,
+            p_action: actionType,
+          });
+        }
+        const { data, error: settleError } = settleResult;
+        // settle_ai_usage_cost renvoie [{new_balance, tokens_charged}], deduct_tokens renvoie un integer
+        const newBalance = Array.isArray(data) ? data[0]?.new_balance : data;
+        if (!settleError && typeof newBalance === 'number') {
+          try {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ b: newBalance })}\n\n`));
+          } catch { /* client déjà déconnecté */ }
+        }
+      };
+
       try {
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
 
           // Sanitize: intercept OpenRouter error events before forwarding to client
+          // + capture le chunk final d'usage réel (stream_options.include_usage)
           const raw = dec.decode(value, { stream: true });
           let sanitized = raw;
           for (const line of raw.split('\n')) {
@@ -241,42 +315,37 @@ serve(async (req: Request) => {
                   `data: ${JSON.stringify({ error: 'AI service temporarily unavailable. Please try again in a few seconds.' })}`,
                 );
               }
+              // OpenRouter envoie un dernier chunk (choices vide) juste avant [DONE]
+              // avec le vrai usage — cf. https://openrouter.ai/docs/api_reference/streaming
+              if (parsed?.usage?.prompt_tokens != null) {
+                usage = {
+                  prompt_tokens: Number(parsed.usage.prompt_tokens) || 0,
+                  completion_tokens: Number(parsed.usage.completion_tokens) || 0,
+                };
+              }
             } catch { /* not JSON, skip */ }
           }
 
-          // Débiter dès le 1er chunk — l'IA a commencé, on est facturé
-          if (deductPromise === null) {
-            deductPromise = supabase.rpc('deduct_tokens', {
-              p_user_id: user.id,
-              p_cost: cost,
-              p_action: actionType,
-            });
-          }
-
+          started = true;
           controller.enqueue(encoder.encode(sanitized));
         }
 
-        // Attendre la déduction et envoyer le nouveau solde
-        if (deductPromise) {
-          const { data: newBalance, error: deductError } = await deductPromise;
-          if (!deductError && typeof newBalance === 'number') {
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify({ b: newBalance })}\n\n`),
-            );
-          }
-        }
+        await settleAndNotify();
       } catch (err: any) {
         // Si l'abort a coupé le stream en cours de lecture, envoyer une erreur au client
         const isTimeout = err?.name === 'AbortError' || err?.message?.includes('timeout');
-        if (isTimeout && deductPromise === null) {
+        if (isTimeout && !started) {
           // Aucun chunk reçu → pas de déduction, juste un message d'erreur
           try {
             controller.enqueue(
               encoder.encode(`data: ${JSON.stringify({ error: 'AI service timed out. Please try again.' })}\n\n`),
             );
           } catch { /* client déjà déconnecté */ }
+        } else if (started) {
+          // L'IA avait commencé à répondre avant l'interruption → facturer quand
+          // même (coût déjà engagé chez OpenRouter), sans faire échouer la requête.
+          await settleAndNotify().catch((e) => console.error('[chat] settleAndNotify after interrupt failed:', e));
         }
-        // Si deductPromise !== null, l'IA avait commencé à répondre → l'élève est facturé
       } finally {
         clearTimeout(timeoutId);
         clearInterval(heartbeat);

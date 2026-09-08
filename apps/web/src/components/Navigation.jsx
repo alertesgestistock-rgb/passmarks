@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { Home, BookOpen, GraduationCap, User, Search, Settings, Sun, Moon, Calculator as CalcIcon, WifiOff, CalendarDays, RotateCw, Download, Users } from 'lucide-react';
+import { Home, BookOpen, GraduationCap, User, Search, Settings, Sun, Moon, Calculator as CalcIcon, WifiOff, CalendarDays, RotateCw, Download, Users, ListChecks } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUser } from '@/contexts/UserContext';
@@ -16,9 +16,10 @@ export function Sidebar({ activeTab, setActiveTab }) {
   const { tokenBalance } = useUser();
   const [showTokenShop, setShowTokenShop] = useState(false);
   const navItems = [
-    { id: "home",     icon: Home,         label: "Home" },
-    { id: "papers",   icon: BookOpen,      label: "Past Papers" },
-    { id: "tutor",    icon: GraduationCap, label: "AI Tutor" },
+    { id: "home",       icon: Home,         label: "Home" },
+    { id: "papers",     icon: BookOpen,      label: "Past Papers" },
+    { id: "tutor",      icon: GraduationCap, label: "AI Tutor" },
+    { id: "quiz-setup", icon: ListChecks,    label: "Quiz" },
     { id: "calendar",  icon: CalendarDays,  label: "Calendar" },
     { id: "referrals", icon: Users,         label: "Referrals" },
     { id: "profile",   icon: User,          label: "Profile" },
@@ -256,11 +257,12 @@ export function TopNav({ setActiveTab }) {
 
 export function BottomNav({ activeTab, setActiveTab }) {
   const navItems = [
-    { id: "home",     icon: Home,         label: "Home" },
-    { id: "papers",   icon: BookOpen,      label: "Papers" },
-    { id: "tutor",    icon: GraduationCap, label: "AI Tutor" },
-    { id: "calendar", icon: CalendarDays,  label: "Calendar" },
-    { id: "settings", icon: Settings,      label: "Settings" },
+    { id: "home",       icon: Home,         label: "Home" },
+    { id: "papers",     icon: BookOpen,      label: "Papers" },
+    { id: "tutor",      icon: GraduationCap, label: "AI Tutor" },
+    { id: "quiz-setup", icon: ListChecks,    label: "Quiz" },
+    { id: "calendar",   icon: CalendarDays,  label: "Calendar" },
+    { id: "settings",   icon: Settings,      label: "Settings" },
   ];
 
   return (
