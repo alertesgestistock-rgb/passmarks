@@ -4,6 +4,7 @@ import { useUser } from '@/contexts/UserContext';
 import { supabase } from '@/lib/supabase';
 import { getTimeGreeting, calculateDaysToExam, getStreakColor } from '@/lib/userStorage';
 import OnboardingRewardsWidget from '@/components/onboarding/OnboardingRewardsWidget';
+import { QUIZ_ENABLED } from '@/lib/featureFlags';
 
 export default function HomePage({ navigate }) {
   const { user, streak, isLoading } = useUser();
@@ -128,12 +129,16 @@ export default function HomePage({ navigate }) {
             const colors = ['text-[#3B82F6]', 'text-[#F97316]', 'text-[#A855F7]'];
             const bgColors = ['bg-[#3B82F6]/10', 'bg-[#F97316]/10', 'bg-[#A855F7]/10'];
             const borderColors = ['hover:border-[#3B82F6]/50', 'hover:border-[#F97316]/50', 'hover:border-[#A855F7]/50'];
-            const actions = ['tutor', 'papers', 'quiz-setup'];
+            const actions = QUIZ_ENABLED ? ['tutor', 'papers', 'quiz-setup'] : ['tutor', 'papers'];
+            // icons/colors/bgColors/borderColors restent calés sur 3 (design inchangé,
+            // couleurs de la 3e position réutilisées pour le 2e outil quand Quiz est
+            // désactivé) — seul le cycle de navigation raccourcit avec actions.length.
+            const slot = idx % actions.length;
 
             return (
               <button
                 key={`subject-${sub}`}
-                onClick={() => navigate(actions[idx % 3])}
+                onClick={() => navigate(actions[slot])}
                 className={`bg-white dark:bg-[#1E293B] h-[110px] rounded-2xl p-4 flex flex-col items-center justify-center gap-3 border border-slate-200 dark:border-[#334155]/50 ${borderColors[idx % 3]} hover:-translate-y-1 transition-all scale-on-click`}
               >
                 <div className={`w-12 h-12 rounded-xl ${bgColors[idx % 3]} ${colors[idx % 3]} flex items-center justify-center`}>

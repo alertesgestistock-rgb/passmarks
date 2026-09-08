@@ -11,6 +11,7 @@ import Calculator from './Calculator';
 import TokenBalance from './TokenBalance';
 import TokenShopModal from './TokenShopModal';
 import { OnboardingRewardsBanner } from './onboarding/OnboardingRewardsBanner';
+import { QUIZ_ENABLED } from '@/lib/featureFlags';
 
 export function Sidebar({ activeTab, setActiveTab }) {
   const { tokenBalance } = useUser();
@@ -19,7 +20,7 @@ export function Sidebar({ activeTab, setActiveTab }) {
     { id: "home",       icon: Home,         label: "Home" },
     { id: "papers",     icon: BookOpen,      label: "Past Papers" },
     { id: "tutor",      icon: GraduationCap, label: "AI Tutor" },
-    { id: "quiz-setup", icon: ListChecks,    label: "Quiz" },
+    ...(QUIZ_ENABLED ? [{ id: "quiz-setup", icon: ListChecks, label: "Quiz" }] : []),
     { id: "calendar",  icon: CalendarDays,  label: "Calendar" },
     { id: "referrals", icon: Users,         label: "Referrals" },
     { id: "profile",   icon: User,          label: "Profile" },
@@ -260,7 +261,7 @@ export function BottomNav({ activeTab, setActiveTab }) {
     { id: "home",       icon: Home,         label: "Home" },
     { id: "papers",     icon: BookOpen,      label: "Papers" },
     { id: "tutor",      icon: GraduationCap, label: "AI Tutor" },
-    { id: "quiz-setup", icon: ListChecks,    label: "Quiz" },
+    ...(QUIZ_ENABLED ? [{ id: "quiz-setup", icon: ListChecks, label: "Quiz" }] : []),
     { id: "calendar",   icon: CalendarDays,  label: "Calendar" },
     { id: "settings",   icon: Settings,      label: "Settings" },
   ];

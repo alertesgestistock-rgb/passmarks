@@ -8,6 +8,7 @@ import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import { ONBOARDING_REWARD_TOTAL } from '@/lib/onboardingRewards';
 import AcquisitionSourceModal from './AcquisitionSourceModal';
 import PhoneBonusModal from './PhoneBonusModal';
+import { QUIZ_ENABLED } from '@/lib/featureFlags';
 
 const STEPS = [
   { key: 'acquisition_source', icon: HelpCircle, page: null, modal: 'acquisition', color: '#3B82F6',
@@ -28,9 +29,14 @@ const STEPS = [
   { key: 'first_paper_read', icon: FileText, page: 'papers', color: '#3B82F6',
     fr: { title: 'Consulter un sujet d’examen', todo: 'Ouvre Past Papers' },
     en: { title: 'Open a past paper', todo: 'Open Past Papers' } },
+  // Quiz retiré de la liste tant que QUIZ_ENABLED est false (cf. featureFlags.js) —
+  // le texte affiché ne doit pas pousser vers un outil caché ailleurs dans l'app.
+  // NB : le comptage réel de "4 outils" se fait côté serveur (get_onboarding_progress) ;
+  // si ce comptage inclut encore une visite sur Quiz, le texte seul ne suffit pas à
+  // rendre ce palier atteignable — à vérifier séparément si besoin.
   { key: 'four_tools', icon: Layers, page: null, color: '#A855F7',
-    fr: { title: 'Explorer 4 outils', todo: 'Quiz, IA Tutor, Calendrier, Past Papers' },
-    en: { title: 'Explore 4 tools', todo: 'Quiz, AI Tutor, Calendar, Past Papers' } },
+    fr: { title: 'Explorer 4 outils', todo: QUIZ_ENABLED ? 'Quiz, IA Tutor, Calendrier, Past Papers' : 'IA Tutor, Calendrier, Past Papers' },
+    en: { title: 'Explore 4 tools', todo: QUIZ_ENABLED ? 'Quiz, AI Tutor, Calendar, Past Papers' : 'AI Tutor, Calendar, Past Papers' } },
   { key: 'seven_day_streak', icon: Flame, page: 'tutor', action: 'continue_streak', color: '#EF4444',
     fr: { title: 'Utiliser l’IA Tutor 7 jours de suite', todo: 'Série actuelle' },
     en: { title: 'Use the AI Tutor 7 days in a row', todo: 'Current streak' } },
