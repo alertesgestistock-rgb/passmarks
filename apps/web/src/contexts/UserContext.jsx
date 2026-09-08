@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase, getSessionSafe } from '@/lib/supabase';
 import { runMobileSafeRequest } from '@/lib/mobileRequest';
 import { loadUserFromLocalStorage, saveUserToLocalStorage, clearUserData, checkAndUpdateStreak } from '@/lib/userStorage';
+import { useTelegram } from '@/hooks/useTelegram';
 
 const UserContext = createContext(null);
 
@@ -35,7 +36,35 @@ const userToProfile = (updates) => {
   return result;
 };
 
+// Exchanges Telegram's initData for a real Supabase session, via the
+// telegram-login Edge Function (HMAC-verifies initData server-side, then
+// issues a magic-link token we redeem immediately). No-op resolves to false
+// on any failure — callers fall back to the normal auth flow.
+const signInWithTelegram = async (initData) => {
+  try {
+    const { data, error } = await supabase.functions.invoke('telegram-login', { body: { initData } });
+    if (error || !data?.token_hash || !data?.email) {
+      console.warn('[UserContext] Telegram login failed:', error);
+      return false;
+    }
+    const { error: otpError } = await supabase.auth.verifyOtp({
+      email: data.email,
+      token: data.token_hash,
+      type: 'magiclink',
+    });
+    if (otpError) {
+      console.warn('[UserContext] Telegram session exchange failed:', otpError);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('[UserContext] Telegram login error:', err);
+    return false;
+  }
+};
+
 export const UserProvider = ({ children }) => {
+  const { isTelegram, initData } = useTelegram();
   const cached = loadUserFromLocalStorage();
   const [user, setUser] = useState(cached || null);
   const [streak, setStreak] = useState(() => cached ? checkAndUpdateStreak() : { current: 0, lastActive: null });
@@ -108,7 +137,18 @@ export const UserProvider = ({ children }) => {
       // toute l'app reste figée sur l'écran de chargement.
       try {
         const { data: { session } } = await getSessionSafe();
-        await loadFromSession(session);
+        const loaded = await loadFromSession(session);
+
+        // No existing session, but we're inside Telegram with signed
+        // initData: silently log in via Telegram instead of showing the
+        // email/password screen.
+        if (!loaded && isTelegram && initData) {
+          const signedIn = await signInWithTelegram(initData);
+          if (signedIn && !cancelled) {
+            const { data: { session: newSession } } = await getSessionSafe();
+            await loadFromSession(newSession);
+          }
+        }
       } catch (err) {
         console.warn('[UserContext] init() session fetch failed:', err);
       } finally {
