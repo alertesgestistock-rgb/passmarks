@@ -65,9 +65,12 @@ const signInWithTelegram = async (initData) => {
       console.warn('[UserContext] Telegram login failed:', error);
       return false;
     }
+    // token_hash (from admin.generateLink) is a self-contained credential —
+    // it must be verified alone, NOT combined with email/token (that's the
+    // separate 6-digit-OTP flow and mixing the two fails silently).
+    // https://supabase.com/docs/reference/javascript/auth-verifyotp
     const { error: otpError } = await supabase.auth.verifyOtp({
-      email: data.email,
-      token: data.token_hash,
+      token_hash: data.token_hash,
       type: 'magiclink',
     });
     if (otpError) {
