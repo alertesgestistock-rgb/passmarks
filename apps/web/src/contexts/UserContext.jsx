@@ -36,10 +36,28 @@ const userToProfile = (updates) => {
   return result;
 };
 
+// Asks telegram-login whether this Telegram id is already linked to a
+// PassMark account, without creating anything. Distinguishes "returning
+// Telegram user, safe to auto sign in" from "unknown — might already have
+// an account under email/password, must ask before creating a duplicate".
+const checkTelegramLinked = async (initData) => {
+  try {
+    const { data, error } = await supabase.functions.invoke('telegram-login', { body: { initData, checkOnly: true } });
+    if (error) { console.warn('[UserContext] Telegram link check failed:', error); return null; }
+    return Boolean(data?.linked);
+  } catch (err) {
+    console.warn('[UserContext] Telegram link check error:', err);
+    return null;
+  }
+};
+
 // Exchanges Telegram's initData for a real Supabase session, via the
 // telegram-login Edge Function (HMAC-verifies initData server-side, then
-// issues a magic-link token we redeem immediately). No-op resolves to false
-// on any failure — callers fall back to the normal auth flow.
+// issues a magic-link token we redeem immediately). Only call this once the
+// Telegram id is either already linked, or the user explicitly chose
+// "Continue with Telegram" (accepting a new account) — never silently on
+// an unknown id. No-op resolves to false on any failure — callers fall back
+// to the normal auth flow.
 const signInWithTelegram = async (initData) => {
   try {
     const { data, error } = await supabase.functions.invoke('telegram-login', { body: { initData } });
@@ -63,6 +81,20 @@ const signInWithTelegram = async (initData) => {
   }
 };
 
+// Links the given Telegram initData to whichever account is signed in RIGHT
+// NOW (must be called right after a successful signup/signin performed
+// inside Telegram) — see telegram-link Edge Function.
+const linkTelegramToCurrentAccount = async (initData) => {
+  try {
+    const { data, error } = await supabase.functions.invoke('telegram-link', { body: { initData } });
+    if (error) { console.warn('[UserContext] Telegram link failed:', error); return false; }
+    return Boolean(data?.ok);
+  } catch (err) {
+    console.warn('[UserContext] Telegram link error:', err);
+    return false;
+  }
+};
+
 export const UserProvider = ({ children }) => {
   const { isTelegram, initData } = useTelegram();
   const cached = loadUserFromLocalStorage();
@@ -70,6 +102,10 @@ export const UserProvider = ({ children }) => {
   const [streak, setStreak] = useState(() => cached ? checkAndUpdateStreak() : { current: 0, lastActive: null });
   const [isLoading, setIsLoading] = useState(!cached);
   const [tokenBalance, setTokenBalance] = useState(null);
+  // null = not applicable / not checked yet, 'unknown' = inside Telegram but
+  // this telegram_id has never been seen before — AuthPage must ask the user
+  // whether to create a new account or sign in to an existing one first.
+  const [telegramChoice, setTelegramChoice] = useState(null);
 
   const ensureWallet = async (userId) => {
     // Wallet is created automatically by the handle_new_profile_wallet DB trigger.
@@ -140,13 +176,22 @@ export const UserProvider = ({ children }) => {
         const loaded = await loadFromSession(session);
 
         // No existing session, but we're inside Telegram with signed
-        // initData: silently log in via Telegram instead of showing the
-        // email/password screen.
+        // initData: check FIRST whether this telegram_id is already known.
+        // Only auto-sign-in for a *returning* Telegram user — an unknown id
+        // might belong to someone who already has a PassMark account under
+        // email/password (Telegram's WebView storage is isolated, so we'd
+        // never see their existing session). For those, AuthPage shows a
+        // choice screen instead of silently creating a duplicate account.
         if (!loaded && isTelegram && initData) {
-          const signedIn = await signInWithTelegram(initData);
-          if (signedIn && !cancelled) {
-            const { data: { session: newSession } } = await getSessionSafe();
-            await loadFromSession(newSession);
+          const linked = await checkTelegramLinked(initData);
+          if (linked === true) {
+            const signedIn = await signInWithTelegram(initData);
+            if (signedIn && !cancelled) {
+              const { data: { session: newSession } } = await getSessionSafe();
+              await loadFromSession(newSession);
+            }
+          } else if (linked === false && !cancelled) {
+            setTelegramChoice('unknown');
           }
         }
       } catch (err) {
@@ -263,11 +308,34 @@ export const UserProvider = ({ children }) => {
     await supabase.auth.signOut();
   };
 
+  // "Continue with Telegram" choice: creates/signs into the Telegram-linked
+  // account for this initData (only meaningful when telegramChoice === 'unknown').
+  const continueWithTelegram = async () => {
+    if (!initData) return false;
+    // verifyOtp() inside signInWithTelegram fires a SIGNED_IN auth event,
+    // which the onAuthStateChange subscription below already handles
+    // (loads the profile, sets `user`) — no manual reload needed here.
+    const signedIn = await signInWithTelegram(initData);
+    if (signedIn) setTelegramChoice(null);
+    return signedIn;
+  };
+
+  // "I already have an account" choice, called right after a successful
+  // email signup/signin performed inside Telegram — attaches telegram_id to
+  // that just-authenticated account so future Telegram opens auto sign in.
+  const linkCurrentAccountToTelegram = async () => {
+    if (!isTelegram || !initData) return false;
+    const linked = await linkTelegramToCurrentAccount(initData);
+    if (linked) setTelegramChoice(null);
+    return linked;
+  };
+
   return (
     <UserContext.Provider value={{
       user, streak, isLoading, tokenBalance,
       updateUser, initializeNewUser, addRecentActivity, clearUser,
       updateTokenBalance, refreshTokenBalance,
+      isTelegram, telegramChoice, continueWithTelegram, linkCurrentAccountToTelegram,
     }}>
       {children}
     </UserContext.Provider>

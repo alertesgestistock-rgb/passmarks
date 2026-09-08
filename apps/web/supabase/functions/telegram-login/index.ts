@@ -82,7 +82,7 @@ serve(async (req) => {
       });
     }
 
-    const { initData } = await req.json();
+    const { initData, checkOnly } = await req.json();
     if (!initData || typeof initData !== "string") {
       return new Response(JSON.stringify({ error: "Champ 'initData' requis." }), {
         status: 400,
@@ -103,6 +103,22 @@ serve(async (req) => {
     const displayName = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ") || tgUser.username || `Telegram ${telegramId}`;
 
     const admin = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+
+    // checkOnly: just report whether this Telegram id is already linked to an
+    // account — never creates anything. Lets the frontend decide between
+    // "silently sign this returning user in" vs "ask them first" (new
+    // Telegram id => might be a brand new user, or an existing PassMark user
+    // opening from Telegram for the first time — we must not guess).
+    if (checkOnly) {
+      const { data: existing } = await admin
+        .from("profiles")
+        .select("id")
+        .eq("telegram_id", telegramId)
+        .maybeSingle();
+      return new Response(JSON.stringify({ linked: Boolean(existing) }), {
+        headers: { ...dynamicCors, "Content-Type": "application/json" },
+      });
+    }
 
     // Synthetic, stable, non-guessable-enough email used only as the Auth
     // identity key — never shown to the user, never used for real mail.

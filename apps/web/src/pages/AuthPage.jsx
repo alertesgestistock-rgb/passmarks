@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Eye, EyeOff, ArrowLeft, ShieldCheck, Sun, Moon } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, ShieldCheck, Sun, Moon, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { useUser } from '@/contexts/UserContext';
@@ -10,8 +10,20 @@ import GlowBackground from '@/components/ui/GlowBackground';
 export default function AuthPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, isLoading } = useUser();
+  const { user, isLoading, isTelegram, telegramChoice, continueWithTelegram, linkCurrentAccountToTelegram } = useUser();
   const { theme, toggleTheme } = useTheme();
+
+  // Inside Telegram, with a telegram_id never seen before: don't show the
+  // normal signup/signin form yet — ask first, to avoid silently creating a
+  // duplicate account for someone who already has one via email/password
+  // (Telegram's WebView storage is isolated, so we can never see an existing
+  // web session from here). 'ask' | 'form' | null (not applicable).
+  const [telegramStep, setTelegramStep] = useState(null);
+  useEffect(() => {
+    if (isTelegram && telegramChoice === 'unknown') setTelegramStep('ask');
+  }, [isTelegram, telegramChoice]);
+  const [telegramLoading, setTelegramLoading] = useState(false);
+  const [telegramError, setTelegramError] = useState('');
 
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'signup');
   const [showPassword, setShowPassword] = useState(false);
@@ -60,6 +72,9 @@ export default function AuthPage() {
         });
       }
       localStorage.removeItem('pm_ref_code');
+      // Came here via "I already have an account" inside Telegram: attach
+      // this telegram_id now so future Telegram opens recognize this account.
+      if (telegramStep === 'form') await linkCurrentAccountToTelegram();
       navigate('/app');
     } else {
       if (referralCode.trim()) {
@@ -76,6 +91,15 @@ export default function AuthPage() {
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (signInError) { setError(signInError.message); return; }
+    if (telegramStep === 'form') await linkCurrentAccountToTelegram();
+    navigate('/app');
+  };
+
+  const handleContinueWithTelegram = async () => {
+    setTelegramLoading(true); setTelegramError('');
+    const ok = await continueWithTelegram();
+    setTelegramLoading(false);
+    if (!ok) { setTelegramError("Couldn't sign in with Telegram. Please try again."); return; }
     navigate('/app');
   };
 
@@ -242,6 +266,27 @@ export default function AuthPage() {
           <div className="ap-logo-sub">GCE AI Tutor · Free</div>
         </div>
 
+        {telegramStep === 'ask' && (
+          <div className="ap-form-fields">
+            <div style={{ textAlign: 'center', fontSize: 13, color: '#94A3B8', marginBottom: 4 }}>
+              Welcome! Is this your first time on PassMark?
+            </div>
+            {telegramError && <div className="ap-error ap-error--err">{telegramError}</div>}
+            <button className="ap-btn-primary" onClick={handleContinueWithTelegram} disabled={telegramLoading} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <Send size={16} /> {telegramLoading ? 'Connecting…' : 'Continue with Telegram'}
+            </button>
+            <button
+              type="button"
+              className="ap-level-btn"
+              onClick={() => setTelegramStep('form')}
+              style={{ width: '100%' }}
+            >
+              I already have an account
+            </button>
+          </div>
+        )}
+
+        {telegramStep !== 'ask' && (
         <div className="ap-tabs">
           {[['signup', 'Sign up'], ['signin', 'Sign in']].map(([tab, label]) => (
             <button key={tab} className={cn('ap-tab', activeTab === tab && 'ap-tab--active')}
@@ -250,8 +295,9 @@ export default function AuthPage() {
             </button>
           ))}
         </div>
+        )}
 
-        {activeTab === 'signup' && (
+        {telegramStep !== 'ask' && activeTab === 'signup' && (
           <div className="ap-form-fields">
             <input className="ap-input" type="text" placeholder="Full name" value={name} onChange={e => setName(e.target.value)} autoComplete="name" />
             
@@ -290,7 +336,7 @@ export default function AuthPage() {
           </div>
         )}
 
-        {activeTab === 'signin' && (
+        {telegramStep !== 'ask' && activeTab === 'signin' && (
           <div className="ap-form-fields">
             <input className="ap-input" type="email" placeholder="your@email.com" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" inputMode="email" />
             
