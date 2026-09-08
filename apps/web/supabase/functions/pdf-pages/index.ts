@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 import { getCorsHeaders } from './cors.ts';
+import { r2Download, R2_BUCKET_PRIVATE } from '../_shared/r2Client.ts';
 
 serve(async (req: Request) => {
   const cors = getCorsHeaders(req);
@@ -29,12 +30,16 @@ serve(async (req: Request) => {
   }
 
   if (page === 'meta') {
-    const { data: cached } = await supabase.storage
-      .from('pdf-page-cache')
-      .download(`${path}/meta.json`);
+    let cached = await r2Download(R2_BUCKET_PRIVATE, `${path}/meta.json`);
+
+    // Fallback: papers converted before the R2 migration still live in Supabase Storage
+    if (!cached) {
+      const { data: legacy } = await supabase.storage.from('pdf-page-cache').download(`${path}/meta.json`);
+      if (legacy) cached = new Uint8Array(await legacy.arrayBuffer());
+    }
 
     if (cached) {
-      return new Response(await cached.text(), {
+      return new Response(new TextDecoder().decode(cached), {
         headers: { ...cors, 'Content-Type': 'application/json' },
       });
     }
@@ -51,22 +56,32 @@ serve(async (req: Request) => {
   }
 
   // Try JPEG first (current format), fall back to PNG (papers converted before JPEG switch)
-  const { data: jpgImg } = await supabase.storage
-    .from('pdf-page-cache')
-    .download(`${path}/page-${pageNum}.jpg`);
-
+  const jpgImg = await r2Download(R2_BUCKET_PRIVATE, `${path}/page-${pageNum}.jpg`);
   if (jpgImg) {
-    return new Response(await jpgImg.arrayBuffer(), {
+    return new Response(jpgImg, {
       headers: { ...cors, 'Content-Type': 'image/jpeg', 'Cache-Control': 'private, max-age=86400' },
     });
   }
 
-  const { data: pngImg } = await supabase.storage
-    .from('pdf-page-cache')
-    .download(`${path}/page-${pageNum}.png`);
-
+  const pngImg = await r2Download(R2_BUCKET_PRIVATE, `${path}/page-${pageNum}.png`);
   if (pngImg) {
-    return new Response(await pngImg.arrayBuffer(), {
+    return new Response(pngImg, {
+      headers: { ...cors, 'Content-Type': 'image/png', 'Cache-Control': 'private, max-age=86400' },
+    });
+  }
+
+  // Fallback: not on R2 yet → this paper was converted before the R2 migration,
+  // its pages still live in the legacy Supabase Storage 'pdf-page-cache' bucket.
+  const { data: legacyJpg } = await supabase.storage.from('pdf-page-cache').download(`${path}/page-${pageNum}.jpg`);
+  if (legacyJpg) {
+    return new Response(await legacyJpg.arrayBuffer(), {
+      headers: { ...cors, 'Content-Type': 'image/jpeg', 'Cache-Control': 'private, max-age=86400' },
+    });
+  }
+
+  const { data: legacyPng } = await supabase.storage.from('pdf-page-cache').download(`${path}/page-${pageNum}.png`);
+  if (legacyPng) {
+    return new Response(await legacyPng.arrayBuffer(), {
       headers: { ...cors, 'Content-Type': 'image/png', 'Cache-Control': 'private, max-age=86400' },
     });
   }
