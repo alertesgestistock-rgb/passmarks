@@ -6,9 +6,16 @@ import { useTelegram } from '@/hooks/useTelegram';
 
 const UserContext = createContext(null);
 
+// Telegram-only accounts get a synthetic, internal-use-only email
+// (tg-<id>@telegram.passmark.internal — see telegram-login) so Supabase
+// Auth has something to key on. It must never surface in the UI (PDF
+// watermarks, "your email" displays, etc.) — treat it as "no email" app-wide,
+// same as a user who never provided one.
+const isSyntheticTelegramEmail = (email) => Boolean(email && email.endsWith('@telegram.passmark.internal'));
+
 const profileToUser = (profile, email) => ({
   id: profile.id,
-  email,
+  email: isSyntheticTelegramEmail(email) ? null : email,
   name: profile.name,
   level: profile.level,
   subjects: profile.subjects || [],
@@ -248,7 +255,7 @@ export const UserProvider = ({ children }) => {
     const { data: { session } } = await getSessionSafe();
     const newUser = {
       id: session?.user?.id || null,
-      email: session?.user?.email || null,
+      email: isSyntheticTelegramEmail(session?.user?.email) ? null : (session?.user?.email || null),
       name, level, subjects, examMonth, examYear,
       avatarUrl: null,
       stats: { questionsSolved: 0, papersRead: 0, quizzesCompleted: 0, totalScore: 0, bySubject: {} },
