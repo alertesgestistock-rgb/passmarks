@@ -41,6 +41,15 @@ export default function Dashboard() {
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
+  // Deep link from the Telegram bot's "Buy tokens" button
+  // (web_app: { url: "...?screen=tokens" }) — open the shop straight away
+  // instead of landing on the home tab first.
+  useEffect(() => {
+    if (searchParams.get('screen') !== 'tokens') return;
+    window.history.replaceState({}, '', '/app');
+    setShowTokenShop(true);
+  }, []);
+
   // Expose globals so external HTML modals can open the token shop or navigate
   useEffect(() => {
     window.passmarkNavigate = navigate;

@@ -51,6 +51,12 @@ function openAppButton(): InlineButton[][] {
   return [[{ text: 'Open PassMark', web_app: { url: MINI_APP_URL } }]];
 }
 
+function tokenShopButton(): InlineButton[][] {
+  // ?screen=tokens is read by Dashboard.jsx on mount to open the token shop
+  // modal directly, instead of landing on the home tab first.
+  return [[{ text: '💳 Buy tokens', web_app: { url: `${MINI_APP_URL}?screen=tokens` } }]];
+}
+
 serve(async (req: Request) => {
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 });
 
@@ -173,6 +179,21 @@ async function handleMessage(supabase: any, botToken: string, message: any): Pro
 
   if (command === '/history') {
     await sendHistory(supabase, botToken, chatId, profile.id, 0);
+    return;
+  }
+
+  if (command === '/tokens') {
+    const { data: wallet } = await supabase
+      .from('token_wallets')
+      .select('balance')
+      .eq('user_id', profile.id)
+      .maybeSingle();
+    const balance = wallet?.balance ?? 0;
+    await sendMessage(
+      botToken, chatId,
+      `You have **${balance}** token${balance === 1 ? '' : 's'} left.`,
+      { buttons: tokenShopButton() },
+    );
     return;
   }
 
