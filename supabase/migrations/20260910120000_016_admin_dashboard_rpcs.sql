@@ -137,7 +137,7 @@ begin
 
   return query
   select
-    p.id, u.email, p.name, p.level, p.exam_month, p.exam_year, p.role,
+    p.id, u.email::text, p.name, p.level, p.exam_month, p.exam_year, p.role,
     p.phone, p.phone_country, (p.telegram_id is not null),
     coalesce((p.stats->>'quizzesCompleted')::int, 0),
     coalesce((p.stats->>'papersRead')::int, 0),
@@ -223,7 +223,7 @@ begin
   if not public.is_admin(auth.uid()) then raise exception 'not_admin'; end if;
 
   return query
-  select p.id, u.email, p.name, w.balance, w.total_earned, w.total_spent, w.pending_cost_usd
+  select p.id, u.email::text, p.name, w.balance, w.total_earned, w.total_spent, w.pending_cost_usd
   from public.token_wallets w
   join public.profiles p on p.id = w.user_id
   join auth.users u on u.id = p.id
@@ -271,14 +271,14 @@ begin
 
   return query
   (
-    select 'conversation'::text, u.email, coalesce(c.title, 'Untitled conversation'), c.created_at
+    select 'conversation'::text, u.email::text, coalesce(c.title, 'Untitled conversation'), c.created_at
     from public.conversations c join auth.users u on u.id = c.user_id
     where c.created_at >= v_from and c.created_at < v_to
     order by c.created_at desc limit p_limit
   )
   union all
   (
-    select 'paper_view'::text, u.email, gp.title, pv.viewed_at
+    select 'paper_view'::text, u.email::text, gp.title, pv.viewed_at
     from public.paper_views pv
     join auth.users u on u.id = pv.user_id
     join public.gce_papers gp on gp.id = pv.paper_id
