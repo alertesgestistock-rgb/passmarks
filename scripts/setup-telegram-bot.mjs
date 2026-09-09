@@ -41,6 +41,7 @@ async function call(method, payload) {
 
 const commands = [
   { command: 'start', description: 'Get started with PassMark' },
+  { command: 'app', description: 'Open the PassMark app' },
   { command: 'new', description: 'Start a new conversation' },
   { command: 'history', description: 'Browse your past conversations' },
   { command: 'tokens', description: 'Check your token balance' },

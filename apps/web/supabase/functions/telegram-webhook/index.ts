@@ -37,6 +37,7 @@ const COPY = {
   noConversations: "You don't have any conversations yet. Just send me a question to start one.",
   historyHeader: 'Your recent conversations — tap one to continue it:',
   switched: 'Switched conversation ✓ Send your next question.',
+  openApp: 'Tap below to open PassMark 👇',
   outOfTokens:
     "You've run out of tokens. Open the app to top up, then come back and continue right here.",
   rateLimited: 'You are sending questions very fast. Please wait a moment and try again.',
@@ -179,6 +180,11 @@ async function handleMessage(supabase: any, botToken: string, message: any): Pro
 
   if (command === '/history') {
     await sendHistory(supabase, botToken, chatId, profile.id, 0);
+    return;
+  }
+
+  if (command === '/app') {
+    await sendMessage(botToken, chatId, COPY.openApp, { buttons: openAppButton() });
     return;
   }
 
