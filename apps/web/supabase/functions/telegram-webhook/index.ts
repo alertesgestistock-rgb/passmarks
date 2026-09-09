@@ -267,7 +267,13 @@ async function handleMessage(supabase: any, botToken: string, message: any): Pro
   }
 
   if (command === '/new') {
-    await supabase.from('profiles').update({ telegram_active_conversation_id: null }).eq('id', profile.id);
+    // Groups have their own persistent thread per (user, chat) — reset only
+    // that one, not the user's private-chat conversation elsewhere.
+    if (isGroup) {
+      await supabase.from('telegram_group_threads').delete().eq('user_id', profile.id).eq('chat_id', chatId);
+    } else {
+      await supabase.from('profiles').update({ telegram_active_conversation_id: null }).eq('id', profile.id);
+    }
     await sendMessage(botToken, chatId, COPY.newConversation, opts);
     return;
   }
@@ -430,6 +436,7 @@ async function handleMessage(supabase: any, botToken: string, message: any): Pro
   await answerQuestion(
     supabase, botToken, chatId, profile, contentParts, promptText, voiceBilling,
     isGroup ? message.message_id : undefined,
+    isGroup,
   );
 }
 
@@ -442,13 +449,19 @@ async function answerQuestion(
   storedUserText: string,
   voiceBilling: { minTokens: number; transcriptionCostUsd: number } | null = null,
   replyToMessageId?: number,
+  isGroup = false,
 ): Promise<void> {
   // Keep "typing…" alive while the model works (it expires after ~5s).
   await sendChatAction(botToken, chatId);
   const typing = setInterval(() => { sendChatAction(botToken, chatId).catch(() => {}); }, TYPING_REFRESH_MS);
 
   try {
-    const conversationId = await getOrCreateConversation(supabase, profile, storedUserText);
+    // Groups get their own persistent thread per (user, chat) — see
+    // telegram_group_threads — instead of the single global thread a
+    // private chat uses (profiles.telegram_active_conversation_id).
+    const conversationId = isGroup
+      ? await getOrCreateGroupConversation(supabase, profile.id, chatId, storedUserText)
+      : await getOrCreateConversation(supabase, profile, storedUserText);
     const history = await loadHistory(supabase, conversationId);
 
     const onlyText = contentParts.length === 1 && contentParts[0].type === 'text';
@@ -493,6 +506,14 @@ async function answerQuestion(
   }
 }
 
+// A group reply's stored text is prefixed with the context it points at (see
+// promptText in handleMessage) — strip that back off so a fresh
+// conversation's title reads as the actual question, not the context blob.
+function titleFrom(firstText: string): string {
+  const stripped = firstText.replace(/^Context — replying to this earlier message: "[^]*?"\n\nQuestion: /, '');
+  return (stripped || 'Telegram conversation').substring(0, 60);
+}
+
 async function getOrCreateConversation(
   supabase: any,
   profile: { id: string; telegram_active_conversation_id: string | null },
@@ -510,19 +531,54 @@ async function getOrCreateConversation(
     if (existing) return existing.id;
   }
 
-  // A group reply's stored text is prefixed with the context it points at
-  // (see promptText in handleMessage) — strip that back off so a fresh
-  // conversation's title reads as the actual question, not the context blob.
-  const titleSource = firstText.replace(/^Context — replying to this earlier message: "[^]*?"\n\nQuestion: /, '');
-  const title = (titleSource || 'Telegram conversation').substring(0, 60);
   const { data: conv } = await supabase
     .from('conversations')
-    .insert({ user_id: profile.id, title })
+    .insert({ user_id: profile.id, title: titleFrom(firstText) })
     .select('id')
     .single();
 
   await supabase.from('profiles').update({ telegram_active_conversation_id: conv.id }).eq('id', profile.id);
   profile.telegram_active_conversation_id = conv.id;
+  return conv.id;
+}
+
+/** Same idea as getOrCreateConversation, but scoped to one (user, group
+ * chat) pair instead of the user's single global thread — see
+ * telegram_group_threads. Persists across days: the same group keeps
+ * reusing this conversation until /new resets just this pairing. */
+async function getOrCreateGroupConversation(
+  supabase: any,
+  userId: string,
+  chatId: number,
+  firstText: string,
+): Promise<string> {
+  const { data: thread } = await supabase
+    .from('telegram_group_threads')
+    .select('conversation_id')
+    .eq('user_id', userId)
+    .eq('chat_id', chatId)
+    .maybeSingle();
+
+  if (thread?.conversation_id) {
+    // Confirm it still exists (may have been deleted from the web app since).
+    const { data: existing } = await supabase
+      .from('conversations')
+      .select('id')
+      .eq('id', thread.conversation_id)
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (existing) return existing.id;
+  }
+
+  const { data: conv } = await supabase
+    .from('conversations')
+    .insert({ user_id: userId, title: titleFrom(firstText) })
+    .select('id')
+    .single();
+
+  await supabase
+    .from('telegram_group_threads')
+    .upsert({ user_id: userId, chat_id: chatId, conversation_id: conv.id, updated_at: new Date().toISOString() });
   return conv.id;
 }
 
