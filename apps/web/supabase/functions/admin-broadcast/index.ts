@@ -45,7 +45,7 @@ serve(async (req) => {
       });
     }
 
-    const { title, body, filters, sendTelegram } = await req.json();
+    const { title, body, filters, sendTelegram, link } = await req.json();
     if (!title || typeof title !== "string" || !body || typeof body !== "string") {
       return new Response(JSON.stringify({ error: "'title' and 'body' are required." }), {
         status: 400,
@@ -65,6 +65,7 @@ serve(async (req) => {
       p_body: body,
       p_filters: filters || {},
       p_send_telegram: Boolean(sendTelegram),
+      p_link: link || null,
     });
 
     if (rpcError) {
@@ -83,12 +84,15 @@ serve(async (req) => {
         console.warn("[admin-broadcast] sendTelegram requested but TELEGRAM_BOT_TOKEN is missing — skipping Telegram delivery.");
       } else {
         const text = `📣 ${title}\n\n${body}`;
+        // Link goes on its own inline button rather than pasted into the
+        // text — cleaner in the chat, and Telegram opens it in one tap.
+        const buttons = link ? [[{ text: "🔗 Open link", url: link }]] : undefined;
         // Sequential with a small delay: Telegram allows ~30 msg/s overall,
         // ~1/s per chat — a broadcast to a few dozen users stays well under
         // that without needing real batching/backoff logic.
         for (const chatId of telegramIds) {
           try {
-            await sendMessage(botToken, chatId, text);
+            await sendMessage(botToken, chatId, text, { buttons });
             telegramSentCount++;
           } catch (err) {
             console.error(`[admin-broadcast] Telegram send failed for ${chatId}:`, err);

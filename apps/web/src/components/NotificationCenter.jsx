@@ -1,11 +1,14 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, BellOff, CalendarClock, Flame, Award, BookOpen, Check } from 'lucide-react';
+import { Bell, BellOff, CalendarClock, Flame, Award, BookOpen, Check, ExternalLink, Megaphone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNotifications } from '@/contexts/NotificationContext';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 export default function NotificationCenter({ navigate }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [detail, setDetail] = useState(null);
   const { notifications, unreadCount, markAsRead, clearAll } = useNotifications();
   const dropdownRef = useRef(null);
 
@@ -21,12 +24,23 @@ export default function NotificationCenter({ navigate }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
+  // Clicking a notification opens the detail modal (full text + link, if
+  // any) rather than acting immediately — for a local reminder with an
+  // internal `action` and no link, the modal's own button does that
+  // navigation instead.
   const handleNotificationClick = (notif) => {
     markAsRead(notif.id);
     setIsOpen(false);
-    if (notif.action && navigate) {
-      navigate(notif.action);
+    setDetail(notif);
+  };
+
+  const handleDetailAction = () => {
+    if (detail?.link) {
+      window.open(detail.link, '_blank', 'noopener,noreferrer');
+    } else if (detail?.action && navigate) {
+      navigate(detail.action);
     }
+    setDetail(null);
   };
 
   const getIcon = (type) => {
@@ -35,6 +49,7 @@ export default function NotificationCenter({ navigate }) {
       case 'EXAM_COUNTDOWN':       return <div className="w-9 h-9 rounded-full bg-[#F97316]/10 text-[#F97316] flex items-center justify-center shrink-0"><CalendarClock size={18} /></div>;
       case 'STREAK_REMINDER':      return <div className="w-9 h-9 rounded-full bg-[#EF4444]/10 text-[#EF4444] flex items-center justify-center shrink-0"><Flame size={18} /></div>;
       case 'QUIZ_CELEBRATION':     return <div className="w-9 h-9 rounded-full bg-[#22C55E]/10 text-[#22C55E] flex items-center justify-center shrink-0"><Award size={18} /></div>;
+      case 'ADMIN_BROADCAST':      return <div className="w-9 h-9 rounded-full bg-[#22C55E]/10 text-[#22C55E] flex items-center justify-center shrink-0"><Megaphone size={18} /></div>;
       default:                     return <div className="w-9 h-9 rounded-full bg-slate-200 dark:bg-[#94A3B8]/10 text-slate-400 dark:text-[#94A3B8] flex items-center justify-center shrink-0"><Bell size={18} /></div>;
     }
   };
@@ -106,6 +121,30 @@ export default function NotificationCenter({ navigate }) {
 
         </div>
       )}
+
+      {/* Detail modal — full text (never truncated) + the link, if any, as
+          its own clickable action underneath. */}
+      <Dialog open={!!detail} onOpenChange={(open) => { if (!open) setDetail(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              {getIcon(detail?.type)}
+              <DialogTitle className="text-left">{detail?.title}</DialogTitle>
+            </div>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{detail?.body}</p>
+          {detail?.link && (
+            <p className="text-xs text-primary break-all">{detail.link}</p>
+          )}
+          {(detail?.link || detail?.action) && (
+            <DialogFooter>
+              <Button onClick={handleDetailAction} className="w-full sm:w-auto gap-2">
+                {detail?.link ? <>Open link <ExternalLink className="h-4 w-4" /></> : 'Open'}
+              </Button>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

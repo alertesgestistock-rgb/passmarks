@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Loader2, Send, Users2 } from 'lucide-react';
+import { Link2, Loader2, Send, Users2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -39,6 +39,7 @@ const EMPTY_FILTERS = { hasPhone: 'any', level: 'any', telegramLinked: 'any', mi
 export default function AdminBroadcastTab() {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
+  const [link, setLink] = useState('');
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [sendTelegram, setSendTelegram] = useState(false);
   const [previewCount, setPreviewCount] = useState(null);
@@ -77,11 +78,11 @@ export default function AdminBroadcastTab() {
     setSending(true);
     try {
       const { data: json, error: invokeError } = await supabase.functions.invoke('admin-broadcast', {
-        body: { title: title.trim(), body: body.trim(), filters: toApiFilters(filters), sendTelegram },
+        body: { title: title.trim(), body: body.trim(), link: link.trim() || null, filters: toApiFilters(filters), sendTelegram },
       });
       if (invokeError) throw new Error(json?.error || invokeError.message);
       toast.success(`Sent to ${json.recipient_count} user${json.recipient_count > 1 ? 's' : ''}${sendTelegram ? ` (${json.telegram_sent_count} via Telegram)` : ''}.`);
-      setTitle(''); setBody(''); setFilters(EMPTY_FILTERS); setSendTelegram(false);
+      setTitle(''); setBody(''); setLink(''); setFilters(EMPTY_FILTERS); setSendTelegram(false);
       await loadHistory();
     } catch (err) {
       toast.error(err.message || 'Could not send this broadcast.');
@@ -97,6 +98,12 @@ export default function AdminBroadcastTab() {
         <CardContent className="space-y-4">
           <Field label="Title *"><Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. New past papers available" maxLength={100} /></Field>
           <Field label="Message *"><Textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="What do you want to tell them?" rows={3} maxLength={500} /></Field>
+          <Field label="Link (optional)">
+            <div className="relative">
+              <Link2 className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input className="pl-8" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://…" type="url" />
+            </div>
+          </Field>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Field label="Phone number">
@@ -151,7 +158,7 @@ export default function AdminBroadcastTab() {
             <TableBody>
               {history.map((h) => (
                 <TableRow key={h.id}>
-                  <TableCell><p className="font-medium">{h.title}</p><p className="text-xs text-muted-foreground line-clamp-1">{h.body}</p></TableCell>
+                  <TableCell><p className="font-medium">{h.title}</p><p className="text-xs text-muted-foreground line-clamp-1">{h.body}</p>{h.link && <a href={h.link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline underline-offset-2">{h.link}</a>}</TableCell>
                   <TableCell className="text-right tabular-nums">{h.recipient_count}</TableCell>
                   <TableCell className="text-right tabular-nums">{h.telegram_sent_count}</TableCell>
                   <TableCell className="text-muted-foreground">{h.created_by_name || '—'}</TableCell>
