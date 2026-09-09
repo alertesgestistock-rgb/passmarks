@@ -63,6 +63,9 @@ export interface InlineButton {
   text: string;
   callback_data?: string;
   web_app?: { url: string };
+  // Plain URL button — used for t.me/share/url links, which Telegram clients
+  // open as their native forward-to-chat picker rather than a browser tab.
+  url?: string;
 }
 
 export async function sendMessage(

@@ -24,6 +24,10 @@ import { askTutor, transcribeVoice, voiceFloorTokens, TutorMessage } from '../_s
 const MINI_APP_URL = Deno.env.get('TELEGRAM_MINI_APP_URL') ?? 'https://passmarks.vercel.app';
 const HISTORY_PAGE_SIZE = 5;
 const CONTEXT_MESSAGE_LIMIT = 10; // past turns replayed to the model
+// Same handle ReferralSection.jsx uses to build its Telegram deep link — kept
+// in sync manually since the bot has no runtime way to read the web app's copy.
+const TELEGRAM_BOT_USERNAME = 'passmark_app_bot';
+const REFERRAL_SHARE_MESSAGE = 'Join me on PassMark — the GCE AI Tutor! Sign up with my link and get 5 free tokens 🎓';
 
 // ── User-facing copy (English only — PassMark's UI language) ────────────────
 const COPY = {
@@ -48,6 +52,8 @@ const COPY = {
   pdfFailed: "I couldn't read that PDF. Try sending it again, or send a photo of the question 📷",
   unsupported: 'I can read text, photos, PDF files and voice messages. Send me a GCE question in one of those formats 📚',
   voiceFailed: "I couldn't understand that voice message. Try recording again, or type your question instead 🎙️",
+  referralNoCode:
+    "You don't have a referral code yet. Open the app to create one — it takes a few seconds, then come back here and run /referral again.",
 };
 
 function openAppButton(): InlineButton[][] {
@@ -58,6 +64,23 @@ function tokenShopButton(): InlineButton[][] {
   // ?screen=tokens is read by Dashboard.jsx on mount to open the token shop
   // modal directly, instead of landing on the home tab first.
   return [[{ text: '💳 Buy tokens', web_app: { url: `${MINI_APP_URL}?screen=tokens` } }]];
+}
+
+function referralMessage(code: string, friendCount: number): string {
+  return (
+    `Your referral code: **${code}**\n\n` +
+    `You earn **10 tokens** per friend · they get **5 tokens** when they sign up.\n` +
+    `${friendCount} friend${friendCount === 1 ? '' : 's'} invited so far — **${friendCount * 10} tokens** earned.\n\n` +
+    'Tap Share to send your link, or copy it below:\n' +
+    `https://t.me/${TELEGRAM_BOT_USERNAME}/app?startapp=ref_${code}`
+  );
+}
+
+function referralButtons(link: string): InlineButton[][] {
+  // A t.me/share/url link, tapped as a plain URL button, opens Telegram's own
+  // forward-to-chat picker — no web_app needed for this one.
+  const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(REFERRAL_SHARE_MESSAGE)}`;
+  return [[{ text: '📤 Share my link', url: shareUrl }]];
 }
 
 // Telegram gives bots no way to touch the native chat header (avatar/name),
@@ -222,6 +245,32 @@ async function handleMessage(supabase: any, botToken: string, message: any): Pro
       { buttons: tokenShopButton() },
     );
     await updateBalanceMenuButton(botToken, chatId, balance);
+    return;
+  }
+
+  if (command === '/referral') {
+    // profile came from findProfile, which doesn't select referral_code —
+    // fetched separately so the common path (a plain question) stays cheap.
+    const { data: full } = await supabase
+      .from('profiles')
+      .select('referral_code')
+      .eq('id', profile.id)
+      .maybeSingle();
+    const code: string | null = full?.referral_code ?? null;
+
+    if (!code) {
+      await sendMessage(botToken, chatId, COPY.referralNoCode, { buttons: openAppButton() });
+      return;
+    }
+
+    const { count } = await supabase
+      .from('referrals')
+      .select('*', { count: 'exact', head: true })
+      .eq('referrer_id', profile.id);
+    const friendCount = count ?? 0;
+    const link = `https://t.me/${TELEGRAM_BOT_USERNAME}/app?startapp=ref_${code}`;
+
+    await sendMessage(botToken, chatId, referralMessage(code, friendCount), { buttons: referralButtons(link) });
     return;
   }
 

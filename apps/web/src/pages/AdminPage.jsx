@@ -11,6 +11,7 @@ import AdminTokensTab from '@/pages/admin/AdminTokensTab';
 import AdminContentTab from '@/pages/admin/AdminContentTab';
 import AdminMarketingTab from '@/pages/admin/AdminMarketingTab';
 import AdminReferralsTab from '@/pages/admin/AdminReferralsTab';
+import AdminBroadcastTab from '@/pages/admin/AdminBroadcastTab';
 import AdminGlobalDateFilter from '@/pages/admin/AdminGlobalDateFilter';
 
 // AdminFirstStoryToggle / AdminModelsTab / AdminGammesTab / AdminPricingTab
@@ -34,6 +35,7 @@ const TABS = [
   { value: 'content', label: 'Content' },
   { value: 'marketing', label: 'Marketing' },
   { value: 'referrals', label: 'Referrals' },
+  { value: 'broadcast', label: 'Broadcast' },
 ];
 
 export default function AdminPage() {
@@ -101,6 +103,10 @@ export default function AdminPage() {
 
           <TabsContent value="referrals" className="mt-6">
             <AdminReferralsTab dateFilter={dateFilter} />
+          </TabsContent>
+
+          <TabsContent value="broadcast" className="mt-6">
+            <AdminBroadcastTab />
           </TabsContent>
         </Tabs>
       </div>

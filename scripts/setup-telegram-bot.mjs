@@ -45,6 +45,7 @@ const commands = [
   { command: 'new', description: 'Start a new conversation' },
   { command: 'history', description: 'Browse your past conversations' },
   { command: 'tokens', description: 'Check your token balance' },
+  { command: 'referral', description: 'Get your referral link' },
 ];
 
 try {
