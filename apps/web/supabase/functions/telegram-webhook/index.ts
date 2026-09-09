@@ -76,6 +76,38 @@ function referralMessage(code: string, friendCount: number): string {
   );
 }
 
+// ── Group chat support (Option B: reply-scoped context, no shared group
+// memory) ─────────────────────────────────────────────────────────────────
+// Telegram's entity offsets/lengths are UTF-16 code units, same as JS string
+// indexing, so slicing directly on them is safe.
+
+/** Finds the `mention` entity that is this bot's own @handle, if any. */
+function findBotMentionEntity(
+  text: string, entities: any[], botUsername: string,
+): { offset: number; length: number } | null {
+  const handle = `@${botUsername}`.toLowerCase();
+  for (const e of entities) {
+    if (e.type !== 'mention') continue;
+    if (text.slice(e.offset, e.offset + e.length).toLowerCase() === handle) return e;
+  }
+  return null;
+}
+
+/** Removes the bot's own @mention from the text so it isn't sent to the model as part of the question. */
+function stripMention(text: string, entity: { offset: number; length: number } | null): string {
+  if (!entity) return text;
+  return (text.slice(0, entity.offset) + text.slice(entity.offset + entity.length)).trim();
+}
+
+/** The text/caption of whatever message this one replies to — the only
+ * context a group message carries beyond itself (no shared group memory). */
+function replyContextText(message: any): string | null {
+  const replied = message.reply_to_message;
+  if (!replied) return null;
+  const t = (replied.text ?? replied.caption ?? '').trim();
+  return t || null;
+}
+
 function referralButtons(link: string): InlineButton[][] {
   // A t.me/share/url link, tapped as a plain URL button, opens Telegram's own
   // forward-to-chat picker — no web_app needed for this one.
@@ -199,25 +231,32 @@ async function handleMessage(supabase: any, botToken: string, message: any): Pro
   const telegramId = String(message.from?.id ?? '');
   if (!chatId || !telegramId) return;
 
+  // Group chats (vs. a private 1-to-1 chat): every reply below is threaded
+  // under the message that triggered it, since several members can be
+  // talking to the bot in the same group at once.
+  const isGroup = message.chat?.type !== 'private';
+  const opts = isGroup ? { replyToMessageId: message.message_id } : {};
+
   const text: string = message.text ?? message.caption ?? '';
+  const entities: any[] = message.entities ?? message.caption_entities ?? [];
   const command = text.startsWith('/') ? text.split(/[\s@]/)[0].toLowerCase() : null;
 
   const profile = await findProfile(supabase, telegramId);
 
   if (command === '/start') {
-    await sendMessage(botToken, chatId, COPY.welcome, { buttons: openAppButton() });
+    await sendMessage(botToken, chatId, COPY.welcome, { buttons: openAppButton(), ...opts });
     if (profile) await primeBalanceMenuButton(supabase, botToken, chatId, profile.id);
     return;
   }
 
   if (!profile) {
-    await sendMessage(botToken, chatId, COPY.notLinked, { buttons: openAppButton() });
+    await sendMessage(botToken, chatId, COPY.notLinked, { buttons: openAppButton(), ...opts });
     return;
   }
 
   if (command === '/new') {
     await supabase.from('profiles').update({ telegram_active_conversation_id: null }).eq('id', profile.id);
-    await sendMessage(botToken, chatId, COPY.newConversation);
+    await sendMessage(botToken, chatId, COPY.newConversation, opts);
     return;
   }
 
@@ -227,7 +266,7 @@ async function handleMessage(supabase: any, botToken: string, message: any): Pro
   }
 
   if (command === '/app') {
-    await sendMessage(botToken, chatId, COPY.openApp, { buttons: openAppButton() });
+    await sendMessage(botToken, chatId, COPY.openApp, { buttons: openAppButton(), ...opts });
     await primeBalanceMenuButton(supabase, botToken, chatId, profile.id);
     return;
   }
@@ -274,9 +313,25 @@ async function handleMessage(supabase: any, botToken: string, message: any): Pro
     return;
   }
 
+  // ── Group gating (Option B): Telegram's Privacy Mode already keeps
+  // unrelated group chatter from ever reaching this webhook, but bail
+  // defensively rather than treat a stray update as a billable question.
+  // A trigger is either an @mention of the bot, or a reply to one of its
+  // own messages — replying to another member's message alone never
+  // reaches us unless it's paired with a mention (see docs in the memo).
+  const mentionEntity = isGroup ? findBotMentionEntity(text, entities, TELEGRAM_BOT_USERNAME) : null;
+  const botId = botToken.split(':')[0];
+  const repliedToBot = isGroup && String(message.reply_to_message?.from?.id ?? '') === botId;
+  if (isGroup && !mentionEntity && !repliedToBot) return;
+
+  // The message being replied to (bot's own, or another member's) becomes
+  // this turn's extra context — the whole point of Option B: no shared
+  // group memory, just "answer this specific thing I'm pointing at".
+  const replyContext = isGroup ? replyContextText(message) : null;
+
   // ── Build the question: text, photo, PDF, or voice ────────────────────────
   const contentParts: any[] = [];
-  let questionText = text.trim();
+  let questionText = stripMention(text, mentionEntity).trim();
   // Set only for voice/audio: overrides askTutor's flat cost tiers with a
   // floor based on how much text the recording turned into, and folds the
   // transcription's own (tiny) real cost into the same debit as the answer.
@@ -287,7 +342,7 @@ async function handleMessage(supabase: any, botToken: string, message: any): Pro
     const largest = message.photo[message.photo.length - 1];
     const bytes = await downloadFile(botToken, largest.file_id);
     if (!bytes) {
-      await sendMessage(botToken, chatId, COPY.fileTooLarge);
+      await sendMessage(botToken, chatId, COPY.fileTooLarge, opts);
       return;
     }
     contentParts.push({
@@ -308,12 +363,12 @@ async function handleMessage(supabase: any, botToken: string, message: any): Pro
     await sendChatAction(botToken, chatId);
     const bytes = await downloadFile(botToken, voiceFile.file_id);
     if (!bytes) {
-      await sendMessage(botToken, chatId, COPY.fileTooLarge);
+      await sendMessage(botToken, chatId, COPY.fileTooLarge, opts);
       return;
     }
     const transcribed = await transcribeVoice(arrayBufferToBase64(bytes), format);
     if (!transcribed.ok) {
-      await sendMessage(botToken, chatId, COPY.voiceFailed);
+      await sendMessage(botToken, chatId, COPY.voiceFailed, opts);
       return;
     }
     questionText = transcribed.text;
@@ -321,13 +376,13 @@ async function handleMessage(supabase: any, botToken: string, message: any): Pro
   } else if (message.document) {
     const mime: string = message.document.mime_type ?? '';
     if (!mime.includes('pdf')) {
-      await sendMessage(botToken, chatId, COPY.unsupported);
+      await sendMessage(botToken, chatId, COPY.unsupported, opts);
       return;
     }
     await sendChatAction(botToken, chatId);
     const bytes = await downloadFile(botToken, message.document.file_id);
     if (!bytes) {
-      await sendMessage(botToken, chatId, COPY.fileTooLarge);
+      await sendMessage(botToken, chatId, COPY.fileTooLarge, opts);
       return;
     }
     const converted = await pdfToJpegPages(bytes);
@@ -336,7 +391,7 @@ async function handleMessage(supabase: any, botToken: string, message: any): Pro
         converted.reason === 'too_many_pages' ? COPY.pdfTooManyPages
         : converted.reason === 'too_large' ? COPY.fileTooLarge
         : COPY.pdfFailed;
-      await sendMessage(botToken, chatId, reply);
+      await sendMessage(botToken, chatId, reply, opts);
       return;
     }
     for (const img of converted.images) {
@@ -345,15 +400,25 @@ async function handleMessage(supabase: any, botToken: string, message: any): Pro
   }
 
   if (!questionText && contentParts.length === 0) {
-    await sendMessage(botToken, chatId, COPY.unsupported);
+    await sendMessage(botToken, chatId, COPY.unsupported, opts);
     return;
   }
 
   // A picture with no caption still needs an instruction for the model.
-  const promptText = questionText || 'Solve this GCE question step by step.';
+  const basePrompt = questionText || 'Solve this GCE question step by step.';
+  // Option B: no shared group memory — the only context beyond this turn's
+  // own message is whatever was directly replied to. Folded into both the
+  // prompt AND the stored text, so the conversation reads standalone later
+  // (in the app or in /history) without needing the original reply chain.
+  const promptText = replyContext
+    ? `Context — replying to this earlier message: "${replyContext.slice(0, 500)}"\n\nQuestion: ${basePrompt}`
+    : basePrompt;
   contentParts.push({ type: 'text', text: promptText });
 
-  await answerQuestion(supabase, botToken, chatId, profile, contentParts, promptText, voiceBilling);
+  await answerQuestion(
+    supabase, botToken, chatId, profile, contentParts, promptText, voiceBilling,
+    isGroup ? message.message_id : undefined,
+  );
 }
 
 async function answerQuestion(
@@ -364,6 +429,7 @@ async function answerQuestion(
   contentParts: any[],
   storedUserText: string,
   voiceBilling: { minTokens: number; transcriptionCostUsd: number } | null = null,
+  replyToMessageId?: number,
 ): Promise<void> {
   // Keep "typing…" alive while the model works (it expires after ~5s).
   await sendChatAction(botToken, chatId);
@@ -391,7 +457,7 @@ async function answerQuestion(
         : COPY.aiError;
       await sendMessage(
         botToken, chatId, reply,
-        result.reason === 'insufficient_tokens' ? { buttons: openAppButton() } : {},
+        { ...(result.reason === 'insufficient_tokens' ? { buttons: openAppButton() } : {}), replyToMessageId },
       );
       return;
     }
@@ -405,7 +471,7 @@ async function answerQuestion(
     // conversations_updated_at BEFORE UPDATE trigger sets the timestamp itself.
     await supabase.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', conversationId);
 
-    await sendMessage(botToken, chatId, result.text);
+    await sendMessage(botToken, chatId, result.text, { replyToMessageId });
     // Keep the persistent menu button's balance current (best-effort — if
     // billing hit its own hiccup and newBalance came back null, leave the
     // button as-is rather than firing an extra query just for this).
@@ -432,7 +498,11 @@ async function getOrCreateConversation(
     if (existing) return existing.id;
   }
 
-  const title = (firstText || 'Telegram conversation').substring(0, 60);
+  // A group reply's stored text is prefixed with the context it points at
+  // (see promptText in handleMessage) — strip that back off so a fresh
+  // conversation's title reads as the actual question, not the context blob.
+  const titleSource = firstText.replace(/^Context — replying to this earlier message: "[^]*?"\n\nQuestion: /, '');
+  const title = (titleSource || 'Telegram conversation').substring(0, 60);
   const { data: conv } = await supabase
     .from('conversations')
     .insert({ user_id: profile.id, title })
