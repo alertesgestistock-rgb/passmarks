@@ -223,6 +223,16 @@ export default function AuthPage() {
         .ap-btn-primary:disabled { opacity: .6; cursor: not-allowed; box-shadow: none; }
         .ap-btn-primary:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(34, 197, 94, 0.35); brightness: 1.05; }
         .ap-btn-primary:not(:disabled):active { transform: translateY(1px); }
+
+        .ap-btn-telegram {
+          width: 100%; background: #229ED9; color: #FFFFFF; border: none;
+          border-radius: 12px; padding: 15px; font-size: 15px; font-weight: 700;
+          cursor: pointer; transition: all .2s ease; font-family: inherit; min-height: 52px;
+          box-shadow: 0 4px 15px rgba(34, 158, 217, 0.25);
+        }
+        .ap-btn-telegram:disabled { opacity: .6; cursor: not-allowed; box-shadow: none; }
+        .ap-btn-telegram:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(34, 158, 217, 0.4); background: #1E92CB; }
+        .ap-btn-telegram:not(:disabled):active { transform: translateY(1px); }
         
         .ap-error { border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.4; border: 1px solid transparent; }
         .ap-error--err { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); color: #FCA5A5; }
@@ -272,7 +282,7 @@ export default function AuthPage() {
               Welcome! Is this your first time on PassMark?
             </div>
             {telegramError && <div className="ap-error ap-error--err">{telegramError}</div>}
-            <button className="ap-btn-primary" onClick={handleContinueWithTelegram} disabled={telegramLoading} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <button className="ap-btn-telegram" onClick={handleContinueWithTelegram} disabled={telegramLoading} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               <Send size={16} /> {telegramLoading ? 'Connecting…' : 'Continue with Telegram'}
             </button>
             <button
@@ -373,10 +383,10 @@ export default function AuthPage() {
             {telegramError && <div className="ap-error ap-error--err" style={{ marginBottom: 10 }}>{telegramError}</div>}
             <button
               type="button"
-              className="ap-level-btn"
+              className="ap-btn-telegram"
               onClick={handleContinueWithTelegram}
               disabled={telegramLoading}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
             >
               <Send size={16} /> {telegramLoading ? 'Connecting…' : `${activeTab === 'signup' ? 'Sign up' : 'Sign in'} with Telegram`}
             </button>
