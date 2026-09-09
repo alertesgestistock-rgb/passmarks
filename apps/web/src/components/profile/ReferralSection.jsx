@@ -3,6 +3,9 @@ import { Gift, Copy, Check, Loader2, Users, AlertTriangle, Share2, Link, Shoppin
 import { supabase, getSessionSafe } from '@/lib/supabase';
 import { runMobileSafeRequest } from '@/lib/mobileRequest';
 import { useUser } from '@/contexts/UserContext';
+import { useTelegram } from '@/hooks/useTelegram';
+
+const TELEGRAM_BOT_USERNAME = 'passmark_app_bot';
 
 function timeAgo(dateStr) {
   const diffMs = Date.now() - new Date(dateStr).getTime();
@@ -16,6 +19,7 @@ function timeAgo(dateStr) {
 
 export default function ReferralSection() {
   const { user, updateTokenBalance } = useUser();
+  const { isTelegram, tg } = useTelegram();
 
   const [referralCode, setReferralCode] = useState(null);
   const [referralCount, setReferralCount] = useState(0);
@@ -89,8 +93,15 @@ export default function ReferralSection() {
     }
   };
 
+  // Inside Telegram, a t.me deep link opens straight into the Mini App
+  // (no browser hand-off) and carries the code via start_param — read by
+  // useTelegram.js on launch and merged into the same pm_ref_code flow the
+  // plain web ?ref= link already uses. Outside Telegram, the classic web
+  // link is still the right one to share.
   const referralLink = referralCode
-    ? `${window.location.origin}/auth?ref=${referralCode}`
+    ? isTelegram
+      ? `https://t.me/${TELEGRAM_BOT_USERNAME}/app?startapp=ref_${referralCode}`
+      : `${window.location.origin}/auth?ref=${referralCode}`
     : '';
 
   const handleCopy = async () => {
@@ -106,7 +117,17 @@ export default function ReferralSection() {
   };
 
   const handleShare = () => {
-    const text = `Join me on PassMark — the GCE AI Tutor! Sign up with my link and get 5 free tokens 🎓\n${referralLink}`;
+    const message = 'Join me on PassMark — the GCE AI Tutor! Sign up with my link and get 5 free tokens 🎓';
+    // Telegram's own share sheet (forward-to-chat picker), opened via the
+    // SDK — a plain navigator.share() inside the Mini App WebView has
+    // nowhere reliable to hand off to. openTelegramLink is the documented
+    // way to open a t.me URL (including /share/url) from inside a Mini App.
+    if (isTelegram && tg?.openTelegramLink) {
+      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(message)}`;
+      tg.openTelegramLink(shareUrl);
+      return;
+    }
+    const text = `${message}\n${referralLink}`;
     if (navigator.share) {
       navigator.share({ title: 'PassMark', text });
     } else {

@@ -82,7 +82,7 @@ serve(async (req) => {
       });
     }
 
-    const { initData, checkOnly } = await req.json();
+    const { initData, checkOnly, referralCode } = await req.json();
     if (!initData || typeof initData !== "string") {
       return new Response(JSON.stringify({ error: "Champ 'initData' requis." }), {
         status: 400,
@@ -176,6 +176,21 @@ serve(async (req) => {
       await admin
         .from("profiles")
         .upsert({ id: userId, telegram_id: telegramId, name: displayName }, { onConflict: "id" });
+
+      // Referral, only for a genuinely NEW account (this whole branch only
+      // runs when no profile was linked to this telegram_id yet) — never on
+      // a returning user's login. apply_referral itself is idempotent and
+      // guards self-referral / already-referred, so this can't double-credit
+      // even on a retried request.
+      if (typeof referralCode === "string" && /^[a-zA-Z0-9]{6}$/.test(referralCode)) {
+        const { error: referralErr } = await admin.rpc("apply_referral", {
+          p_code: referralCode,
+          p_referred_id: userId,
+        });
+        // Never fail the login over a bad/reused code — the account still
+        // needs to be created either way.
+        if (referralErr) console.warn("[telegram-login] apply_referral failed:", referralErr);
+      }
     }
 
     // Issue a one-time login token via the Admin API (magic-link machinery,

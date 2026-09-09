@@ -67,11 +67,23 @@ const checkTelegramLinked = async (initData) => {
 // to the normal auth flow.
 const signInWithTelegram = async (initData) => {
   try {
-    const { data, error } = await supabase.functions.invoke('telegram-login', { body: { initData } });
+    // Consumed here (not just read) — a referral link only ever counts once,
+    // matching AuthPage.jsx's own pm_ref_code lifecycle for the ?ref= web
+    // flow. The Edge Function only actually applies it when it's creating a
+    // brand-new account — see telegram-login/index.ts.
+    const referralCode = localStorage.getItem('pm_ref_code') || undefined;
+    const { data, error } = await supabase.functions.invoke('telegram-login', { body: { initData, referralCode } });
     if (error || !data?.token_hash || !data?.email) {
       console.warn('[UserContext] Telegram login failed:', error);
+      // Do NOT clear pm_ref_code here — a network/stale-bundle failure means
+      // the server may never have seen it (AuthPage's known WebView retry
+      // calls this again), so it must survive to be retried.
       return false;
     }
+    // The server was reached and processed the code (applied only if this
+    // was actually a new account — see telegram-login/index.ts) — safe to
+    // consume now regardless of what happens next.
+    if (referralCode) localStorage.removeItem('pm_ref_code');
     // token_hash (from admin.generateLink) is a self-contained credential —
     // it must be verified alone, NOT combined with email/token (that's the
     // separate 6-digit-OTP flow and mixing the two fails silently).
