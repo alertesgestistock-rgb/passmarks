@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link2, Loader2, Send, Users2 } from 'lucide-react';
+import { Link2, Loader2, Plus, Send, Trash2, Users2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -39,7 +39,7 @@ const EMPTY_FILTERS = { hasPhone: 'any', level: 'any', telegramLinked: 'any', mi
 export default function AdminBroadcastTab() {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
-  const [link, setLink] = useState('');
+  const [links, setLinks] = useState([]); // [{ label, url }, ...] — as many as needed
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [sendTelegram, setSendTelegram] = useState(false);
   const [previewCount, setPreviewCount] = useState(null);
@@ -72,17 +72,28 @@ export default function AdminBroadcastTab() {
 
   const updateFilter = (key, value) => setFilters((f) => ({ ...f, [key]: value }));
 
+  const addLink = () => setLinks((l) => [...l, { label: '', url: '' }]);
+  const updateLink = (index, key, value) => setLinks((l) => l.map((item, i) => (i === index ? { ...item, [key]: value } : item)));
+  const removeLink = (index) => setLinks((l) => l.filter((_, i) => i !== index));
+  const validLinks = links.filter((l) => l.url.trim());
+
   async function handleSend() {
     if (!title.trim() || !body.trim()) { toast.error('Title and message are both required.'); return; }
     if (!previewCount) { toast.error("No user matches this audience — nothing to send."); return; }
     setSending(true);
     try {
       const { data: json, error: invokeError } = await supabase.functions.invoke('admin-broadcast', {
-        body: { title: title.trim(), body: body.trim(), link: link.trim() || null, filters: toApiFilters(filters), sendTelegram },
+        body: {
+          title: title.trim(),
+          body: body.trim(),
+          links: validLinks.map((l) => ({ label: l.label.trim() || 'Open link', url: l.url.trim() })),
+          filters: toApiFilters(filters),
+          sendTelegram,
+        },
       });
       if (invokeError) throw new Error(json?.error || invokeError.message);
       toast.success(`Sent to ${json.recipient_count} user${json.recipient_count > 1 ? 's' : ''}${sendTelegram ? ` (${json.telegram_sent_count} via Telegram)` : ''}.`);
-      setTitle(''); setBody(''); setLink(''); setFilters(EMPTY_FILTERS); setSendTelegram(false);
+      setTitle(''); setBody(''); setLinks([]); setFilters(EMPTY_FILTERS); setSendTelegram(false);
       await loadHistory();
     } catch (err) {
       toast.error(err.message || 'Could not send this broadcast.');
@@ -98,12 +109,22 @@ export default function AdminBroadcastTab() {
         <CardContent className="space-y-4">
           <Field label="Title *"><Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. New past papers available" maxLength={100} /></Field>
           <Field label="Message *"><Textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="What do you want to tell them?" rows={3} maxLength={500} /></Field>
-          <Field label="Link (optional)">
-            <div className="relative">
-              <Link2 className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input className="pl-8" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://…" type="url" />
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Link buttons (optional, add as many as you want)</Label>
+              <Button type="button" variant="outline" size="sm" onClick={addLink} className="gap-1.5"><Plus className="h-3.5 w-3.5" />Add button</Button>
             </div>
-          </Field>
+            {links.map((l, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <Input value={l.label} onChange={(e) => updateLink(i, 'label', e.target.value)} placeholder="Button text, e.g. Buy tokens" className="flex-1" maxLength={40} />
+                <div className="relative flex-1">
+                  <Link2 className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input className="pl-8" value={l.url} onChange={(e) => updateLink(i, 'url', e.target.value)} placeholder="https://…" type="url" />
+                </div>
+                <Button type="button" variant="ghost" size="icon" onClick={() => removeLink(i)} className="shrink-0 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
+              </div>
+            ))}
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Field label="Phone number">
@@ -158,7 +179,13 @@ export default function AdminBroadcastTab() {
             <TableBody>
               {history.map((h) => (
                 <TableRow key={h.id}>
-                  <TableCell><p className="font-medium">{h.title}</p><p className="text-xs text-muted-foreground line-clamp-1">{h.body}</p>{h.link && <a href={h.link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline underline-offset-2">{h.link}</a>}</TableCell>
+                  <TableCell>
+                    <p className="font-medium">{h.title}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-1">{h.body}</p>
+                    {(h.links || []).map((l, i) => (
+                      <a key={i} href={l.url} target="_blank" rel="noopener noreferrer" className="block text-xs text-primary underline underline-offset-2">{l.label || l.url}</a>
+                    ))}
+                  </TableCell>
                   <TableCell className="text-right tabular-nums">{h.recipient_count}</TableCell>
                   <TableCell className="text-right tabular-nums">{h.telegram_sent_count}</TableCell>
                   <TableCell className="text-muted-foreground">{h.created_by_name || '—'}</TableCell>

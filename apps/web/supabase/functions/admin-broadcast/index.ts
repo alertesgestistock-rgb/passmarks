@@ -45,13 +45,17 @@ serve(async (req) => {
       });
     }
 
-    const { title, body, filters, sendTelegram, link } = await req.json();
+    const { title, body, filters, sendTelegram, links } = await req.json();
     if (!title || typeof title !== "string" || !body || typeof body !== "string") {
       return new Response(JSON.stringify({ error: "'title' and 'body' are required." }), {
         status: 400,
         headers: { ...dynamicCors, "Content-Type": "application/json" },
       });
     }
+    // links: [{ label: string, url: string }, ...] — as many as the admin added.
+    const linkButtons: { label: string; url: string }[] = Array.isArray(links)
+      ? links.filter((l) => l?.url && typeof l.url === "string")
+      : [];
 
     // Runs as the caller — admin_broadcast_notification() does its own
     // is_admin(auth.uid()) check and raises if the caller isn't one.
@@ -65,7 +69,7 @@ serve(async (req) => {
       p_body: body,
       p_filters: filters || {},
       p_send_telegram: Boolean(sendTelegram),
-      p_link: link || null,
+      p_links: linkButtons,
     });
 
     if (rpcError) {
@@ -84,9 +88,12 @@ serve(async (req) => {
         console.warn("[admin-broadcast] sendTelegram requested but TELEGRAM_BOT_TOKEN is missing — skipping Telegram delivery.");
       } else {
         const text = `📣 ${title}\n\n${body}`;
-        // Link goes on its own inline button rather than pasted into the
-        // text — cleaner in the chat, and Telegram opens it in one tap.
-        const buttons = link ? [[{ text: "🔗 Open link", url: link }]] : undefined;
+        // Each link becomes its own inline-keyboard row (its own label,
+        // stacked vertically) rather than pasted into the text — mirrors how
+        // the bot already renders multiple choices (see /history).
+        const buttons = linkButtons.length
+          ? linkButtons.map((l) => [{ text: l.label?.trim() || "🔗 Open link", url: l.url }])
+          : undefined;
         // Sequential with a small delay: Telegram allows ~30 msg/s overall,
         // ~1/s per chat — a broadcast to a few dozen users stays well under
         // that without needing real batching/backoff logic.

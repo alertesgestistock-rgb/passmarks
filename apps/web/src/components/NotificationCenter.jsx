@@ -34,12 +34,13 @@ export default function NotificationCenter({ navigate }) {
     setDetail(notif);
   };
 
-  const handleDetailAction = () => {
-    if (detail?.link) {
-      window.open(detail.link, '_blank', 'noopener,noreferrer');
-    } else if (detail?.action && navigate) {
-      navigate(detail.action);
-    }
+  const handleOpenLink = (url) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+    setDetail(null);
+  };
+
+  const handleOpenAction = () => {
+    if (detail?.action && navigate) navigate(detail.action);
     setDetail(null);
   };
 
@@ -133,14 +134,16 @@ export default function NotificationCenter({ navigate }) {
             </div>
           </DialogHeader>
           <p className="text-sm text-muted-foreground whitespace-pre-wrap">{detail?.body}</p>
-          {detail?.link && (
-            <p className="text-xs text-primary break-all">{detail.link}</p>
-          )}
-          {(detail?.link || detail?.action) && (
-            <DialogFooter>
-              <Button onClick={handleDetailAction} className="w-full sm:w-auto gap-2">
-                {detail?.link ? <>Open link <ExternalLink className="h-4 w-4" /></> : 'Open'}
-              </Button>
+          {(detail?.links?.length > 0 || detail?.action) && (
+            <DialogFooter className="flex-col sm:flex-col gap-2">
+              {(detail?.links || []).map((l, i) => (
+                <Button key={i} onClick={() => handleOpenLink(l.url)} className="w-full gap-2">
+                  {l.label || 'Open link'} <ExternalLink className="h-4 w-4" />
+                </Button>
+              ))}
+              {!detail?.links?.length && detail?.action && (
+                <Button onClick={handleOpenAction} className="w-full">Open</Button>
+              )}
             </DialogFooter>
           )}
         </DialogContent>

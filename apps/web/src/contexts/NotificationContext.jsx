@@ -24,7 +24,7 @@ const fromServerRow = (row) => ({
   read: Boolean(row.read_at),
   type: row.source === 'admin_broadcast' ? 'ADMIN_BROADCAST' : 'SERVER',
   action: row.action || null,
-  link: row.link || null,
+  links: Array.isArray(row.links) ? row.links : [],
 });
 
 export const NotificationProvider = ({ children }) => {
@@ -38,7 +38,7 @@ export const NotificationProvider = ({ children }) => {
     if (!user?.id) { setServerNotifications([]); return; }
     const { data, error } = await supabase
       .from('notifications')
-      .select('id, title, body, link, source, action, created_at, read_at')
+      .select('id, title, body, links, source, action, created_at, read_at')
       .order('created_at', { ascending: false })
       .limit(50);
     if (!error) setServerNotifications((data || []).map(fromServerRow));
