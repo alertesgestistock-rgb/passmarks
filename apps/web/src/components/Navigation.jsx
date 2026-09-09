@@ -5,6 +5,7 @@ import { Home, BookOpen, GraduationCap, User, Search, Settings, Sun, Moon, Calcu
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUser } from '@/contexts/UserContext';
+import { useTelegram } from '@/hooks/useTelegram';
 import InstallBanner from './InstallBanner';
 import NotificationCenter from './NotificationCenter';
 import Calculator from './Calculator';
@@ -85,6 +86,7 @@ function getInitials(name) {
 export function TopNav({ setActiveTab }) {
   const { user, tokenBalance } = useUser();
   const { theme, toggleTheme } = useTheme();
+  const { isTelegram } = useTelegram();
   const [showCalc, setShowCalc] = useState(false);
   const [showTokenShop, setShowTokenShop] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -156,8 +158,10 @@ export function TopNav({ setActiveTab }) {
             </button>
           )}
 
-          {/* PWA Install trigger button — visible only on browser (not installed yet) */}
-          {!isPWA && (
+          {/* PWA Install trigger button — visible only on browser (not installed
+              yet, and not inside the Telegram Mini App, where "install as an
+              app" makes no sense — Telegram's own WebView is already the app). */}
+          {!isPWA && !isTelegram && (
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('passmark_trigger_install'))}
               aria-label="Install app"
