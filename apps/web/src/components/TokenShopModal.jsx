@@ -112,7 +112,7 @@ export default function TokenShopModal({ onClose }) {
                 key={pkg.id}
                 className={cn(
                   'relative flex items-center gap-3.5 rounded-[14px] p-3.5 transition-all hover:-translate-y-0.5',
-                  'bg-slate-50 dark:bg-white/4',
+                  'bg-slate-50 dark:bg-[#26364B]',
                   pkg.is_popular
                     ? 'border-[1.5px]'
                     : 'border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'

@@ -51,19 +51,19 @@ export default function ProfileCard({ onEdit }) {
       <div className="absolute top-4 right-4 flex items-center gap-2">
         <button
           onClick={onEdit}
-          className="bg-slate-100 dark:bg-[#334155] text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white rounded-lg px-3 py-1.5 text-[12px] font-medium flex items-center gap-1.5 transition-colors scale-on-click"
+          className="bg-slate-100 dark:bg-[#334155] text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white rounded-lg px-4 py-2.5 text-[14px] font-medium flex items-center gap-1.5 transition-colors scale-on-click min-h-[40px]"
         >
-          <Edit2 size={12} /> Edit
+          <Edit2 size={15} /> Edit
         </button>
         <button
           onClick={handleLogout}
           disabled={loggingOut}
           title="Log out"
-          className="bg-slate-100 dark:bg-[#334155] text-slate-500 dark:text-[#94A3B8] hover:text-red-500 dark:hover:text-red-400 rounded-lg px-2.5 py-1.5 flex items-center transition-colors scale-on-click"
+          className="bg-slate-100 dark:bg-[#334155] text-slate-500 dark:text-[#94A3B8] hover:text-red-500 dark:hover:text-red-400 rounded-lg px-3 py-2.5 flex items-center justify-center transition-colors scale-on-click min-w-[40px] min-h-[40px]"
         >
           {loggingOut
-            ? <Loader2 size={12} className="animate-spin" />
-            : <LogOut size={12} />
+            ? <Loader2 size={15} className="animate-spin" />
+            : <LogOut size={15} />
           }
         </button>
       </div>
