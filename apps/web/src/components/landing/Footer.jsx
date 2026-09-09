@@ -2,9 +2,25 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
+import { useTelegram } from '@/hooks/useTelegram';
+
+const CONTACT_MESSAGE = 'Hello sir, I got your number from PassMark App';
+const WHATSAPP_URL = `https://wa.me/237683982584?text=${encodeURIComponent(CONTACT_MESSAGE)}`;
+const TELEGRAM_CONTACT_URL = `https://t.me/Luteinising8?text=${encodeURIComponent(CONTACT_MESSAGE)}`;
 
 export default function Footer() {
   const { t } = useTranslation();
+  // Outside Telegram, WhatsApp is the real contact channel. Inside the
+  // Telegram Mini App, a WhatsApp deep link can't open at all (WebView has no
+  // WhatsApp to hand off to) — swap it for a real Telegram contact instead.
+  const { isTelegram, tg } = useTelegram();
+
+  const openTelegramContact = () => {
+    // openTelegramLink is the SDK method for t.me links from inside a Mini
+    // App's WebView — a plain <a href> to t.me is unreliable there.
+    if (tg?.openTelegramLink) tg.openTelegramLink(TELEGRAM_CONTACT_URL);
+    else window.open(TELEGRAM_CONTACT_URL, '_blank', 'noopener,noreferrer');
+  };
 
   const navLinks = [
     { to: '/features', label: t('nav.features') },
@@ -51,17 +67,29 @@ export default function Footer() {
           <div className="flex flex-col gap-3 sm:items-end">
             <div className="flex flex-col gap-3 w-fit">
               <h4 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#64748B] mb-1">Contact</h4>
-              <a
-                href="https://wa.me/237683982584?text=Hello%20sir%2C%20I%20got%20your%20number%20from%20PassMark%20App"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-sm text-slate-650 hover:text-[#25D366] dark:text-[#94A3B8] dark:hover:text-[#25D366] transition-colors duration-150"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-[#25D366] shrink-0">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .1 5.392.1 11.951c0 2.096.546 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.95-5.392 11.953-11.95-.002-3.178-1.236-6.165-3.483-8.412z" />
-                </svg>
-                WhatsApp Support
-              </a>
+              {isTelegram ? (
+                <button
+                  onClick={openTelegramContact}
+                  className="flex items-center gap-2 text-sm text-slate-650 hover:text-[#229ED9] dark:text-[#94A3B8] dark:hover:text-[#229ED9] transition-colors duration-150 text-left"
+                >
+                  <svg width="14" height="14" viewBox="0 0 240 240" fill="currentColor" className="text-[#229ED9] shrink-0">
+                    <path d="M120 0C53.7 0 0 53.7 0 120s53.7 120 120 120 120-53.7 120-120S186.3 0 120 0zm54.7 82.5l-19.7 92.8c-1.5 6.6-5.4 8.2-10.9 5.1l-30.2-22.3-14.6 14c-1.6 1.6-3 3-6.1 3l2.2-30.9 56.2-50.8c2.4-2.2-.5-3.4-3.8-1.2l-69.5 43.8-29.9-9.4c-6.5-2-6.6-6.5 1.4-9.6l117-45.1c5.4-2 10.1 1.3 8.3 9.6z" />
+                  </svg>
+                  Telegram Support
+                </button>
+              ) : (
+                <a
+                  href={WHATSAPP_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm text-slate-650 hover:text-[#25D366] dark:text-[#94A3B8] dark:hover:text-[#25D366] transition-colors duration-150"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-[#25D366] shrink-0">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .1 5.392.1 11.951c0 2.096.546 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.95-5.392 11.953-11.95-.002-3.178-1.236-6.165-3.483-8.412z" />
+                  </svg>
+                  WhatsApp Support
+                </a>
+              )}
               <span className="text-xs text-slate-500 dark:text-[#64748B] mt-1">Yaoundé · Douala · Buea · Bamenda</span>
               <span className="text-xs text-slate-500 dark:text-[#64748B] self-start sm:self-end">Cameroon 🇨🇲</span>
             </div>
@@ -83,20 +111,36 @@ export default function Footer() {
 
       </div>
 
-      {/* Floating WhatsApp Action Button */}
-      <motion.a
-        href="https://wa.me/237683982584?text=Hello%20sir%2C%20I%20got%20your%20number%20from%20PassMark%20App"
-        target="_blank"
-        rel="noopener noreferrer"
-        whileHover={{ scale: 1.1, y: -2 }}
-        whileTap={{ scale: 0.95 }}
-        className="fixed bottom-5 right-5 w-[52px] h-[52px] rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-[0_8px_30px_rgba(37,211,102,0.4)] z-50"
-        aria-label={t('common.whatsapp_label')}
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .1 5.392.1 11.951c0 2.096.546 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.95-5.392 11.953-11.95-.002-3.178-1.236-6.165-3.483-8.412z" />
-        </svg>
-      </motion.a>
+      {/* Floating contact button — WhatsApp on the normal web, Telegram
+          contact when opened as a Telegram Mini App (a wa.me link has
+          nowhere to hand off to from inside Telegram's WebView). */}
+      {isTelegram ? (
+        <motion.button
+          onClick={openTelegramContact}
+          whileHover={{ scale: 1.1, y: -2 }}
+          whileTap={{ scale: 0.95 }}
+          className="fixed bottom-5 right-5 w-[52px] h-[52px] rounded-full bg-[#229ED9] text-white flex items-center justify-center shadow-[0_8px_30px_rgba(34,158,217,0.4)] z-50"
+          aria-label="Chat on Telegram"
+        >
+          <svg width="26" height="26" viewBox="0 0 240 240" fill="currentColor">
+            <path d="M120 0C53.7 0 0 53.7 0 120s53.7 120 120 120 120-53.7 120-120S186.3 0 120 0zm54.7 82.5l-19.7 92.8c-1.5 6.6-5.4 8.2-10.9 5.1l-30.2-22.3-14.6 14c-1.6 1.6-3 3-6.1 3l2.2-30.9 56.2-50.8c2.4-2.2-.5-3.4-3.8-1.2l-69.5 43.8-29.9-9.4c-6.5-2-6.6-6.5 1.4-9.6l117-45.1c5.4-2 10.1 1.3 8.3 9.6z" />
+          </svg>
+        </motion.button>
+      ) : (
+        <motion.a
+          href={WHATSAPP_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          whileHover={{ scale: 1.1, y: -2 }}
+          whileTap={{ scale: 0.95 }}
+          className="fixed bottom-5 right-5 w-[52px] h-[52px] rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-[0_8px_30px_rgba(37,211,102,0.4)] z-50"
+          aria-label={t('common.whatsapp_label')}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .1 5.392.1 11.951c0 2.096.546 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.95-5.392 11.953-11.95-.002-3.178-1.236-6.165-3.483-8.412z" />
+          </svg>
+        </motion.a>
+      )}
     </footer>
   );
 }
