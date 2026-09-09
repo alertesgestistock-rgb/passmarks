@@ -271,6 +271,8 @@ async function answerQuestion(
       { conversation_id: conversationId, role: 'user', content: storedUserText, content_type: 'text' },
       { conversation_id: conversationId, role: 'assistant', content: result.text, content_type: 'text' },
     ]);
+    // Touch the row so /history keeps ordering by most recent activity. The
+    // conversations_updated_at BEFORE UPDATE trigger sets the timestamp itself.
     await supabase.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', conversationId);
 
     await sendMessage(botToken, chatId, result.text);

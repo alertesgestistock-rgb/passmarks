@@ -139,10 +139,18 @@ serve(async (req) => {
       // No profile linked yet — create the Auth user (idempotent: if the
       // synthetic email already exists from a previous partial run, fetch it
       // instead of failing).
+      // `name` matters here: the on_auth_user_created trigger (handle_new_user)
+      // seeds public.profiles from raw_user_meta_data, so without it the profile
+      // is created with an empty name and only fixed by the upsert below.
       const { data: created, error: createErr } = await admin.auth.admin.createUser({
         email: syntheticEmail,
         email_confirm: true,
-        user_metadata: { telegram_id: telegramId, telegram_username: tgUser.username ?? null, provider: "telegram" },
+        user_metadata: {
+          name: displayName,
+          telegram_id: telegramId,
+          telegram_username: tgUser.username ?? null,
+          provider: "telegram",
+        },
       });
 
       if (createErr) {

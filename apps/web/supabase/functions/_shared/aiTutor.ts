@@ -80,13 +80,22 @@ function toOpenAIMessages(messages: TutorMessage[]) {
   return result;
 }
 
-/** Rolling-minute cap on billed AI actions, shared across web and bot. */
+/**
+ * Rolling-minute cap on billed AI actions, shared across web and bot.
+ *
+ * Only debits count: token_transactions also records credits (signup_bonus,
+ * purchase, referral and onboarding bonuses), and those must not eat into a
+ * student's question allowance — someone who just topped up would otherwise
+ * start their next question already one slot down. Debits are negative
+ * amounts, credits positive.
+ */
 export async function isRateLimited(supabase: any, userId: string): Promise<boolean> {
   const oneMinuteAgo = new Date(Date.now() - 60_000).toISOString();
   const { count, error } = await supabase
     .from('token_transactions')
     .select('id', { count: 'exact', head: true })
     .eq('user_id', userId)
+    .lt('amount', 0)
     .gte('created_at', oneMinuteAgo);
 
   if (error) {
