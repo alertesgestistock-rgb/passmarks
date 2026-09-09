@@ -97,9 +97,14 @@ export default function AuthPage() {
 
   const handleContinueWithTelegram = async () => {
     setTelegramLoading(true); setTelegramError('');
-    const ok = await continueWithTelegram();
+    let ok = await continueWithTelegram();
+    // Telegram's WebView sometimes serves a stale cached bundle right after a
+    // deploy, causing the very first attempt to silently fail — a transparent
+    // single retry clears this for most users instead of forcing them to
+    // notice an error and tap the button again themselves.
+    if (!ok) ok = await continueWithTelegram();
     setTelegramLoading(false);
-    if (!ok) { setTelegramError("Couldn't sign in with Telegram. Please try again."); return; }
+    if (!ok) { setTelegramError('Connection interrupted — please try again.'); return; }
     navigate('/app');
   };
 
