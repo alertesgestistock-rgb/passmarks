@@ -7,11 +7,14 @@
 // for the web app.
 
 import { SYSTEM_PROMPT } from '../chat/systemPrompt.ts';
+import { ACTIVE_MODEL } from './modelConfig.ts';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const OPENROUTER_TRANSCRIPTION_URL = 'https://openrouter.ai/api/v1/audio/transcriptions';
-const MODEL = 'anthropic/claude-sonnet-4-5';
-const MODEL_PRICING_USD_PER_MTOK = { input: 3, output: 15 };
+// Modèle et tarif partagés avec chat/index.ts et quiz/index.ts — voir
+// _shared/modelConfig.ts pour le point de bascule unique.
+const MODEL = ACTIVE_MODEL.id;
+const MODEL_PRICING_USD_PER_MTOK = ACTIVE_MODEL.pricing;
 
 // Speech-to-text for voice messages/audio files sent to the bot. Whisper
 // Large V3 Turbo on OpenRouter — reuses the same OPENROUTER_API_KEY secret
@@ -111,8 +114,17 @@ function detectCost(messages: TutorMessage[]): { cost: number; actionType: strin
 }
 
 function toOpenAIMessages(messages: TutorMessage[]) {
+  // cache_control n'est fiable que sur certains providers (cf. modelConfig.ts)
+  // — désactivé plutôt qu'ignoré silencieusement selon le provider tiré.
+  const useCache = ACTIVE_MODEL.supportsCacheControl;
+
   const result: any[] = [
-    { role: 'system', content: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }] },
+    {
+      role: 'system',
+      content: useCache
+        ? [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }]
+        : SYSTEM_PROMPT,
+    },
   ];
   for (const msg of messages as any[]) {
     if (typeof msg.content === 'string') {
@@ -128,6 +140,8 @@ function toOpenAIMessages(messages: TutorMessage[]) {
       result.push({ role: msg.role, content: parts });
     }
   }
+
+  if (!useCache) return result;
 
   // Cache breakpoint on the last history message, so prior turns are read from
   // Anthropic's cache (~10% of the price) instead of being re-billed in full.
@@ -182,6 +196,11 @@ export async function askTutor(
   const apiKey = Deno.env.get('OPENROUTER_API_KEY')?.trim();
   if (!apiKey) return { ok: false, reason: 'not_configured' };
 
+  // Traçabilité : voir la même ligne dans chat/index.ts. Le bot n'a pas de
+  // choix par élève (ACTIVE_MODEL est le même pour tout le monde ici), mais
+  // ça reste utile pour confirmer quel modèle tourne réellement en prod.
+  console.log('[aiTutor] model:', MODEL, 'user:', userId);
+
   if (await isRateLimited(supabase, userId)) return { ok: false, reason: 'rate_limited' };
 
   const { cost, actionType } = voiceOverride
@@ -211,7 +230,8 @@ export async function askTutor(
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 4000,
+        max_tokens: ACTIVE_MODEL.maxTokens,
+        ...(ACTIVE_MODEL.reasoningEffort ? { reasoning: { effort: ACTIVE_MODEL.reasoningEffort } } : {}),
         messages: toOpenAIMessages(messages),
       }),
       signal: ac.signal,

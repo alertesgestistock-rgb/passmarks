@@ -4,13 +4,16 @@ import {
   X, ArrowLeft, Plus, MessageSquare, Pencil, Check, PanelLeftClose, PanelLeftOpen,
   Download,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, getPreferredAiModel } from '@/lib/utils';
 import { useUser } from '@/contexts/UserContext';
 import { supabase, getSessionSafe } from '@/lib/supabase';
 import { InsufficientTokensError } from '@/lib/apiServerClient';
 import InsufficientTokensAlert from '@/components/InsufficientTokensAlert';
 import TokenShopModal from '@/components/TokenShopModal';
 import { downloadMessageAsPDF } from '@/lib/generatePDF';
+import VoiceInputButton from '@/components/voice/VoiceInputButton';
+import katex from 'katex';
+import 'katex/contrib/mhchem'; // enregistre \ce{} / \pu{} pour les équations chimiques
 
 
 const SUGGESTED_QUESTIONS = {
@@ -24,6 +27,7 @@ const SUGGESTED_QUESTIONS = {
 function getSuggestedQuestion(subject) {
   return SUGGESTED_QUESTIONS[subject] || `Help me with ${subject}`;
 }
+
 
 function buildWelcome(user) {
   return {
@@ -50,12 +54,44 @@ function formatRelativeDate(dateStr) {
 // ─────────────────────────────────────────────────────────────
 // Markdown renderer (léger, sans dépendance)
 // ─────────────────────────────────────────────────────────────
+function renderMath(tex, displayMode, key) {
+  let html;
+  try {
+    html = katex.renderToString(tex, { throwOnError: false, displayMode, strict: false });
+  } catch {
+    // Formule invalide (rare) — on retombe sur le texte brut plutôt que de casser le message.
+    return displayMode
+      ? <div key={key} className="font-mono text-[13px]">{`$$${tex}$$`}</div>
+      : <span key={key} className="font-mono text-[13px]">{`$${tex}$`}</span>;
+  }
+  return displayMode
+    ? <div key={key} className="my-1 overflow-x-auto" dangerouslySetInnerHTML={{ __html: html }} />
+    : <span key={key} dangerouslySetInnerHTML={{ __html: html }} />;
+}
+
+const MATH_MARK = '';
+// $$...$$ / \[...\] (bloc, peut s'étendre sur plusieurs lignes) et $...$ / \(...\) (inline).
+const MATH_SOURCE_REGEX = /\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]|\$((?:[^$\n]|\\\$)+?)\$|\\\(([\s\S]+?)\\\)/g;
+const MATH_MARK_REGEX = new RegExp(`${MATH_MARK}(\\d+)${MATH_MARK}`, 'g');
+
 function MarkdownText({ content, streaming }) {
-  const lines = content.split('\n');
+  // Extrait les formules LaTeX AVANT de découper en lignes — sinon une formule
+  // en bloc ($$...$$) qui s'étend sur plusieurs lignes serait coupée en morceaux.
+  // Chaque formule est remplacée par un marqueur ("<index>") réinjecté
+  // plus bas via renderMath(), le reste du texte suit le parsing markdown normal.
+  const mathBlocks = [];
+  const preprocessed = content.replace(MATH_SOURCE_REGEX, (_, block1, block2, inline1, inline2) => {
+    const displayMode = block1 !== undefined || block2 !== undefined;
+    const tex = block1 ?? block2 ?? inline1 ?? inline2;
+    mathBlocks.push({ tex, displayMode });
+    return `${MATH_MARK}${mathBlocks.length - 1}${MATH_MARK}`;
+  });
+
+  const lines = preprocessed.split('\n');
   const elements = [];
   let i = 0;
 
-  const renderInline = (text) => {
+  const renderText = (text) => {
     const parts = [];
     const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/g;
     let last = 0, m;
@@ -67,6 +103,22 @@ function MarkdownText({ content, streaming }) {
       last = m.index + m[0].length;
     }
     if (last < text.length) parts.push(text.slice(last));
+    return parts;
+  };
+
+  // Réinjecte les formules (marqueurs posés ci-dessus) et n'applique gras/italique/code
+  // qu'au texte restant — sinon des symboles comme * ou _ dans une formule casseraient le rendu.
+  const renderInline = (text) => {
+    const parts = [];
+    let last = 0, m;
+    MATH_MARK_REGEX.lastIndex = 0;
+    while ((m = MATH_MARK_REGEX.exec(text)) !== null) {
+      if (m.index > last) parts.push(...renderText(text.slice(last, m.index)));
+      const block = mathBlocks[Number(m[1])];
+      if (block) parts.push(renderMath(block.tex, block.displayMode, `math-${m[1]}`));
+      last = m.index + m[0].length;
+    }
+    if (last < text.length) parts.push(...renderText(text.slice(last)));
     return parts;
   };
 
@@ -114,6 +166,7 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
 
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [input, setInput] = useState('');
+  const [voiceInterim, setVoiceInterim] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [pendingImage, setPendingImage] = useState(null);
   const [pendingPdf, setPendingPdf] = useState(null); // { name, text }
@@ -411,7 +464,7 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
           'Content-Type': 'application/json',
           ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
         },
-        body: JSON.stringify({ messages: requestMessages, ...pdfContext }),
+        body: JSON.stringify({ messages: requestMessages, aiModel: getPreferredAiModel(), ...pdfContext }),
         signal: abortCtrl.signal,
       });
 
@@ -486,7 +539,7 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
               'Content-Type': 'application/json',
               ...(resumedSession?.access_token ? { Authorization: `Bearer ${resumedSession.access_token}` } : {}),
             },
-            body: JSON.stringify({ messages: continueMessages }),
+            body: JSON.stringify({ messages: continueMessages, aiModel: getPreferredAiModel() }),
             signal: abortCtrl.signal,
           });
           if (!res2.ok) return;
@@ -803,6 +856,13 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
         </div>
       )}
 
+      {/* Voice dictation live preview — shown only while listening */}
+      {voiceInterim && (
+        <p className="shrink-0 px-3 pb-1 text-[13px] italic text-slate-400 dark:text-[#64748B] truncate">
+          {voiceInterim}
+        </p>
+      )}
+
       {/* Input Bar */}
       <div className="shrink-0 sticky bottom-0 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 rounded-2xl p-2 flex items-center gap-2">
         <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
@@ -815,6 +875,14 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
           className="w-[40px] h-[40px] rounded-xl flex items-center justify-center text-slate-400 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-[#334155] transition-colors shrink-0 disabled:opacity-40">
           <FileText size={20} />
         </button>
+        <VoiceInputButton
+          disabled={isLoading || isOffline}
+          onInterim={setVoiceInterim}
+          onResult={(text) => {
+            setVoiceInterim('');
+            setInput(prev => prev.trim() ? `${prev.trim()} ${text}` : text);
+          }}
+        />
         <input
           type="text" value={input}
           onChange={(e) => setInput(e.target.value)}

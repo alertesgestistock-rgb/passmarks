@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { ArrowLeft, Sparkles, AlertCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, getPreferredAiModel } from '@/lib/utils';
 import { InsufficientTokensError } from '@/lib/apiServerClient';
 import { supabase, getSessionSafe } from '@/lib/supabase';
 import { useUser } from '@/contexts/UserContext';
@@ -22,6 +22,14 @@ export default function QuizSetupScreen({ navigate, viewState }) {
   const [noTokens, setNoTokens] = useState(false);
   const [showTokenShop, setShowTokenShop] = useState(false);
 
+  // Mirrors reserveForCount() in supabase/functions/quiz/index.ts — same base
+  // tiers, same 0.7x multiplier for 'fast' (Gemini, cheaper) — purely for
+  // display, the edge function computes the real, authoritative reserve.
+  const baseTokens = numQuestions <= 5 ? 1 : numQuestions <= 10 ? 2 : 3;
+  const estimatedTokens = getPreferredAiModel() === 'fast'
+    ? Math.max(1, Math.round(baseTokens * 0.7))
+    : baseTokens;
+
   const handleGenerate = async () => {
     setIsLoading(true);
     setError(null);
@@ -38,7 +46,7 @@ export default function QuizSetupScreen({ navigate, viewState }) {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session?.access_token}`,
         },
-        body: JSON.stringify({ subject, difficulty: level, count: numQuestions }),
+        body: JSON.stringify({ subject, difficulty: level, count: numQuestions, aiModel: getPreferredAiModel() }),
       });
 
       if (res.status === 402) {
@@ -167,7 +175,7 @@ export default function QuizSetupScreen({ navigate, viewState }) {
           {isLoading ? (
             <div className="w-5 h-5 border-2 border-[#052e16] border-t-transparent rounded-full animate-spin" />
           ) : (
-            <>Generate Quiz <Sparkles size={18} /><span className="text-[13px] opacity-70 font-medium ml-1">(~{numQuestions <= 5 ? 1 : numQuestions <= 10 ? 2 : 3} token{numQuestions <= 5 ? '' : 's'})</span></>
+            <>Generate Quiz <Sparkles size={18} /><span className="text-[13px] opacity-70 font-medium ml-1">(~{estimatedTokens} token{estimatedTokens === 1 ? '' : 's'})</span></>
           )}
         </button>
       </div>

@@ -2,17 +2,9 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 import { getCorsHeaders } from './cors.ts';
 import { SYSTEM_PROMPT } from './systemPrompt.ts';
+import { getFloor, resolveModel, type ModelConfig } from '../_shared/modelConfig.ts';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const MODEL = 'anthropic/claude-sonnet-4-5';
-
-// Prix réel Anthropic (repris de Raconty, qui utilise le même modèle) — $/1M tokens.
-// Sert à calculer le vrai coût de chaque appel à partir de usage.prompt_tokens /
-// usage.completion_tokens renvoyés par OpenRouter, au lieu du forfait fixe (1/2/4)
-// qui ne reflète pas la vraie taille du message. Le forfait reste utilisé comme
-// réserve prudente AVANT l'appel (voir detectCost plus bas) ; la vraie facturation
-// se fait APRÈS, via settle_ai_usage_cost (cf. migration 013_real_usage_billing.sql).
-const MODEL_PRICING_USD_PER_MTOK = { input: 3, output: 15 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -23,8 +15,14 @@ function jsonError(corsHeaders: Record<string, string>, message: string, status:
   });
 }
 
-function detectCost(messages: unknown[], hasPdfPath = false): { cost: number; actionType: string } {
-  if (hasPdfPath) return { cost: 4, actionType: 'pdf' };
+// Le modèle est résolu par requête (choix de l'élève dans Settings, envoyé
+// comme `aiModel` dans le corps — cf. resolveModel() qui ne fait confiance
+// qu'à 'precise'/'fast', jamais à un id de modèle arbitraire). Les planchers
+// PDF/image/suivi-de-contexte sont ajustés au coût relatif du modèle choisi
+// via getFloor() — un message texte simple reste sans plancher (0), la
+// facturation réelle (settle_ai_usage_cost) fait tout le travail.
+function detectCost(model: ModelConfig, messages: unknown[], hasPdfPath = false): { cost: number; actionType: string } {
+  if (hasPdfPath) return { cost: getFloor(model, 'pdf'), actionType: 'pdf' };
 
   const lastUser = [...messages].reverse().find((m: any) => m.role === 'user') as any;
 
@@ -32,11 +30,11 @@ function detectCost(messages: unknown[], hasPdfPath = false): { cost: number; ac
   const hasVision =
     Array.isArray(lastUser?.content) &&
     lastUser.content.some((p: any) => p.type === 'image' || p.type === 'image_url');
-  if (hasVision) return { cost: 4, actionType: 'image' };
+  if (hasVision) return { cost: getFloor(model, 'image'), actionType: 'image' };
 
   // PDF in last message
   const text = typeof lastUser?.content === 'string' ? lastUser.content : '';
-  if (text.startsWith('[PDF:')) return { cost: 4, actionType: 'pdf' };
+  if (text.startsWith('[PDF:')) return { cost: getFloor(model, 'pdf'), actionType: 'pdf' };
 
   // Follow-up in a conversation with PDF/image context
   const hasPdfContext = (messages as any[]).some((m: any) => {
@@ -45,7 +43,7 @@ function detectCost(messages: unknown[], hasPdfPath = false): { cost: number; ac
     if (Array.isArray(m.content) && m.content.some((p: any) => p.type === 'image' || p.type === 'image_url')) return true;
     return false;
   });
-  if (hasPdfContext) return { cost: 2, actionType: 'message_with_context' };
+  if (hasPdfContext) return { cost: getFloor(model, 'message_with_context'), actionType: 'message_with_context' };
 
   return { cost: 1, actionType: 'message' };
 }
@@ -60,11 +58,19 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
-function toOpenAIMessages(messages: unknown[]) {
+function toOpenAIMessages(model: ModelConfig, messages: unknown[]) {
+  // cache_control (breakpoint de cache prompt façon Anthropic) n'est fiable
+  // que sur certains providers (cf. modelConfig.ts) — on ne le pose pas du
+  // tout pour un modèle qui ne le supporte pas plutôt que d'envoyer un champ
+  // silencieusement ignoré selon le provider tiré par OpenRouter.
+  const useCache = model.supportsCacheControl;
+
   const result: any[] = [
     {
       role: 'system',
-      content: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
+      content: useCache
+        ? [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }]
+        : SYSTEM_PROMPT,
     },
   ];
   for (const msg of messages as any[]) {
@@ -84,6 +90,8 @@ function toOpenAIMessages(messages: unknown[]) {
       result.push({ role: msg.role, content: parts });
     }
   }
+
+  if (!useCache) return result;
 
   // Cache breakpoint sur le dernier message de l'HISTORIQUE (donc juste avant le
   // nouveau message utilisateur, toujours le dernier élément de `result`) — tout
@@ -134,13 +142,21 @@ serve(async (req: Request) => {
   let body: any;
   try { body = await req.json(); } catch { return jsonError(cors, 'Invalid JSON body', 400); }
 
-  const { messages, pdfPath, currentPage } = body;
+  const { messages, pdfPath, currentPage, aiModel } = body;
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return jsonError(cors, 'messages must be a non-empty array', 400);
   }
 
+  // Choix de l'élève dans Settings ('precise' par défaut) — resolveModel()
+  // ignore toute valeur qui n'est pas une des deux clés connues.
+  const model = resolveModel(aiModel);
+  // Traçabilité : rien d'autre (DB, transactions) ne conserve quel modèle a
+  // servi un message donné — sans cette ligne, impossible de vérifier après
+  // coup si le choix Fast/Precise a bien été respecté pour un utilisateur.
+  console.log('[chat] model:', model.id, 'user:', user.id);
+
   // ── Vérif solde (lecture seule — pas de débit avant que l'IA réponde) ─────
-  const { cost, actionType } = detectCost(messages, !!pdfPath);
+  const { cost, actionType } = detectCost(model, messages, !!pdfPath);
   const { data: wallet } = await supabase
     .from('token_wallets')
     .select('balance')
@@ -213,15 +229,20 @@ serve(async (req: Request) => {
         'X-Title': 'PassMark AI Tutor',
       },
       body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 4000,
+        model: model.id,
+        max_tokens: model.maxTokens,
+        // Effort de raisonnement (Gemini) — ses tokens sont facturés comme
+        // de la sortie, donc capturés par le calcul de coût réel plus bas
+        // sans changement nécessaire côté facturation. Absent pour un modèle
+        // qui n'en a pas besoin (ex. Claude).
+        ...(model.reasoningEffort ? { reasoning: { effort: model.reasoningEffort } } : {}),
         stream: true,
         // Demande à OpenRouter d'envoyer un dernier chunk avec le vrai usage
         // (prompt_tokens/completion_tokens) juste avant [DONE] — nécessaire pour
         // facturer au coût réel au lieu du forfait. Voir doc OpenRouter streaming :
         // https://openrouter.ai/docs/api_reference/streaming
         stream_options: { include_usage: true },
-        messages: toOpenAIMessages(finalMessages),
+        messages: toOpenAIMessages(model, finalMessages),
       }),
       signal: ac.signal,
     });
@@ -263,8 +284,8 @@ serve(async (req: Request) => {
         let settleResult: { data: unknown; error: unknown } | null = null;
         if (usage) {
           const providerCostUsd =
-            (usage.prompt_tokens * MODEL_PRICING_USD_PER_MTOK.input +
-              usage.completion_tokens * MODEL_PRICING_USD_PER_MTOK.output) / 1_000_000;
+            (usage.prompt_tokens * model.pricing.input +
+              usage.completion_tokens * model.pricing.output) / 1_000_000;
           // Plancher conservé pour pdf/image/message_with_context (paiement déjà
           // réservé sur cette base) ; laissé à 0 pour un message texte simple afin
           // que l'accumulateur de reliquat joue pleinement son rôle.

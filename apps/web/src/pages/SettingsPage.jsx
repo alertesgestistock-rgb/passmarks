@@ -13,6 +13,12 @@ export default function SettingsPage({ navigate }) {
   const [settings, setSettings] = useState({
     dailyGoal: '30 min',
     quizDifficulty: 'Medium',
+    // 'precise' (Claude) or 'fast' (Gemini, cheaper) — sent as `aiModel` on
+    // every /chat and /quiz request (see AITutorPage.jsx, QuizSetupScreen.jsx).
+    // The edge functions never trust anything else than these two keys
+    // (resolveModel() in _shared/modelConfig.ts), so this is safe to read
+    // straight from localStorage.
+    aiModel: 'precise',
     dailyReminder: true,
     reminderTime: '19:00',
     examAlerts: true,
@@ -126,12 +132,27 @@ export default function SettingsPage({ navigate }) {
               </div>
             </div>
 
-            <div className="p-3">
+            <div className="p-3 border-b border-slate-100 dark:border-[#334155]/50">
               <label className="block text-[14px] font-medium text-slate-800 dark:text-[#F1F5F9] mb-3">Quiz difficulty</label>
               <div className="flex gap-2">
                 {['Easy', 'Medium', 'Hard'].map(opt => (
                   <Pill key={opt} active={settings.quizDifficulty === opt} onClick={() => updateSetting('quizDifficulty', opt)}>
                     {opt}
+                  </Pill>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-3">
+              <label className="block text-[14px] font-medium text-slate-800 dark:text-[#F1F5F9] mb-1">AI Tutor speed</label>
+              <p className="text-[12px] text-slate-400 dark:text-[#64748B] mb-3">Fast uses fewer tokens per question. Precise gives more in-depth answers.</p>
+              <div className="flex gap-2">
+                {[
+                  { key: 'fast', label: 'Fast' },
+                  { key: 'precise', label: 'Precise' },
+                ].map(opt => (
+                  <Pill key={opt.key} active={settings.aiModel === opt.key} onClick={() => updateSetting('aiModel', opt.key)}>
+                    {opt.label}
                   </Pill>
                 ))}
               </div>

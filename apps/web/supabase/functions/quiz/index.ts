@@ -1,20 +1,19 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 import { getCorsHeaders } from './cors.ts';
+import { resolveModel, type ModelConfig } from '../_shared/modelConfig.ts';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const MODEL = 'anthropic/claude-sonnet-4-5';
 const ALLOWED_COUNTS = new Set([5, 10, 15]);
 
-// $/1M tokens — mêmes tarifs que chat/index.ts (même modèle).
-const MODEL_PRICING_USD_PER_MTOK = { input: 3, output: 15 };
-
 // Réserve prudente AVANT l'appel (l'IA n'a pas encore répondu) — proportionnelle
-// au nombre de questions demandées. La vraie facturation se fait APRÈS, au coût
-// réel (usage.prompt_tokens/completion_tokens renvoyés par OpenRouter), via
+// au nombre de questions demandées ET au coût relatif du modèle choisi (via
+// costMultiplier). La vraie facturation se fait APRÈS, au coût réel
+// (usage.prompt_tokens/completion_tokens renvoyés par OpenRouter), via
 // settle_ai_usage_cost — cf. migration 013_real_usage_billing.sql.
-function reserveForCount(count: number): number {
-  return count <= 5 ? 1 : count <= 10 ? 2 : 3;
+function reserveForCount(model: ModelConfig, count: number): number {
+  const base = count <= 5 ? 1 : count <= 10 ? 2 : 3;
+  return Math.max(1, Math.round(base * model.costMultiplier));
 }
 
 function jsonError(cors: Record<string, string>, message: string, status: number, extra = {}) {
@@ -52,13 +51,19 @@ serve(async (req: Request) => {
   let body: any;
   try { body = await req.json(); } catch { return jsonError(cors, 'Invalid JSON body', 400); }
 
-  const { subject, difficulty, count } = body;
+  const { subject, difficulty, count, aiModel } = body;
   if (!subject || !difficulty || !ALLOWED_COUNTS.has(count)) {
     return jsonError(cors, 'Invalid request parameters', 400);
   }
 
+  // Choix de l'élève dans Settings ('precise' par défaut) — resolveModel()
+  // ignore toute valeur qui n'est pas une des deux clés connues.
+  const model = resolveModel(aiModel);
+  // Traçabilité : voir la même ligne dans chat/index.ts.
+  console.log('[quiz] model:', model.id, 'user:', user.id);
+
   // ── Vérif solde (lecture seule — pas de débit avant que l'IA réponde) ─────
-  const reserve = reserveForCount(count);
+  const reserve = reserveForCount(model, count);
   const { data: wallet } = await supabase
     .from('token_wallets')
     .select('balance')
@@ -81,8 +86,14 @@ serve(async (req: Request) => {
         'X-Title': 'PassMark Quiz',
       },
       body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 2000,
+        model: model.id,
+        // 2000 suffit pour le JSON de questions avec Claude (pas de
+        // raisonnement séparé). Pour un modèle à raisonnement obligatoire
+        // (ex. Gemini), les tokens de réflexion consomment ce même budget
+        // avant le JSON — on prend le plus large des deux pour ne pas
+        // tronquer la sortie.
+        max_tokens: Math.max(2000, model.maxTokens),
+        ...(model.reasoningEffort ? { reasoning: { effort: model.reasoningEffort } } : {}),
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `Generate ${count} ${difficulty} level ${subject} questions in the specified JSON format.` },
@@ -118,11 +129,11 @@ serve(async (req: Request) => {
     // Réponse reçue mais invalide — l'appel a quand même coûté un vrai $ chez
     // OpenRouter, donc on facture quand même au coût réel avant de renvoyer l'erreur.
     console.error('[quiz] failed to parse questions:', (err as Error).message, 'raw content:', JSON.stringify(data?.choices?.[0]?.message?.content));
-    await settleQuizCost(supabase, user.id, data?.usage, reserve).catch(() => {});
+    await settleQuizCost(supabase, user.id, model, data?.usage, reserve).catch(() => {});
     return jsonError(cors, 'Could not generate quiz. Please try again.', 502);
   }
 
-  const balanceAfter = await settleQuizCost(supabase, user.id, data?.usage, reserve);
+  const balanceAfter = await settleQuizCost(supabase, user.id, model, data?.usage, reserve);
 
   return new Response(JSON.stringify({ questions, balance_after: balanceAfter }), {
     status: 200,
@@ -133,6 +144,7 @@ serve(async (req: Request) => {
 async function settleQuizCost(
   supabase: ReturnType<typeof createClient>,
   userId: string,
+  model: ModelConfig,
   usage: { prompt_tokens?: number; completion_tokens?: number } | undefined,
   reserve: number,
 ): Promise<number | null> {
@@ -141,7 +153,7 @@ async function settleQuizCost(
 
   if (promptTokens > 0 || completionTokens > 0) {
     const providerCostUsd =
-      (promptTokens * MODEL_PRICING_USD_PER_MTOK.input + completionTokens * MODEL_PRICING_USD_PER_MTOK.output) / 1_000_000;
+      (promptTokens * model.pricing.input + completionTokens * model.pricing.output) / 1_000_000;
     const { data, error } = await supabase.rpc('settle_ai_usage_cost', {
       p_user_id: userId,
       p_provider_cost_usd: providerCostUsd,
