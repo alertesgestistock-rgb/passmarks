@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { UserProvider, useUser } from './contexts/UserContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -11,6 +11,10 @@ import FeaturesPage from './pages/FeaturesPage';
 import HowItWorksPage from './pages/HowItWorksPage';
 import AuthPage from './pages/AuthPage';
 import Dashboard from './pages/Dashboard';
+import AdminRoute from '@/components/AdminRoute';
+
+// Admin : chargé uniquement si quelqu'un navigue vers /boss (jamais lié dans un menu).
+const AdminPage = lazy(() => import('./pages/AdminPage'));
 
 /* Protected route — redirects to / if not authenticated */
 function ProtectedRoute({ children }) {
@@ -70,6 +74,23 @@ function AppRoutes() {
       {/* Legacy redirects from old HTML files */}
       <Route path="/landing.html" element={<Navigate to="/" replace />} />
       <Route path="/pricing.html" element={<Navigate to="/pricing" replace />} />
+
+      {/* Admin : jamais liée dans un menu, protégée par rôle (voir AdminRoute).
+          Un utilisateur normal qui devine l'URL est renvoyé vers /app. */}
+      <Route
+        path="/boss"
+        element={
+          <AdminRoute>
+            <Suspense fallback={
+              <div className="min-h-screen bg-[#0F172A] flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-[#22C55E] border-t-transparent rounded-full animate-spin" />
+              </div>
+            }>
+              <AdminPage />
+            </Suspense>
+          </AdminRoute>
+        }
+      />
 
       {/* 404 → landing */}
       <Route path="*" element={<Navigate to="/" replace />} />
