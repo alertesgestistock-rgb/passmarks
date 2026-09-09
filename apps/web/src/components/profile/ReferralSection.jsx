@@ -29,6 +29,7 @@ export default function ReferralSection() {
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedTelegramLink, setCopiedTelegramLink] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -93,15 +94,18 @@ export default function ReferralSection() {
     }
   };
 
-  // Inside Telegram, a t.me deep link opens straight into the Mini App
-  // (no browser hand-off) and carries the code via start_param — read by
-  // useTelegram.js on launch and merged into the same pm_ref_code flow the
-  // plain web ?ref= link already uses. Outside Telegram, the classic web
-  // link is still the right one to share.
   const referralLink = referralCode
-    ? isTelegram
-      ? `https://t.me/${TELEGRAM_BOT_USERNAME}/app?startapp=ref_${referralCode}`
-      : `${window.location.origin}/auth?ref=${referralCode}`
+    ? `${window.location.origin}/auth?ref=${referralCode}`
+    : '';
+  // A t.me deep link opens straight into the Mini App (no browser hand-off)
+  // and carries the code via start_param — read by useTelegram.js on launch
+  // and merged into the same pm_ref_code flow the plain web link already
+  // uses. Shown as its own option regardless of where this page is
+  // currently open (desktop, Telegram, or anywhere else) — someone browsing
+  // from a normal browser may still want to send a friend the Telegram
+  // version.
+  const telegramReferralLink = referralCode
+    ? `https://t.me/${TELEGRAM_BOT_USERNAME}/app?startapp=ref_${referralCode}`
     : '';
 
   const handleCopy = async () => {
@@ -116,18 +120,18 @@ export default function ReferralSection() {
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
+  const SHARE_MESSAGE = 'Join me on PassMark — the GCE AI Tutor! Sign up with my link and get 5 free tokens 🎓';
+
   const handleShare = () => {
-    const message = 'Join me on PassMark — the GCE AI Tutor! Sign up with my link and get 5 free tokens 🎓';
-    // Telegram's own share sheet (forward-to-chat picker), opened via the
-    // SDK — a plain navigator.share() inside the Mini App WebView has
-    // nowhere reliable to hand off to. openTelegramLink is the documented
-    // way to open a t.me URL (including /share/url) from inside a Mini App.
+    // Already inside the Mini App: share the Telegram link via Telegram's
+    // own forward-to-chat picker — a plain navigator.share() has nowhere
+    // reliable to hand off to from inside the WebView.
     if (isTelegram && tg?.openTelegramLink) {
-      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(message)}`;
+      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(telegramReferralLink)}&text=${encodeURIComponent(SHARE_MESSAGE)}`;
       tg.openTelegramLink(shareUrl);
       return;
     }
-    const text = `${message}\n${referralLink}`;
+    const text = `${SHARE_MESSAGE}\n${referralLink}`;
     if (navigator.share) {
       navigator.share({ title: 'PassMark', text });
     } else {
@@ -135,6 +139,21 @@ export default function ReferralSection() {
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
     }
+  };
+
+  // Standalone Telegram option, always offered (not only from inside the
+  // Mini App) — a friend on desktop may still want to send this specific
+  // link to someone they know is on Telegram.
+  const handleShareTelegram = () => {
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(telegramReferralLink)}&text=${encodeURIComponent(SHARE_MESSAGE)}`;
+    if (isTelegram && tg?.openTelegramLink) tg.openTelegramLink(shareUrl);
+    else window.open(shareUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleCopyTelegramLink = async () => {
+    await navigator.clipboard.writeText(telegramReferralLink);
+    setCopiedTelegramLink(true);
+    setTimeout(() => setCopiedTelegramLink(false), 2000);
   };
 
   if (loading) {
@@ -310,6 +329,29 @@ export default function ReferralSection() {
             </button>
           </div>
 
+          {/* Telegram referral link — opens straight into the Mini App via
+              start_param, no browser hand-off. Offered as its own option
+              regardless of where this page happens to be open right now. */}
+          <div className="bg-[#229ED9]/8 dark:bg-[#229ED9]/10 border border-[#229ED9]/20 rounded-xl px-3 py-2.5 flex items-center gap-2 mb-4">
+            <svg width="15" height="15" viewBox="0 0 240 240" fill="none" className="shrink-0">
+              <circle cx="120" cy="120" r="120" fill="#229ED9" />
+              <path
+                fill="#fff"
+                d="M174.7 82.5l-19.7 92.8c-1.5 6.6-5.4 8.2-10.9 5.1l-30.2-22.3-14.6 14c-1.6 1.6-3 3-6.1 3l2.2-30.9 56.2-50.8c2.4-2.2-.5-3.4-3.8-1.2l-69.5 43.8-29.9-9.4c-6.5-2-6.6-6.5 1.4-9.6l117-45.1c5.4-2 10.1 1.3 8.3 9.6z"
+              />
+            </svg>
+            <span className="text-[11px] text-[#229ED9] dark:text-[#5AC0EE] font-mono truncate flex-1">
+              {telegramReferralLink}
+            </span>
+            <button
+              onClick={handleCopyTelegramLink}
+              className="flex items-center gap-1 text-[11px] font-semibold text-[#229ED9] hover:text-[#1E92CB] transition-colors shrink-0"
+            >
+              {copiedTelegramLink ? <Check size={12} /> : <Copy size={12} />}
+              {copiedTelegramLink ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+
           {/* Rewards breakdown */}
           <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3.5 mb-4">
             <div className="text-[11px] font-semibold text-slate-500 dark:text-[#94A3B8] uppercase tracking-wide mb-2">
@@ -370,13 +412,27 @@ export default function ReferralSection() {
             </div>
           )}
 
-          {/* Share button */}
-          <button
-            onClick={handleShare}
-            className="w-full bg-[#A855F7] text-white rounded-xl py-3 text-[14px] font-bold flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all"
-          >
-            <Share2 size={15} /> Share my code
-          </button>
+          {/* Share buttons */}
+          <div className="flex gap-2">
+            <button
+              onClick={handleShare}
+              className="flex-1 bg-[#A855F7] text-white rounded-xl py-3 text-[14px] font-bold flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all"
+            >
+              <Share2 size={15} /> Share my code
+            </button>
+            <button
+              onClick={handleShareTelegram}
+              aria-label="Share via Telegram"
+              className="w-[52px] bg-[#229ED9] text-white rounded-xl flex items-center justify-center hover:brightness-110 active:scale-[0.98] transition-all shrink-0"
+            >
+              <svg width="20" height="20" viewBox="0 0 240 240" fill="none">
+                <path
+                  fill="currentColor"
+                  d="M120 0C53.7 0 0 53.7 0 120s53.7 120 120 120 120-53.7 120-120S186.3 0 120 0zm54.7 82.5l-19.7 92.8c-1.5 6.6-5.4 8.2-10.9 5.1l-30.2-22.3-14.6 14c-1.6 1.6-3 3-6.1 3l2.2-30.9 56.2-50.8c2.4-2.2-.5-3.4-3.8-1.2l-69.5 43.8-29.9-9.4c-6.5-2-6.6-6.5 1.4-9.6l117-45.1c5.4-2 10.1 1.3 8.3 9.6z"
+                />
+              </svg>
+            </button>
+          </div>
         </>
       )}
     </div>
