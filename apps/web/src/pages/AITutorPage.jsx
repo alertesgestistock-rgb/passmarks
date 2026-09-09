@@ -113,10 +113,20 @@ function MarkdownText({ content, streaming }) {
     let last = 0, m;
     MATH_MARK_REGEX.lastIndex = 0;
     while ((m = MATH_MARK_REGEX.exec(text)) !== null) {
-      if (m.index > last) parts.push(...renderText(text.slice(last, m.index)));
+      // Markdown emphasis can wrap a formula, e.g. **$c = 3 \times 10^8$**.
+      // The math marker splits the text in two, so the usual lightweight Markdown
+      // parser cannot see the opening and closing ** together. Consume that wrapper
+      // here and apply the emphasis to the rendered KaTeX element instead.
+      const hasBoldWrapper = text.slice(m.index - 2, m.index) === '**'
+        && text.slice(m.index + m[0].length, m.index + m[0].length + 2) === '**';
+      const textEnd = hasBoldWrapper ? m.index - 2 : m.index;
+      if (textEnd > last) parts.push(...renderText(text.slice(last, textEnd)));
       const block = mathBlocks[Number(m[1])];
-      if (block) parts.push(renderMath(block.tex, block.displayMode, `math-${m[1]}`));
-      last = m.index + m[0].length;
+      if (block) {
+        const math = renderMath(block.tex, block.displayMode, `math-${m[1]}`);
+        parts.push(hasBoldWrapper ? <strong key={`bold-math-${m[1]}`}>{math}</strong> : math);
+      }
+      last = m.index + m[0].length + (hasBoldWrapper ? 2 : 0);
     }
     if (last < text.length) parts.push(...renderText(text.slice(last)));
     return parts;
