@@ -6,7 +6,7 @@
 //   - ~1 message/second per chat, ~30/second overall → callers must not loop
 //     faster than that (see TYPING_REFRESH_MS / editMessageText usage)
 
-import { markdownToTelegramHtml } from './telegramFormat.ts';
+import { markdownToTelegramHtml, markdownToTelegramPlainText } from './telegramFormat.ts';
 
 const API_BASE = 'https://api.telegram.org';
 
@@ -89,10 +89,10 @@ export async function sendMessage(
     const html = markdownToTelegramHtml(parts[i]);
     const result = await callApi(token, 'sendMessage', { ...payload, text: html, parse_mode: 'HTML' });
 
-    // Malformed HTML (a Markdown edge case our converter didn't anticipate)
-    // must never eat the answer — fall back to the plain, unconverted text.
+    // Malformed HTML must never eat the answer. Fall back to a plain, already
+    // cleaned version — never to raw Markdown/LaTeX control characters.
     if (!result?.ok) {
-      await callApi(token, 'sendMessage', { ...payload, text: parts[i] });
+      await callApi(token, 'sendMessage', { ...payload, text: markdownToTelegramPlainText(parts[i]) });
     }
   }
 }
@@ -128,7 +128,7 @@ export async function editMessageText(
     parse_mode: 'HTML',
   });
   if (!result?.ok) {
-    await callApi(token, 'editMessageText', { ...payload, text: raw });
+    await callApi(token, 'editMessageText', { ...payload, text: markdownToTelegramPlainText(raw) });
   }
 }
 
