@@ -360,6 +360,29 @@ export default function AuthPage() {
           </div>
         )}
 
+        {/* Manual Telegram entry point — covers e.g. someone who explicitly
+            logged out and came back to these plain forms; the automatic
+            ask/auto-sign-in flow above only runs once on launch. */}
+        {telegramStep !== 'ask' && isTelegram && (
+          <div style={{ marginTop: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '4px 0 14px', color: '#64748B', fontSize: 12 }}>
+              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+              or
+              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+            </div>
+            {telegramError && <div className="ap-error ap-error--err" style={{ marginBottom: 10 }}>{telegramError}</div>}
+            <button
+              type="button"
+              className="ap-level-btn"
+              onClick={handleContinueWithTelegram}
+              disabled={telegramLoading}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+            >
+              <Send size={16} /> {telegramLoading ? 'Connecting…' : `${activeTab === 'signup' ? 'Sign up' : 'Sign in'} with Telegram`}
+            </button>
+          </div>
+        )}
+
         <div className="ap-footer-text">
           <ShieldCheck size={14} className="text-emerald-500" />
           <span>Secure encrypted connection. Your data is private.</span>
