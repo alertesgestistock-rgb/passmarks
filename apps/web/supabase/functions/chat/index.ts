@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 import { getCorsHeaders } from './cors.ts';
 import { SYSTEM_PROMPT } from './systemPrompt.ts';
 import { getFloor, resolveModel, type ModelConfig } from '../_shared/modelConfig.ts';
+import { TAVILY_CONFIGURED, WEB_SEARCH_TOOL, resolveToolCalls, type ToolCallAcc } from '../_shared/webSearch.ts';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
@@ -215,12 +216,33 @@ serve(async (req: Request) => {
 
   // ── Appel OpenRouter avec timeout strict ─────────────────────────────────
   // Sans timeout, si OpenRouter freeze le heartbeat masque le problème indéfiniment
-  const ac = new AbortController();
-  const timeoutId = setTimeout(() => ac.abort(new Error('OpenRouter timeout after 90s')), 90_000);
+  const apiMessages = toOpenAIMessages(model, finalMessages);
 
-  let upstream: Response;
-  try {
-    upstream = await fetch(OPENROUTER_URL, {
+  function buildPayload(msgs: unknown[], withTools: boolean) {
+    return {
+      model: model.id,
+      max_tokens: model.maxTokens,
+      // Effort de raisonnement (Gemini) — ses tokens sont facturés comme
+      // de la sortie, donc capturés par le calcul de coût réel plus bas
+      // sans changement nécessaire côté facturation. Absent pour un modèle
+      // qui n'en a pas besoin (ex. Claude).
+      ...(model.reasoningEffort ? { reasoning: { effort: model.reasoningEffort } } : {}),
+      stream: true,
+      // Demande à OpenRouter d'envoyer un dernier chunk avec le vrai usage
+      // (prompt_tokens/completion_tokens) juste avant [DONE] — nécessaire pour
+      // facturer au coût réel au lieu du forfait. Voir doc OpenRouter streaming :
+      // https://openrouter.ai/docs/api_reference/streaming
+      stream_options: { include_usage: true },
+      messages: msgs,
+      // Web search n'est proposé au modèle que si au moins une TAVILY_API_KEY
+      // est configurée ET qu'on veut bien l'offrir sur cet appel (jamais sur
+      // le second tour, pour éviter une boucle de recherches en chaîne).
+      ...(withTools && TAVILY_CONFIGURED ? { tools: [WEB_SEARCH_TOOL] } : {}),
+    };
+  }
+
+  async function callOpenRouter(payload: unknown, signal: AbortSignal) {
+    return fetch(OPENROUTER_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -228,24 +250,17 @@ serve(async (req: Request) => {
         'HTTP-Referer': 'https://passmarks.vercel.app',
         'X-Title': 'PassMark AI Tutor',
       },
-      body: JSON.stringify({
-        model: model.id,
-        max_tokens: model.maxTokens,
-        // Effort de raisonnement (Gemini) — ses tokens sont facturés comme
-        // de la sortie, donc capturés par le calcul de coût réel plus bas
-        // sans changement nécessaire côté facturation. Absent pour un modèle
-        // qui n'en a pas besoin (ex. Claude).
-        ...(model.reasoningEffort ? { reasoning: { effort: model.reasoningEffort } } : {}),
-        stream: true,
-        // Demande à OpenRouter d'envoyer un dernier chunk avec le vrai usage
-        // (prompt_tokens/completion_tokens) juste avant [DONE] — nécessaire pour
-        // facturer au coût réel au lieu du forfait. Voir doc OpenRouter streaming :
-        // https://openrouter.ai/docs/api_reference/streaming
-        stream_options: { include_usage: true },
-        messages: toOpenAIMessages(model, finalMessages),
-      }),
-      signal: ac.signal,
+      body: JSON.stringify(payload),
+      signal,
     });
+  }
+
+  const ac = new AbortController();
+  const timeoutId = setTimeout(() => ac.abort(new Error('OpenRouter timeout after 90s')), 90_000);
+
+  let upstream: Response;
+  try {
+    upstream = await callOpenRouter(buildPayload(apiMessages, true), ac.signal);
   } catch (err: any) {
     clearTimeout(timeoutId);
     const isTimeout = err?.name === 'AbortError' || err?.message?.includes('timeout');
@@ -270,22 +285,22 @@ serve(async (req: Request) => {
         try { controller.enqueue(encoder.encode(': keep-alive\n\n')); } catch { /* connexion fermée */ }
       }, 15000);
 
-      const reader = upstream.body!.getReader();
-      const dec = new TextDecoder();
       let started = false;
-      let usage: { prompt_tokens: number; completion_tokens: number } | null = null;
+      const usageAcc = { prompt_tokens: 0, completion_tokens: 0 };
+      let hasUsage = false;
 
       // Règlement de la facturation — appelée à la fin normale du stream ET en
       // cas d'interruption (abort/erreur en cours de route) dès que l'IA avait
       // commencé à répondre, pour ne jamais perdre la facturation d'un appel
-      // déjà payé chez OpenRouter.
+      // déjà payé chez OpenRouter. usageAcc cumule les DEUX tours si une
+      // recherche web a eu lieu (le second appel a aussi un coût réel).
       const settleAndNotify = async () => {
         if (!started) return;
         let settleResult: { data: unknown; error: unknown } | null = null;
-        if (usage) {
+        if (hasUsage) {
           const providerCostUsd =
-            (usage.prompt_tokens * model.pricing.input +
-              usage.completion_tokens * model.pricing.output) / 1_000_000;
+            (usageAcc.prompt_tokens * model.pricing.input +
+              usageAcc.completion_tokens * model.pricing.output) / 1_000_000;
           // Plancher conservé pour pdf/image/message_with_context (paiement déjà
           // réservé sur cette base) ; laissé à 0 pour un message texte simple afin
           // que l'accumulateur de reliquat joue pleinement son rôle.
@@ -315,40 +330,105 @@ serve(async (req: Request) => {
         }
       };
 
-      try {
+      // Lit un stream OpenRouter ligne par ligne. Quand forwardContent=true, les
+      // deltas de texte réel sont retransmis au client au format minimal déjà
+      // attendu par le front ({choices:[{delta:{content}}]} — cf. AITutorPage.jsx).
+      // Les deltas de tool_calls ne sont JAMAIS montrés au client (ce sont des
+      // instructions internes, pas une réponse) : ils sont accumulés à part et
+      // remontés une fois le tour terminé, avec finish_reason et l'usage réel.
+      async function pumpStream(response: Response, forwardContent: boolean) {
+        const reader = response.body!.getReader();
+        const dec = new TextDecoder();
+        let buf = '';
+        const toolCallsAcc: Record<number, ToolCallAcc> = {};
+        let finishReason: string | null = null;
+
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
+          buf += dec.decode(value, { stream: true });
+          const lines = buf.split('\n');
+          buf = lines.pop() ?? ''; // ligne potentiellement coupée entre deux lectures réseau
 
-          // Sanitize: intercept OpenRouter error events before forwarding to client
-          // + capture le chunk final d'usage réel (stream_options.include_usage)
-          const raw = dec.decode(value, { stream: true });
-          let sanitized = raw;
-          for (const line of raw.split('\n')) {
+          for (const line of lines) {
             const clean = line.trim();
             if (!clean.startsWith('data: ') || clean === 'data: [DONE]') continue;
-            try {
-              const parsed = JSON.parse(clean.slice(6));
-              if (parsed?.error) {
-                console.error('[chat] stream error from upstream:', JSON.stringify(parsed.error));
-                sanitized = sanitized.replace(
-                  line,
-                  `data: ${JSON.stringify({ error: 'AI service temporarily unavailable. Please try again in a few seconds.' })}`,
-                );
-              }
-              // OpenRouter envoie un dernier chunk (choices vide) juste avant [DONE]
-              // avec le vrai usage — cf. https://openrouter.ai/docs/api_reference/streaming
-              if (parsed?.usage?.prompt_tokens != null) {
-                usage = {
-                  prompt_tokens: Number(parsed.usage.prompt_tokens) || 0,
-                  completion_tokens: Number(parsed.usage.completion_tokens) || 0,
-                };
-              }
-            } catch { /* not JSON, skip */ }
-          }
+            let parsed: any;
+            try { parsed = JSON.parse(clean.slice(6)); } catch { continue; }
 
-          started = true;
-          controller.enqueue(encoder.encode(sanitized));
+            if (parsed?.error) {
+              console.error('[chat] stream error from upstream:', JSON.stringify(parsed.error));
+              if (forwardContent) {
+                try {
+                  controller.enqueue(encoder.encode(
+                    `data: ${JSON.stringify({ error: 'AI service temporarily unavailable. Please try again in a few seconds.' })}\n\n`,
+                  ));
+                } catch { /* client déjà déconnecté */ }
+              }
+              continue;
+            }
+
+            // OpenRouter envoie un dernier chunk (choices vide) juste avant [DONE]
+            // avec le vrai usage — cf. https://openrouter.ai/docs/api_reference/streaming
+            if (parsed?.usage?.prompt_tokens != null) {
+              usageAcc.prompt_tokens += Number(parsed.usage.prompt_tokens) || 0;
+              usageAcc.completion_tokens += Number(parsed.usage.completion_tokens) || 0;
+              hasUsage = true;
+            }
+
+            const choice = parsed?.choices?.[0];
+            if (choice?.finish_reason) finishReason = choice.finish_reason;
+
+            const delta = choice?.delta;
+            if (delta?.tool_calls) {
+              for (const tc of delta.tool_calls) {
+                const idx = tc.index ?? 0;
+                if (!toolCallsAcc[idx]) toolCallsAcc[idx] = { id: '', name: '', args: '' };
+                if (tc.id) toolCallsAcc[idx].id = tc.id;
+                if (tc.function?.name) toolCallsAcc[idx].name += tc.function.name;
+                if (tc.function?.arguments) toolCallsAcc[idx].args += tc.function.arguments;
+              }
+            } else if (delta?.content && forwardContent) {
+              started = true;
+              controller.enqueue(encoder.encode(
+                `data: ${JSON.stringify({ choices: [{ delta: { content: delta.content } }] })}\n\n`,
+              ));
+            }
+          }
+        }
+
+        return { finishReason, toolCalls: Object.values(toolCallsAcc).filter((tc) => tc.name) };
+      }
+
+      try {
+        // Premier tour : réponse directe, OU demande de recherche web (tool_calls).
+        const first = await pumpStream(upstream, true);
+
+        if (first.finishReason === 'tool_calls' && first.toolCalls.length > 0) {
+          // Exécute chaque recherche demandée puis relance un second tour avec
+          // les résultats injectés — c'est CE second tour qui produit la réponse
+          // réellement visible par l'élève (le premier n'a émis que des
+          // tool_calls, jamais de texte, donc rien n'a encore été streamé).
+          const { assistantToolCallMsg, toolResultMsgs } = await resolveToolCalls(first.toolCalls);
+
+          const ac2 = new AbortController();
+          const timeoutId2 = setTimeout(() => ac2.abort(new Error('OpenRouter timeout after 60s')), 60_000);
+          try {
+            const followupMessages = [...apiMessages, assistantToolCallMsg, ...toolResultMsgs];
+            const upstream2 = await callOpenRouter(buildPayload(followupMessages, false), ac2.signal);
+            if (upstream2.ok) {
+              await pumpStream(upstream2, true);
+            } else {
+              console.error('[chat] follow-up (post-search) upstream error:', upstream2.status);
+              if (!started) {
+                controller.enqueue(encoder.encode(
+                  `data: ${JSON.stringify({ error: 'AI service temporarily unavailable. Please try again in a few seconds.' })}\n\n`,
+                ));
+              }
+            }
+          } finally {
+            clearTimeout(timeoutId2);
+          }
         }
 
         await settleAndNotify();

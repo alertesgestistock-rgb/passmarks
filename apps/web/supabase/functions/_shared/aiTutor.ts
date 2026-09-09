@@ -8,6 +8,7 @@
 
 import { SYSTEM_PROMPT } from '../chat/systemPrompt.ts';
 import { ACTIVE_MODEL } from './modelConfig.ts';
+import { TAVILY_CONFIGURED, WEB_SEARCH_TOOL, resolveToolCalls, type ToolCallAcc } from './webSearch.ts';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const OPENROUTER_TRANSCRIPTION_URL = 'https://openrouter.ai/api/v1/audio/transcriptions';
@@ -215,12 +216,8 @@ export async function askTutor(
   const balance = wallet?.balance ?? 0;
   if (balance < cost) return { ok: false, reason: 'insufficient_tokens', balance };
 
-  const ac = new AbortController();
-  const timeoutId = setTimeout(() => ac.abort(new Error('OpenRouter timeout after 90s')), 90_000);
-
-  let payload: any;
-  try {
-    const upstream = await fetch(OPENROUTER_URL, {
+  async function callOpenRouter(msgs: unknown[], withTools: boolean, signal: AbortSignal) {
+    return fetch(OPENROUTER_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -232,17 +229,66 @@ export async function askTutor(
         model: MODEL,
         max_tokens: ACTIVE_MODEL.maxTokens,
         ...(ACTIVE_MODEL.reasoningEffort ? { reasoning: { effort: ACTIVE_MODEL.reasoningEffort } } : {}),
-        messages: toOpenAIMessages(messages),
+        messages: msgs,
+        // Même règle que chat/index.ts : proposé seulement si au moins une clé
+        // est configurée, jamais sur le second tour (pas de recherches en chaîne).
+        ...(withTools && TAVILY_CONFIGURED ? { tools: [WEB_SEARCH_TOOL] } : {}),
       }),
-      signal: ac.signal,
+      signal,
     });
+  }
 
+  const apiMessages = toOpenAIMessages(messages);
+  const usageAcc = { prompt_tokens: 0, completion_tokens: 0 };
+  let hasUsage = false;
+  const addUsage = (u: any) => {
+    if (u?.prompt_tokens == null) return;
+    usageAcc.prompt_tokens += Number(u.prompt_tokens) || 0;
+    usageAcc.completion_tokens += Number(u.completion_tokens) || 0;
+    hasUsage = true;
+  };
+
+  let payload: any;
+  const ac = new AbortController();
+  const timeoutId = setTimeout(() => ac.abort(new Error('OpenRouter timeout after 90s')), 90_000);
+  try {
+    const upstream = await callOpenRouter(apiMessages, true, ac.signal);
     if (!upstream.ok) {
       const err = await upstream.text().catch(() => '');
       console.error('[aiTutor] upstream error:', upstream.status, err.slice(0, 500));
       return { ok: false, reason: 'ai_unavailable' };
     }
     payload = await upstream.json();
+    addUsage(payload?.usage);
+
+    // Le modèle a demandé une recherche web au lieu de répondre directement —
+    // exécute-la, réinjecte le résultat, puis relance un second appel (sans
+    // tools, pour éviter une chaîne de recherches) qui produit la vraie réponse.
+    const rawToolCalls = payload?.choices?.[0]?.message?.tool_calls;
+    if (payload?.choices?.[0]?.finish_reason === 'tool_calls' && Array.isArray(rawToolCalls) && rawToolCalls.length > 0) {
+      const toolCalls: ToolCallAcc[] = rawToolCalls.map((tc: any) => ({
+        id: tc.id ?? '',
+        name: tc.function?.name ?? '',
+        args: tc.function?.arguments ?? '{}',
+      }));
+      const { assistantToolCallMsg, toolResultMsgs } = await resolveToolCalls(toolCalls);
+      const followupMessages = [...apiMessages, assistantToolCallMsg, ...toolResultMsgs];
+
+      const ac2 = new AbortController();
+      const timeoutId2 = setTimeout(() => ac2.abort(new Error('OpenRouter timeout after 60s')), 60_000);
+      try {
+        const upstream2 = await callOpenRouter(followupMessages, false, ac2.signal);
+        if (!upstream2.ok) {
+          const err = await upstream2.text().catch(() => '');
+          console.error('[aiTutor] follow-up (post-search) upstream error:', upstream2.status, err.slice(0, 500));
+          return { ok: false, reason: 'ai_unavailable' };
+        }
+        payload = await upstream2.json();
+        addUsage(payload?.usage);
+      } finally {
+        clearTimeout(timeoutId2);
+      }
+    }
   } catch (err) {
     console.error('[aiTutor] request failed:', (err as Error).message);
     return { ok: false, reason: 'ai_unavailable' };
@@ -254,13 +300,13 @@ export async function askTutor(
   if (!text.trim()) return { ok: false, reason: 'ai_unavailable' };
 
   // Bill on real usage when OpenRouter reports it, exactly like the web path.
+  // usageAcc cumule les deux tours si une recherche a eu lieu.
   let newBalance: number | null = null;
-  const usage = payload?.usage;
   try {
-    if (usage?.prompt_tokens != null) {
+    if (hasUsage) {
       const providerCostUsd =
-        (Number(usage.prompt_tokens) * MODEL_PRICING_USD_PER_MTOK.input +
-          Number(usage.completion_tokens ?? 0) * MODEL_PRICING_USD_PER_MTOK.output) / 1_000_000
+        (usageAcc.prompt_tokens * MODEL_PRICING_USD_PER_MTOK.input +
+          usageAcc.completion_tokens * MODEL_PRICING_USD_PER_MTOK.output) / 1_000_000
         + (voiceOverride?.transcriptionCostUsd ?? 0);
       const { data } = await supabase.rpc('settle_ai_usage_cost', {
         p_user_id: userId,
