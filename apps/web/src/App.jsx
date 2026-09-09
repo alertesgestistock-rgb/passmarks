@@ -103,13 +103,13 @@ export default function App() {
   return (
     <BrowserRouter>
       <ThemeProvider>
-        <NotificationProvider>
-          <UserProvider>
+        <UserProvider>
+          <NotificationProvider>
             <AppRoutes />
             <ActivityHeartbeat />
             <Toaster position="top-center" richColors />
-          </UserProvider>
-        </NotificationProvider>
+          </NotificationProvider>
+        </UserProvider>
       </ThemeProvider>
     </BrowserRouter>
   );
