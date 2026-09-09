@@ -6,6 +6,8 @@
 //   - ~1 message/second per chat, ~30/second overall → callers must not loop
 //     faster than that (see TYPING_REFRESH_MS / editMessageText usage)
 
+import { markdownToTelegramHtml } from './telegramFormat.ts';
+
 const API_BASE = 'https://api.telegram.org';
 
 export const TELEGRAM_MAX_MESSAGE_CHARS = 4096;
@@ -69,16 +71,26 @@ export async function sendMessage(
   text: string,
   options: { buttons?: InlineButton[][]; replyToMessageId?: number } = {},
 ): Promise<void> {
-  const parts = splitForTelegram(text);
+  // Split on the raw Markdown with headroom below the 4096 cap: converting to
+  // HTML adds tag overhead (<b>, <pre>, …) on top of the original length.
+  const parts = splitForTelegram(text, 3500);
   for (let i = 0; i < parts.length; i++) {
     const isLast = i === parts.length - 1;
-    await callApi(token, 'sendMessage', {
+    const payload = {
       chat_id: chatId,
-      text: parts[i],
       // Buttons only on the final chunk, so they sit at the bottom of the answer
       ...(isLast && options.buttons ? { reply_markup: { inline_keyboard: options.buttons } } : {}),
       ...(i === 0 && options.replyToMessageId ? { reply_to_message_id: options.replyToMessageId } : {}),
-    });
+    };
+
+    const html = markdownToTelegramHtml(parts[i]);
+    const result = await callApi(token, 'sendMessage', { ...payload, text: html, parse_mode: 'HTML' });
+
+    // Malformed HTML (a Markdown edge case our converter didn't anticipate)
+    // must never eat the answer — fall back to the plain, unconverted text.
+    if (!result?.ok) {
+      await callApi(token, 'sendMessage', { ...payload, text: parts[i] });
+    }
   }
 }
 
@@ -101,12 +113,20 @@ export async function editMessageText(
   text: string,
   buttons?: InlineButton[][],
 ): Promise<void> {
-  await callApi(token, 'editMessageText', {
+  const payload = {
     chat_id: chatId,
     message_id: messageId,
-    text: text.slice(0, TELEGRAM_MAX_MESSAGE_CHARS),
     ...(buttons ? { reply_markup: { inline_keyboard: buttons } } : {}),
+  };
+  const raw = text.slice(0, 3500);
+  const result = await callApi(token, 'editMessageText', {
+    ...payload,
+    text: markdownToTelegramHtml(raw),
+    parse_mode: 'HTML',
   });
+  if (!result?.ok) {
+    await callApi(token, 'editMessageText', { ...payload, text: raw });
+  }
 }
 
 /**

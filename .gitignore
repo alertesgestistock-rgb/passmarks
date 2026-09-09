@@ -50,3 +50,6 @@ skills/
 
 # Supabase CLI binary (local, non versionné)
 apps/web/supabase/.temp/
+
+# Documentation interne (contexte de session, config bot Telegram) — ne doit pas être publique
+docs/
