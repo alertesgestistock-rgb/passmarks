@@ -12,6 +12,7 @@ import HowItWorksPage from './pages/HowItWorksPage';
 import AuthPage from './pages/AuthPage';
 import Dashboard from './pages/Dashboard';
 import AdminRoute from '@/components/AdminRoute';
+import ActivityHeartbeat from '@/components/ActivityHeartbeat';
 
 // Admin : chargé uniquement si quelqu'un navigue vers /boss (jamais lié dans un menu).
 const AdminPage = lazy(() => import('./pages/AdminPage'));
@@ -105,6 +106,7 @@ export default function App() {
         <NotificationProvider>
           <UserProvider>
             <AppRoutes />
+            <ActivityHeartbeat />
             <Toaster position="top-center" richColors />
           </UserProvider>
         </NotificationProvider>

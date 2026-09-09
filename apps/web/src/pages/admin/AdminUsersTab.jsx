@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Search, ShieldCheck, Send } from 'lucide-react';
+import { Circle, Search, ShieldCheck, Send } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { adminDateRangeToRpc } from '@/lib/adminDateRange';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -15,10 +16,19 @@ import { SortableTableHeader, useAdminTableSort } from '@/components/admin/Sorta
 
 // Source: public.admin_list_users(p_search, p_level, p_limit, p_offset) and
 // public.admin_count_users(...) — see
-// supabase/migrations/20260910120000_016_admin_dashboard_rpcs.sql.
-// No plan/subscription (PassMark has none) and no presence/heartbeat system
-// (not built) — just the real profile + token balance.
+// supabase/migrations/20260910120000_016_admin_dashboard_rpcs.sql. No plan/
+// subscription (PassMark has none) — just the real profile + token balance.
+//
+// "Online"/"Time spent" come from public.admin_user_activity(p_since,
+// p_until) — see supabase/migrations/20260910140000_018_activity_heartbeats.sql,
+// fed by the heartbeat <ActivityHeartbeat /> sends every 60s (mounted
+// globally in App.jsx) while a tab is visible. "Online" = last heartbeat
+// < 90s ago, and is NEVER bounded by the period filter — otherwise someone
+// active right now would show offline just because "Today" was picked at
+// 00:01. "Time spent" does follow the period. Both stay empty for anyone
+// who hasn't reloaded the app since this shipped — that's expected, not a bug.
 
+const ONLINE_THRESHOLD_MS = 90 * 1000;
 const PAGE_SIZE = 50;
 
 function initials(name) {
@@ -39,11 +49,34 @@ function formatPhone(country, phone) {
   return country ? `+${country} ${phone}` : phone;
 }
 
-export default function AdminUsersTab() {
+function formatDuration(minutes) {
+  if (minutes == null) return '—';
+  if (minutes < 60) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m > 0 ? `${h}h ${m}min` : `${h}h`;
+}
+
+function isOnline(lastHeartbeatAt) {
+  if (!lastHeartbeatAt) return false;
+  return Date.now() - new Date(lastHeartbeatAt).getTime() < ONLINE_THRESHOLD_MS;
+}
+
+function formatLastSeen(lastHeartbeatAt) {
+  if (!lastHeartbeatAt) return 'Never seen';
+  const minutesAgo = Math.floor((Date.now() - new Date(lastHeartbeatAt).getTime()) / 60000);
+  if (minutesAgo <= 1) return 'Just now';
+  if (minutesAgo < 60) return `${minutesAgo} min ago`;
+  if (minutesAgo < 1440) return `${Math.floor(minutesAgo / 60)}h ago`;
+  return `${Math.floor(minutesAgo / 1440)}d ago`;
+}
+
+export default function AdminUsersTab({ dateFilter }) {
   const [search, setSearch] = useState('');
   const [levelFilter, setLevelFilter] = useState('all');
   const [users, setUsers] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
+  const [activityByUser, setActivityByUser] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -52,11 +85,23 @@ export default function AdminUsersTab() {
     setLoading(true);
     setError('');
 
+    const { p_from, p_to } = adminDateRangeToRpc(dateFilter);
+    const activityParams = { p_since: p_from || '1970-01-01T00:00:00Z', p_until: p_to || new Date().toISOString() };
+
+    function applyActivity(rows) {
+      const byUser = {};
+      (rows || []).forEach((row) => {
+        byUser[row.user_id] = { totalMinutes: row.total_minutes, lastHeartbeatAt: row.last_heartbeat_at };
+      });
+      setActivityByUser(byUser);
+    }
+
     const timer = setTimeout(async () => {
       const params = { p_search: search || null, p_level: levelFilter === 'all' ? null : levelFilter };
-      const [{ data: listData, error: listError }, { data: countData, error: countError }] = await Promise.all([
+      const [{ data: listData, error: listError }, { data: countData, error: countError }, { data: activityData }] = await Promise.all([
         supabase.rpc('admin_list_users', { ...params, p_limit: PAGE_SIZE, p_offset: 0 }),
         supabase.rpc('admin_count_users', params),
+        supabase.rpc('admin_user_activity', activityParams),
       ]);
       if (cancelled) return;
       if (listError || countError) {
@@ -67,16 +112,28 @@ export default function AdminUsersTab() {
         setUsers(listData || []);
         setTotalCount(countData ?? 0);
       }
+      applyActivity(activityData);
       setLoading(false);
     }, search ? 250 : 0);
 
-    return () => { cancelled = true; clearTimeout(timer); };
-  }, [search, levelFilter]);
+    // Refresh just the activity (not the whole list) every 30s so the
+    // "online" badge stays fresh while this tab stays open.
+    const refreshActivity = setInterval(() => {
+      supabase.rpc('admin_user_activity', activityParams).then(({ data }) => {
+        if (!cancelled) applyActivity(data);
+      });
+    }, 30000);
+
+    return () => { cancelled = true; clearTimeout(timer); clearInterval(refreshActivity); };
+  }, [search, levelFilter, dateFilter]);
 
   const sortableUsers = useMemo(() => users.map((user) => ({
     ...user,
     display_name: user.full_name || user.email,
-  })), [users]);
+    activity_minutes: activityByUser[user.id]?.totalMinutes,
+    last_heartbeat_at: activityByUser[user.id]?.lastHeartbeatAt,
+    online: isOnline(activityByUser[user.id]?.lastHeartbeatAt) ? 1 : 0,
+  })), [users, activityByUser]);
   const { sortedRows: sorted, sort, toggleSort } = useAdminTableSort(sortableUsers, 'created_at', 'desc');
 
   return (
@@ -88,6 +145,7 @@ export default function AdminUsersTab() {
               <CardTitle className="text-base">Users</CardTitle>
               <CardDescription>
                 {totalCount} account{totalCount > 1 ? 's' : ''} total · {sorted.length} shown
+                {' · Presence/time spent over: '}{dateFilter?.label || 'Last 7 days'}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -120,7 +178,7 @@ export default function AdminUsersTab() {
           <Table>
             <TableHeader>
               <TableRow>
-                {[['User', 'display_name', 'left'], ['Phone', 'phone', 'left'], ['Level', 'level', 'left'], ['Quizzes', 'quizzes_completed', 'right'], ['Tokens', 'balance', 'right'], ['Telegram', 'is_telegram', 'left'], ['Joined', 'created_at', 'left']].map(([label, key, align]) => <TableHead key={key} className={align === 'right' ? 'text-right' : ''}><SortableTableHeader label={label} sortKey={key} sort={sort} onSort={toggleSort} align={align} /></TableHead>)}
+                {[['User', 'display_name', 'left'], ['Phone', 'phone', 'left'], ['Level', 'level', 'left'], ['Presence', 'online', 'left'], [`Time spent (${dateFilter?.label || 'Last 7 days'})`, 'activity_minutes', 'right'], ['Quizzes', 'quizzes_completed', 'right'], ['Tokens', 'balance', 'right'], ['Telegram', 'is_telegram', 'left'], ['Joined', 'created_at', 'left']].map(([label, key, align]) => <TableHead key={key} className={align === 'right' ? 'text-right' : ''}><SortableTableHeader label={label} sortKey={key} sort={sort} onSort={toggleSort} align={align} /></TableHead>)}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -146,6 +204,17 @@ export default function AdminUsersTab() {
                     {formatPhone(u.phone_country, u.phone)}
                   </TableCell>
                   <TableCell>{u.level || '—'}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1.5 text-sm">
+                      <Circle className={`h-2 w-2 shrink-0 ${isOnline(activityByUser[u.id]?.lastHeartbeatAt) ? 'fill-emerald-500 text-emerald-500' : 'fill-muted-foreground/40 text-muted-foreground/40'}`} />
+                      <span className={isOnline(activityByUser[u.id]?.lastHeartbeatAt) ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-muted-foreground'}>
+                        {isOnline(activityByUser[u.id]?.lastHeartbeatAt) ? 'Online' : formatLastSeen(activityByUser[u.id]?.lastHeartbeatAt)}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-muted-foreground">
+                    {formatDuration(activityByUser[u.id]?.totalMinutes)}
+                  </TableCell>
                   <TableCell className="text-right tabular-nums">{u.quizzes_completed ?? 0}</TableCell>
                   <TableCell className="text-right tabular-nums font-medium">
                     {Number(u.balance ?? 0).toLocaleString('en-US')}
@@ -158,7 +227,7 @@ export default function AdminUsersTab() {
               ))}
               {!loading && sorted.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-10">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-10">
                     No user matches this filter.
                   </TableCell>
                 </TableRow>
@@ -167,6 +236,11 @@ export default function AdminUsersTab() {
           </Table>
         </CardContent>
       </Card>
+
+      <p className="text-xs text-muted-foreground px-1">
+        "Presence" and "Time spent" fill in as people reconnect (heartbeat sent every 60s per active
+        tab, shipped 2026-09-10) — empty for anyone who hasn't reopened the app since, that's expected.
+      </p>
     </div>
   );
 }

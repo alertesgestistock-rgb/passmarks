@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/table';
 
 // Source: public.admin_referral_details(p_from, p_to) — see
-// supabase/migrations/20260910130000_017_admin_referral_details.sql.
+// supabase/migrations/20260910150000_019_admin_referral_details.sql.
 // Row-by-row view of the referral program (who invited whom, when, whether
 // the invited friend converted, tokens each side earned) — the detailed
 // counterpart to AdminMarketingTab's aggregate summary.
