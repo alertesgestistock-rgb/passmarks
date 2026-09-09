@@ -103,10 +103,10 @@ export default function InstallBanner() {
             <Download size={14} className="animate-bounce" />
           </div>
           <div>
-            <span className="text-[12px] font-semibold text-slate-800 dark:text-[#F1F5F9] block">
+            <span className="text-[13px] font-semibold text-slate-800 dark:text-[#F1F5F9] block">
               PassMark Web App
             </span>
-            <span className="text-[10px] text-slate-400 dark:text-[#64748B] block -mt-0.5">
+            <span className="text-[11px] text-slate-400 dark:text-[#64748B] block -mt-0.5">
               Install as an app for full offline support
             </span>
           </div>
@@ -114,7 +114,7 @@ export default function InstallBanner() {
         <div className="flex items-center gap-3">
           <button 
             onClick={handleInstallClick}
-            className="bg-[#22C55E] text-white rounded-xl px-4 py-1.5 text-[12px] font-bold hover:brightness-110 active:scale-95 transition-all shadow-md shadow-green-500/10"
+            className="bg-[#22C55E] text-white rounded-xl px-4 py-1.5 text-[13px] font-bold hover:brightness-110 active:scale-95 transition-all shadow-md shadow-green-500/10"
           >
             Install
           </button>
@@ -141,8 +141,8 @@ export default function InstallBanner() {
             {/* Header */}
             <div className="flex justify-between items-start">
               <div className="flex items-center gap-2">
-                <span className="text-[20px]">🍏</span>
-                <h3 className="text-[15px] font-bold text-slate-900 dark:text-white">
+                <span className="text-[21px]">🍏</span>
+                <h3 className="text-[16px] font-bold text-slate-900 dark:text-white">
                   Install on iPhone / iPad
                 </h3>
               </div>
@@ -155,7 +155,7 @@ export default function InstallBanner() {
             </div>
 
             {/* Steps */}
-            <div className="flex flex-col gap-4 text-[13px] text-slate-600 dark:text-[#94A3B8]">
+            <div className="flex flex-col gap-4 text-[14px] text-slate-600 dark:text-[#94A3B8]">
               <p className="leading-relaxed">
                 Safari on iOS does not support one-click installation. Follow these simple steps to install the app on your home screen:
               </p>
@@ -163,7 +163,7 @@ export default function InstallBanner() {
               <div className="flex flex-col gap-3.5 mt-2">
                 {/* Step 1 */}
                 <div className="flex gap-3 items-start bg-slate-50 dark:bg-[#0F172A]/40 p-3 rounded-xl border border-slate-100 dark:border-[#334155]/30">
-                  <div className="w-6 h-6 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center font-bold text-[11px] shrink-0">
+                  <div className="w-6 h-6 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center font-bold text-[12px] shrink-0">
                     1
                   </div>
                   <div className="flex-1">
@@ -174,7 +174,7 @@ export default function InstallBanner() {
 
                 {/* Step 2 */}
                 <div className="flex gap-3 items-start bg-slate-50 dark:bg-[#0F172A]/40 p-3 rounded-xl border border-slate-100 dark:border-[#334155]/30">
-                  <div className="w-6 h-6 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center font-bold text-[11px] shrink-0">
+                  <div className="w-6 h-6 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center font-bold text-[12px] shrink-0">
                     2
                   </div>
                   <div className="flex-1">
@@ -185,7 +185,7 @@ export default function InstallBanner() {
 
                 {/* Step 3 */}
                 <div className="flex gap-3 items-start bg-slate-50 dark:bg-[#0F172A]/40 p-3 rounded-xl border border-slate-100 dark:border-[#334155]/30">
-                  <div className="w-6 h-6 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center font-bold text-[11px] shrink-0">
+                  <div className="w-6 h-6 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center font-bold text-[12px] shrink-0">
                     3
                   </div>
                   <div className="flex-1">
@@ -199,7 +199,7 @@ export default function InstallBanner() {
             {/* Button Close */}
             <button
               onClick={() => setShowIosModal(false)}
-              className="w-full bg-[#22C55E] text-white rounded-xl py-2.5 text-[13px] font-bold hover:brightness-110 active:scale-98 transition-all mt-2"
+              className="w-full bg-[#22C55E] text-white rounded-xl py-2.5 text-[14px] font-bold hover:brightness-110 active:scale-98 transition-all mt-2"
             >
               Got it
             </button>

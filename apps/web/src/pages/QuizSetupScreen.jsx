@@ -75,17 +75,17 @@ export default function QuizSetupScreen({ navigate, viewState }) {
     <div className="max-w-[500px] mx-auto">
       <button
         onClick={() => navigate('home')}
-        className="flex items-center gap-1 text-slate-500 dark:text-[#64748B] hover:text-slate-900 dark:hover:text-white font-medium text-[13px] mb-6 transition-colors"
+        className="flex items-center gap-1 text-slate-500 dark:text-[#64748B] hover:text-slate-900 dark:hover:text-white font-medium text-[14px] mb-6 transition-colors"
       >
         <ArrowLeft size={16} /> Back
       </button>
 
-      <h1 className="text-[24px] font-bold text-slate-900 dark:text-white mb-8 tracking-tight">Quick Quiz ✨</h1>
+      <h1 className="text-[25px] font-bold text-slate-900 dark:text-white mb-8 tracking-tight">Quick Quiz ✨</h1>
 
       <div className="bg-white dark:bg-[#1E293B] rounded-2xl p-5 border border-slate-200 dark:border-[#334155]/50 flex flex-col gap-6 shadow-sm">
 
         {error && (
-          <div className="bg-red-50 dark:bg-[#450a0a] text-red-600 dark:text-[#EF4444] p-3 rounded-xl text-[12px] flex items-center gap-2 border border-red-200 dark:border-[#7f1d1d]">
+          <div className="bg-red-50 dark:bg-[#450a0a] text-red-600 dark:text-[#EF4444] p-3 rounded-xl text-[13px] flex items-center gap-2 border border-red-200 dark:border-[#7f1d1d]">
             <AlertCircle size={16} className="shrink-0" /> {error}
           </div>
         )}
@@ -98,14 +98,14 @@ export default function QuizSetupScreen({ navigate, viewState }) {
 
         {/* Level */}
         <div>
-          <label className="block text-[13px] font-semibold text-slate-400 dark:text-[#94A3B8] mb-3 uppercase tracking-wider">Level</label>
+          <label className="block text-[14px] font-semibold text-slate-400 dark:text-[#94A3B8] mb-3 uppercase tracking-wider">Level</label>
           <div className="flex gap-3">
             {['O Level', 'A Level'].map(lvl => (
               <button
                 key={lvl}
                 onClick={() => setLevel(lvl)}
                 className={cn(
-                  "flex-1 py-2.5 rounded-xl text-[14px] font-medium border transition-all active:scale-95",
+                  "flex-1 py-2.5 rounded-xl text-[15px] font-medium border transition-all active:scale-95",
                   level === lvl
                     ? "bg-[#3B82F6]/20 border-[#3B82F6] text-[#3B82F6]"
                     : "bg-slate-100 dark:bg-[#0F172A] border-slate-200 dark:border-[#334155] text-slate-500 dark:text-[#94A3B8] hover:border-slate-300 dark:hover:border-[#475569]"
@@ -119,14 +119,14 @@ export default function QuizSetupScreen({ navigate, viewState }) {
 
         {/* Subject */}
         <div>
-          <label className="block text-[13px] font-semibold text-slate-400 dark:text-[#94A3B8] mb-3 uppercase tracking-wider">Subject</label>
+          <label className="block text-[14px] font-semibold text-slate-400 dark:text-[#94A3B8] mb-3 uppercase tracking-wider">Subject</label>
           <div className="flex flex-wrap gap-2">
             {SUBJECTS.map(sub => (
               <button
                 key={sub}
                 onClick={() => setSubject(sub)}
                 className={cn(
-                  "px-4 py-2 rounded-xl text-[13px] font-medium border transition-all active:scale-95",
+                  "px-4 py-2 rounded-xl text-[14px] font-medium border transition-all active:scale-95",
                   subject === sub
                     ? "bg-[#22C55E]/20 border-[#22C55E] text-[#22C55E]"
                     : "bg-slate-100 dark:bg-[#0F172A] border-slate-200 dark:border-[#334155] text-slate-500 dark:text-[#94A3B8] hover:border-slate-300 dark:hover:border-[#475569]"
@@ -140,14 +140,14 @@ export default function QuizSetupScreen({ navigate, viewState }) {
 
         {/* Number of Questions */}
         <div>
-          <label className="block text-[13px] font-semibold text-slate-400 dark:text-[#94A3B8] mb-3 uppercase tracking-wider">Questions</label>
+          <label className="block text-[14px] font-semibold text-slate-400 dark:text-[#94A3B8] mb-3 uppercase tracking-wider">Questions</label>
           <div className="flex gap-3">
             {[5, 10, 15].map(num => (
               <button
                 key={num}
                 onClick={() => setNumQuestions(num)}
                 className={cn(
-                  "flex-1 py-2.5 rounded-xl text-[14px] font-medium border transition-all active:scale-95",
+                  "flex-1 py-2.5 rounded-xl text-[15px] font-medium border transition-all active:scale-95",
                   numQuestions === num
                     ? "bg-[#F97316]/20 border-[#F97316] text-[#F97316]"
                     : "bg-slate-100 dark:bg-[#0F172A] border-slate-200 dark:border-[#334155] text-slate-500 dark:text-[#94A3B8] hover:border-slate-300 dark:hover:border-[#475569]"
@@ -162,12 +162,12 @@ export default function QuizSetupScreen({ navigate, viewState }) {
         <button
           onClick={handleGenerate}
           disabled={isLoading || noTokens}
-          className="w-full mt-4 bg-[#22C55E] text-[#052e16] rounded-xl py-3.5 text-[15px] font-bold flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 shadow-md"
+          className="w-full mt-4 bg-[#22C55E] text-[#052e16] rounded-xl py-3.5 text-[16px] font-bold flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 shadow-md"
         >
           {isLoading ? (
             <div className="w-5 h-5 border-2 border-[#052e16] border-t-transparent rounded-full animate-spin" />
           ) : (
-            <>Generate Quiz <Sparkles size={18} /><span className="text-[12px] opacity-70 font-medium ml-1">(~{numQuestions <= 5 ? 1 : numQuestions <= 10 ? 2 : 3} token{numQuestions <= 5 ? '' : 's'})</span></>
+            <>Generate Quiz <Sparkles size={18} /><span className="text-[13px] opacity-70 font-medium ml-1">(~{numQuestions <= 5 ? 1 : numQuestions <= 10 ? 2 : 3} token{numQuestions <= 5 ? '' : 's'})</span></>
           )}
         </button>
       </div>

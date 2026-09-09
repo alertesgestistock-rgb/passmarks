@@ -58,11 +58,11 @@ export default function NotificationCenter({ navigate }) {
 
           {/* Header */}
           <div className="p-3 border-b border-slate-100 dark:border-[#334155] flex justify-between items-center bg-slate-50 dark:bg-[#0F172A]/50 shrink-0">
-            <h3 className="text-[14px] font-bold text-slate-900 dark:text-[#F1F5F9]">Notifications</h3>
+            <h3 className="text-[15px] font-bold text-slate-900 dark:text-[#F1F5F9]">Notifications</h3>
             {notifications.length > 0 && (
               <button
                 onClick={clearAll}
-                className="text-[11px] font-medium text-slate-400 dark:text-[#64748B] hover:text-slate-700 dark:hover:text-[#F1F5F9] flex items-center gap-1 transition-colors"
+                className="text-[12px] font-medium text-slate-400 dark:text-[#64748B] hover:text-slate-700 dark:hover:text-[#F1F5F9] flex items-center gap-1 transition-colors"
               >
                 <Check size={12} /> Clear all
               </button>
@@ -85,11 +85,11 @@ export default function NotificationCenter({ navigate }) {
                     {!notif.read && <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-[#22C55E]" />}
                     {getIcon(notif.type)}
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-[13px] font-medium text-slate-900 dark:text-[#F1F5F9] truncate mb-0.5">{notif.title}</h4>
-                      <p className="text-[12px] text-slate-500 dark:text-[#94A3B8] leading-[1.5] line-clamp-2 mb-1 text-balance">
+                      <h4 className="text-[14px] font-medium text-slate-900 dark:text-[#F1F5F9] truncate mb-0.5">{notif.title}</h4>
+                      <p className="text-[13px] text-slate-500 dark:text-[#94A3B8] leading-[1.5] line-clamp-2 mb-1 text-balance">
                         {notif.body}
                       </p>
-                      <span className="text-[10px] text-slate-400 dark:text-[#64748B] block text-right">
+                      <span className="text-[11px] text-slate-400 dark:text-[#64748B] block text-right">
                         {new Date(notif.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
@@ -99,7 +99,7 @@ export default function NotificationCenter({ navigate }) {
             ) : (
               <div className="p-8 flex flex-col items-center justify-center text-center">
                 <BellOff size={32} className="text-slate-300 dark:text-[#64748B] mb-3 opacity-50" />
-                <p className="text-[13px] text-slate-400 dark:text-[#64748B] font-medium">No notifications yet</p>
+                <p className="text-[14px] text-slate-400 dark:text-[#64748B] font-medium">No notifications yet</p>
               </div>
             )}
           </div>

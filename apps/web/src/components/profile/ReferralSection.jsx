@@ -170,17 +170,17 @@ export default function ReferralSection() {
           <Users size={17} className="text-[#A855F7]" />
         </div>
         <div>
-          <div className="text-[14px] font-semibold text-slate-900 dark:text-white">
+          <div className="text-[15px] font-semibold text-slate-900 dark:text-white">
             Invite &amp; Earn
           </div>
-          <div className="text-[11px] text-slate-500 dark:text-[#94A3B8] font-medium mt-0.5">
+          <div className="text-[12px] text-slate-500 dark:text-[#94A3B8] font-medium mt-0.5">
             You earn <span className="text-[#A855F7] font-bold">10 tokens</span> · your friend gets <span className="text-[#A855F7] font-bold">5 tokens</span>
           </div>
         </div>
         {referralCode && (
           <div className="ml-auto flex items-center gap-1.5 bg-[#A855F7]/10 px-2.5 py-1 rounded-full">
             <Users size={11} className="text-[#A855F7]" />
-            <span className="text-[12px] font-bold text-[#A855F7]">{referralCount}</span>
+            <span className="text-[13px] font-bold text-[#A855F7]">{referralCount}</span>
           </div>
         )}
       </div>
@@ -188,7 +188,7 @@ export default function ReferralSection() {
       {/* No code yet — creation form */}
       {!referralCode && (
         <>
-          <p className="text-[12px] text-slate-500 dark:text-[#94A3B8] mb-4 leading-relaxed">
+          <p className="text-[13px] text-slate-500 dark:text-[#94A3B8] mb-4 leading-relaxed">
             Create your unique referral code to invite friends. Share it and both of you get free tokens when they sign up.
           </p>
 
@@ -199,7 +199,7 @@ export default function ReferralSection() {
               value={codeInput}
               onChange={handleCodeInput}
               placeholder="e.g. Mark42"
-              className="w-full h-[44px] px-4 bg-slate-100 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl text-[14px] font-mono font-bold uppercase tracking-widest text-slate-900 dark:text-[#F1F5F9] placeholder:text-slate-300 dark:placeholder:text-[#475569] placeholder:normal-case placeholder:tracking-normal placeholder:font-normal outline-none focus:border-[#A855F7] dark:focus:border-[#A855F7] transition-colors pr-10"
+              className="w-full h-[44px] px-4 bg-slate-100 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl text-[15px] font-mono font-bold uppercase tracking-widest text-slate-900 dark:text-[#F1F5F9] placeholder:text-slate-300 dark:placeholder:text-[#475569] placeholder:normal-case placeholder:tracking-normal placeholder:font-normal outline-none focus:border-[#A855F7] dark:focus:border-[#A855F7] transition-colors pr-10"
               maxLength={6}
             />
             {isValidFormat && (
@@ -211,7 +211,7 @@ export default function ReferralSection() {
 
           {/* Format hint */}
           <div className="mt-2">
-            <span className={`text-[11px] font-medium transition-colors ${
+            <span className={`text-[12px] font-medium transition-colors ${
               codeInput.length === 0
                 ? 'text-slate-400 dark:text-[#64748B]'
                 : isValidFormat
@@ -230,7 +230,7 @@ export default function ReferralSection() {
           {isValidFormat && (
             <div className="mt-3 flex items-start gap-2 bg-amber-500/8 dark:bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2.5">
               <AlertTriangle size={13} className="text-amber-500 shrink-0 mt-[1px]" />
-              <p className="text-[11px] text-slate-600 dark:text-[#94A3B8] leading-relaxed">
+              <p className="text-[12px] text-slate-600 dark:text-[#94A3B8] leading-relaxed">
                 <span className="font-semibold text-slate-800 dark:text-[#F1F5F9]">This is permanent.</span>{' '}
                 Once confirmed, your referral code <span className="font-semibold">cannot be changed</span>.
               </p>
@@ -250,19 +250,19 @@ export default function ReferralSection() {
               >
                 {confirmed && <Check size={12} className="text-white" strokeWidth={3} />}
               </div>
-              <span className="text-[12px] text-slate-600 dark:text-[#94A3B8]">
+              <span className="text-[13px] text-slate-600 dark:text-[#94A3B8]">
                 I understand my code <strong className="text-slate-800 dark:text-[#F1F5F9]">{codeInput}</strong> cannot be changed after this
               </span>
             </label>
           )}
 
-          {error && <p className="text-[12px] text-red-500 mt-2">{error}</p>}
+          {error && <p className="text-[13px] text-red-500 mt-2">{error}</p>}
 
           {/* Confirm button */}
           <button
             onClick={handleConfirm}
             disabled={!isValidFormat || !confirmed || saving}
-            className="mt-4 w-full bg-[#A855F7] text-white rounded-xl py-3 text-[14px] font-bold flex items-center justify-center gap-2 disabled:opacity-40 hover:brightness-110 active:scale-[0.98] transition-all"
+            className="mt-4 w-full bg-[#A855F7] text-white rounded-xl py-3 text-[15px] font-bold flex items-center justify-center gap-2 disabled:opacity-40 hover:brightness-110 active:scale-[0.98] transition-all"
           >
             {saving
               ? <Loader2 size={16} className="animate-spin" />
@@ -277,24 +277,24 @@ export default function ReferralSection() {
           {/* Stats row */}
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div className="bg-[#A855F7] rounded-xl p-4 text-white">
-              <div className="text-[22px] font-bold tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              <div className="text-[23px] font-bold tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
                 {referralCount * 10}
               </div>
-              <div className="text-[11px] font-medium text-white/80 mt-0.5">Tokens earned</div>
+              <div className="text-[12px] font-medium text-white/80 mt-0.5">Tokens earned</div>
             </div>
             <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-4">
-              <div className="text-[22px] font-bold text-slate-900 dark:text-white tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              <div className="text-[23px] font-bold text-slate-900 dark:text-white tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
                 {referralCount}
               </div>
-              <div className="text-[11px] font-medium text-slate-500 dark:text-[#94A3B8] mt-0.5">
+              <div className="text-[12px] font-medium text-slate-500 dark:text-[#94A3B8] mt-0.5">
                 {referralCount === 1 ? 'Friend invited' : 'Friends invited'}
               </div>
             </div>
             <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-4">
-              <div className="text-[22px] font-bold text-[#22C55E] tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              <div className="text-[23px] font-bold text-[#22C55E] tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
                 {convertedCount}
               </div>
-              <div className="text-[11px] font-medium text-slate-500 dark:text-[#94A3B8] mt-0.5">
+              <div className="text-[12px] font-medium text-slate-500 dark:text-[#94A3B8] mt-0.5">
                 {convertedCount === 1 ? 'Bought tokens' : 'Bought tokens'}
               </div>
             </div>
@@ -302,12 +302,12 @@ export default function ReferralSection() {
 
           {/* Code display */}
           <div className="bg-[#A855F7]/8 dark:bg-[#A855F7]/10 border border-[#A855F7]/20 rounded-xl px-4 py-3 flex items-center justify-between mb-3">
-            <span className="text-[22px] font-mono font-bold tracking-[0.15em] text-[#A855F7] uppercase">
+            <span className="text-[23px] font-mono font-bold tracking-[0.15em] text-[#A855F7] uppercase">
               {referralCode}
             </span>
             <button
               onClick={handleCopy}
-              className="flex items-center gap-1.5 text-[12px] font-semibold text-[#A855F7] hover:text-[#9333EA] transition-colors"
+              className="flex items-center gap-1.5 text-[13px] font-semibold text-[#A855F7] hover:text-[#9333EA] transition-colors"
             >
               {copied ? <Check size={14} /> : <Copy size={14} />}
               {copied ? 'Copied!' : 'Copy code'}
@@ -317,12 +317,12 @@ export default function ReferralSection() {
           {/* Referral link */}
           <div className="bg-slate-100 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl px-3 py-2.5 flex items-center gap-2 mb-4">
             <Link size={13} className="text-slate-400 dark:text-[#64748B] shrink-0" />
-            <span className="text-[11px] text-slate-500 dark:text-[#94A3B8] font-mono truncate flex-1">
+            <span className="text-[12px] text-slate-500 dark:text-[#94A3B8] font-mono truncate flex-1">
               {referralLink}
             </span>
             <button
               onClick={handleCopyLink}
-              className="flex items-center gap-1 text-[11px] font-semibold text-[#A855F7] hover:text-[#9333EA] transition-colors shrink-0"
+              className="flex items-center gap-1 text-[12px] font-semibold text-[#A855F7] hover:text-[#9333EA] transition-colors shrink-0"
             >
               {copiedLink ? <Check size={12} /> : <Copy size={12} />}
               {copiedLink ? 'Copied!' : 'Copy'}
@@ -340,12 +340,12 @@ export default function ReferralSection() {
                 d="M174.7 82.5l-19.7 92.8c-1.5 6.6-5.4 8.2-10.9 5.1l-30.2-22.3-14.6 14c-1.6 1.6-3 3-6.1 3l2.2-30.9 56.2-50.8c2.4-2.2-.5-3.4-3.8-1.2l-69.5 43.8-29.9-9.4c-6.5-2-6.6-6.5 1.4-9.6l117-45.1c5.4-2 10.1 1.3 8.3 9.6z"
               />
             </svg>
-            <span className="text-[11px] text-[#229ED9] dark:text-[#5AC0EE] font-mono truncate flex-1">
+            <span className="text-[12px] text-[#229ED9] dark:text-[#5AC0EE] font-mono truncate flex-1">
               {telegramReferralLink}
             </span>
             <button
               onClick={handleCopyTelegramLink}
-              className="flex items-center gap-1 text-[11px] font-semibold text-[#229ED9] hover:text-[#1E92CB] transition-colors shrink-0"
+              className="flex items-center gap-1 text-[12px] font-semibold text-[#229ED9] hover:text-[#1E92CB] transition-colors shrink-0"
             >
               {copiedTelegramLink ? <Check size={12} /> : <Copy size={12} />}
               {copiedTelegramLink ? 'Copied!' : 'Copy'}
@@ -354,18 +354,18 @@ export default function ReferralSection() {
 
           {/* Rewards breakdown */}
           <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3.5 mb-4">
-            <div className="text-[11px] font-semibold text-slate-500 dark:text-[#94A3B8] uppercase tracking-wide mb-2">
+            <div className="text-[12px] font-semibold text-slate-500 dark:text-[#94A3B8] uppercase tracking-wide mb-2">
               Rewards
             </div>
             <div className="flex items-center justify-between py-1.5 border-b border-slate-200 dark:border-white/10">
-              <span className="text-[12px] text-slate-600 dark:text-[#94A3B8]">You receive</span>
-              <span className="text-[13px] font-bold text-[#A855F7]">+10 tokens</span>
+              <span className="text-[13px] text-slate-600 dark:text-[#94A3B8]">You receive</span>
+              <span className="text-[14px] font-bold text-[#A855F7]">+10 tokens</span>
             </div>
             <div className="flex items-center justify-between py-1.5">
-              <span className="text-[12px] text-slate-600 dark:text-[#94A3B8]">Your friend receives</span>
-              <span className="text-[13px] font-bold text-[#A855F7]">+5 tokens</span>
+              <span className="text-[13px] text-slate-600 dark:text-[#94A3B8]">Your friend receives</span>
+              <span className="text-[14px] font-bold text-[#A855F7]">+5 tokens</span>
             </div>
-            <p className="text-[11px] text-slate-400 dark:text-[#64748B] mt-2 leading-relaxed">
+            <p className="text-[12px] text-slate-400 dark:text-[#64748B] mt-2 leading-relaxed">
               Tokens are credited automatically as soon as your friend signs up with your link.
             </p>
           </div>
@@ -373,7 +373,7 @@ export default function ReferralSection() {
           {/* Friends list */}
           {friends.length > 0 && (
             <div className="mb-4">
-              <div className="text-[11px] font-semibold text-slate-500 dark:text-[#94A3B8] uppercase tracking-wide mb-2">
+              <div className="text-[12px] font-semibold text-slate-500 dark:text-[#94A3B8] uppercase tracking-wide mb-2">
                 Your friends ({friends.length})
               </div>
               <div className="flex flex-col gap-2 max-h-[280px] overflow-y-auto pr-0.5">
@@ -385,24 +385,24 @@ export default function ReferralSection() {
                     {f.avatar_url ? (
                       <img src={f.avatar_url} alt={f.name} className="w-9 h-9 rounded-full object-cover shrink-0" />
                     ) : (
-                      <div className="w-9 h-9 rounded-full bg-[#A855F7]/15 text-[#A855F7] flex items-center justify-center font-bold text-[13px] shrink-0">
+                      <div className="w-9 h-9 rounded-full bg-[#A855F7]/15 text-[#A855F7] flex items-center justify-center font-bold text-[14px] shrink-0">
                         {(f.name || '?').charAt(0).toUpperCase()}
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <div className="text-[13px] font-semibold text-slate-900 dark:text-white truncate">
+                      <div className="text-[14px] font-semibold text-slate-900 dark:text-white truncate">
                         {f.name || 'Student'}
                       </div>
-                      <div className="text-[11px] text-slate-400 dark:text-[#64748B]">
+                      <div className="text-[12px] text-slate-400 dark:text-[#64748B]">
                         Joined {timeAgo(f.joined_at)}
                       </div>
                     </div>
                     {f.converted ? (
-                      <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-[#22C55E]/10 text-[#22C55E] text-[10px] font-bold shrink-0">
+                      <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-[#22C55E]/10 text-[#22C55E] text-[11px] font-bold shrink-0">
                         <ShoppingBag size={11} /> Purchased
                       </span>
                     ) : (
-                      <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-[#94A3B8] text-[10px] font-bold shrink-0">
+                      <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-[#94A3B8] text-[11px] font-bold shrink-0">
                         <UserPlus size={11} /> Signed up
                       </span>
                     )}
@@ -416,7 +416,7 @@ export default function ReferralSection() {
           <div className="flex gap-2">
             <button
               onClick={handleShare}
-              className="flex-1 bg-[#A855F7] text-white rounded-xl py-3 text-[14px] font-bold flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all"
+              className="flex-1 bg-[#A855F7] text-white rounded-xl py-3 text-[15px] font-bold flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all"
             >
               <Share2 size={15} /> Share my code
             </button>

@@ -37,7 +37,7 @@ function PersonCell({ name, email, telegramLinked }) {
         <div className="flex items-center gap-1.5">
           <p className="text-xs text-muted-foreground truncate">{email || '—'}</p>
           {telegramLinked && (
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-[#229ED9]/40 text-[#229ED9]">Telegram</Badge>
+            <Badge variant="outline" className="text-[11px] px-1.5 py-0 h-4 border-[#229ED9]/40 text-[#229ED9]">Telegram</Badge>
           )}
         </div>
       </div>

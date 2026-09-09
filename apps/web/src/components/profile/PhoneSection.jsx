@@ -82,19 +82,19 @@ export default function PhoneSection() {
           <Phone size={17} className="text-[#22C55E]" />
         </div>
         <div>
-          <div className="text-[14px] font-semibold text-slate-900 dark:text-white">
+          <div className="text-[15px] font-semibold text-slate-900 dark:text-white">
             Phone number
           </div>
           {!claimed && (
             <div className="flex items-center gap-1 mt-0.5">
               <Gift size={11} className="text-[#F97316]" />
-              <span className="text-[11px] text-[#F97316] font-medium">
+              <span className="text-[12px] text-[#F97316] font-medium">
                 Add your number → get 2 free tokens
               </span>
             </div>
           )}
           {claimed && (
-            <div className="text-[11px] text-[#22C55E] font-medium mt-0.5">
+            <div className="text-[12px] text-[#22C55E] font-medium mt-0.5">
               ✓ Number saved
 </div>
           )}
@@ -107,7 +107,7 @@ export default function PhoneSection() {
         <div className="relative">
           <button
             onClick={() => setShowDropdown(v => !v)}
-            className="h-[44px] px-3 bg-slate-100 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl flex items-center gap-1.5 text-[13px] font-medium text-slate-700 dark:text-[#F1F5F9] min-w-[120px] hover:border-slate-300 dark:hover:border-[#475569] transition-colors"
+            className="h-[44px] px-3 bg-slate-100 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl flex items-center gap-1.5 text-[14px] font-medium text-slate-700 dark:text-[#F1F5F9] min-w-[120px] hover:border-slate-300 dark:hover:border-[#475569] transition-colors"
           >
             <span>{selectedCountry.name}</span>
             <span className="text-slate-400 dark:text-[#64748B]">(+{selectedCountry.code})</span>
@@ -120,7 +120,7 @@ export default function PhoneSection() {
                 <button
                   key={c.code}
                   onClick={() => handleCountryChange(c.code)}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-[13px] text-slate-700 dark:text-[#F1F5F9] hover:bg-slate-50 dark:hover:bg-[#0F172A] transition-colors text-left"
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-[14px] text-slate-700 dark:text-[#F1F5F9] hover:bg-slate-50 dark:hover:bg-[#0F172A] transition-colors text-left"
                 >
                   {c.code === countryCode && <Check size={12} className="text-[#22C55E] shrink-0" />}
                   {c.code !== countryCode && <span className="w-3 shrink-0" />}
@@ -140,7 +140,7 @@ export default function PhoneSection() {
             value={phone}
             onChange={handlePhoneInput}
             placeholder={'0'.repeat(selectedCountry.digits)}
-            className="w-full h-[44px] px-4 bg-slate-100 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl text-[14px] text-slate-900 dark:text-[#F1F5F9] placeholder:text-slate-300 dark:placeholder:text-[#475569] outline-none focus:border-[#22C55E] dark:focus:border-[#22C55E] transition-colors pr-10"
+            className="w-full h-[44px] px-4 bg-slate-100 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl text-[15px] text-slate-900 dark:text-[#F1F5F9] placeholder:text-slate-300 dark:placeholder:text-[#475569] outline-none focus:border-[#22C55E] dark:focus:border-[#22C55E] transition-colors pr-10"
           />
           {isValidFormat && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -152,7 +152,7 @@ export default function PhoneSection() {
 
       {/* Format indicator */}
       <div className="mt-2 flex items-center justify-between">
-        <span className={`text-[11px] font-medium transition-colors ${
+        <span className={`text-[12px] font-medium transition-colors ${
           phone.length === 0
             ? 'text-slate-400 dark:text-[#64748B]'
             : isValidFormat
@@ -171,7 +171,7 @@ export default function PhoneSection() {
       {!claimed && (
         <div className="mt-3 flex items-start gap-2 bg-[#22C55E]/8 dark:bg-[#22C55E]/10 border border-[#22C55E]/20 rounded-xl px-3 py-2.5">
           <MessageCircle size={13} className="text-[#22C55E] shrink-0 mt-[1px]" />
-          <p className="text-[11px] text-slate-600 dark:text-[#94A3B8] leading-relaxed">
+          <p className="text-[12px] text-slate-600 dark:text-[#94A3B8] leading-relaxed">
             <span className="font-semibold text-slate-800 dark:text-[#F1F5F9]">WhatsApp number only.</span>{' '}
             Make sure this is your correct WhatsApp number — a confirmation will be sent to verify it before the tokens are credited.
           </p>
@@ -179,14 +179,14 @@ export default function PhoneSection() {
       )}
 
       {error && (
-        <p className="text-[12px] text-red-500 mt-2">{error}</p>
+        <p className="text-[13px] text-red-500 mt-2">{error}</p>
       )}
 
       {/* Save button */}
       <button
         onClick={handleClaim}
         disabled={!isValidFormat || saving}
-        className="mt-4 w-full bg-[#22C55E] text-[#052e16] rounded-xl py-3 text-[14px] font-bold flex items-center justify-center gap-2 disabled:opacity-40 hover:brightness-110 active:scale-[0.98] transition-all"
+        className="mt-4 w-full bg-[#22C55E] text-[#052e16] rounded-xl py-3 text-[15px] font-bold flex items-center justify-center gap-2 disabled:opacity-40 hover:brightness-110 active:scale-[0.98] transition-all"
       >
         {saving
           ? <Loader2 size={16} className="animate-spin" />

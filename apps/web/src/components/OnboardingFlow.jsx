@@ -52,8 +52,8 @@ export default function OnboardingFlow({ initialStep = 0, isEditMode = false, on
                 <path d="M12 2L22 12L12 22L2 12L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
-            <h1 className="text-[24px] font-medium text-slate-900 dark:text-[#F1F5F9] mb-2 text-center">Welcome to PassMark</h1>
-            <p className="text-[16px] text-slate-500 dark:text-[#94A3B8] text-center mb-12 text-balance">Your personal GCE AI Tutor. Powered by Claude AI.</p>
+            <h1 className="text-[25px] font-medium text-slate-900 dark:text-[#F1F5F9] mb-2 text-center">Welcome to PassMark</h1>
+            <p className="text-[17px] text-slate-500 dark:text-[#94A3B8] text-center mb-12 text-balance">Your personal GCE AI Tutor. Powered by Claude AI.</p>
 
             <div className="relative w-48 h-48 mb-12">
               <div className="absolute inset-0 bg-white dark:bg-[#1E293B] rounded-3xl border border-slate-200 dark:border-[#334155] shadow-xl flex flex-col p-4 gap-3">
@@ -87,7 +87,7 @@ export default function OnboardingFlow({ initialStep = 0, isEditMode = false, on
         {/* Screen 2: Features */}
         {step === 1 && (
           <div className="absolute inset-0 flex flex-col items-center justify-center fade-in">
-            <h2 className="text-[20px] font-medium text-slate-900 dark:text-[#F1F5F9] mb-8 text-center">Everything you need to pass</h2>
+            <h2 className="text-[21px] font-medium text-slate-900 dark:text-[#F1F5F9] mb-8 text-center">Everything you need to pass</h2>
 
             <div className="w-full flex flex-col mb-12">
               <div className="bg-white dark:bg-[#1E293B] rounded-[12px] p-[14px] flex items-center gap-[14px] mb-[10px] border border-slate-200 dark:border-transparent shadow-sm">
@@ -95,8 +95,8 @@ export default function OnboardingFlow({ initialStep = 0, isEditMode = false, on
                   <MessageSquare size={20} />
                 </div>
                 <div>
-                  <h3 className="text-[14px] font-medium text-slate-900 dark:text-white mb-0.5">AI Tutor</h3>
-                  <p className="text-[12px] text-slate-500 dark:text-[#94A3B8]">Solve any GCE question instantly</p>
+                  <h3 className="text-[15px] font-medium text-slate-900 dark:text-white mb-0.5">AI Tutor</h3>
+                  <p className="text-[13px] text-slate-500 dark:text-[#94A3B8]">Solve any GCE question instantly</p>
                 </div>
               </div>
 
@@ -105,8 +105,8 @@ export default function OnboardingFlow({ initialStep = 0, isEditMode = false, on
                   <FileText size={20} />
                 </div>
                 <div>
-                  <h3 className="text-[14px] font-medium text-slate-900 dark:text-white mb-0.5">Past Papers</h3>
-                  <p className="text-[12px] text-slate-500 dark:text-[#94A3B8]">All subjects 2015–2024, offline ready</p>
+                  <h3 className="text-[15px] font-medium text-slate-900 dark:text-white mb-0.5">Past Papers</h3>
+                  <p className="text-[13px] text-slate-500 dark:text-[#94A3B8]">All subjects 2015–2024, offline ready</p>
                 </div>
               </div>
 
@@ -115,8 +115,8 @@ export default function OnboardingFlow({ initialStep = 0, isEditMode = false, on
                   <List size={20} />
                 </div>
                 <div>
-                  <h3 className="text-[14px] font-medium text-slate-900 dark:text-white mb-0.5">Smart Quizzes</h3>
-                  <p className="text-[12px] text-slate-500 dark:text-[#94A3B8]">AI-generated MCQs in exam style</p>
+                  <h3 className="text-[15px] font-medium text-slate-900 dark:text-white mb-0.5">Smart Quizzes</h3>
+                  <p className="text-[13px] text-slate-500 dark:text-[#94A3B8]">AI-generated MCQs in exam style</p>
                 </div>
               </div>
             </div>
@@ -140,31 +140,31 @@ export default function OnboardingFlow({ initialStep = 0, isEditMode = false, on
         {step === 2 && (
           <div className="absolute inset-0 flex flex-col justify-center fade-in">
             <div className="mb-6 text-center flex items-center justify-center relative">
-              <h2 className="text-[20px] font-medium text-slate-900 dark:text-[#F1F5F9]">
+              <h2 className="text-[21px] font-medium text-slate-900 dark:text-[#F1F5F9]">
                 {isEditMode ? 'Edit Profile' : 'Set up your profile'}
               </h2>
               {isEditMode && onClose && (
                 <button
                   onClick={onClose}
-                  className="absolute right-0 text-slate-400 dark:text-[#64748B] hover:text-slate-700 dark:hover:text-white text-[20px] leading-none"
+                  className="absolute right-0 text-slate-400 dark:text-[#64748B] hover:text-slate-700 dark:hover:text-white text-[21px] leading-none"
                   aria-label="Fermer"
                 >
                   ×
                 </button>
               )}
-              {!isEditMode && <p className="text-[12px] text-slate-500 dark:text-[#94A3B8] mt-1">30 seconds. No account needed.</p>}
+              {!isEditMode && <p className="text-[13px] text-slate-500 dark:text-[#94A3B8] mt-1">30 seconds. No account needed.</p>}
             </div>
 
             <div className="flex flex-col gap-[12px] overflow-y-auto hide-scrollbar pb-4">
               {/* Name */}
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] text-slate-500 dark:text-[#94A3B8] ml-1">Your name</label>
+                <label className="text-[12px] text-slate-500 dark:text-[#94A3B8] ml-1">Your name</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Collins Obi"
-                  className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] rounded-[10px] p-[12px] text-[14px] text-slate-900 dark:text-[#F1F5F9] outline-none focus:border-[#22C55E] placeholder:text-slate-400 dark:placeholder:text-[#475569]"
+                  className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] rounded-[10px] p-[12px] text-[15px] text-slate-900 dark:text-[#F1F5F9] outline-none focus:border-[#22C55E] placeholder:text-slate-400 dark:placeholder:text-[#475569]"
                 />
               </div>
 
@@ -175,7 +175,7 @@ export default function OnboardingFlow({ initialStep = 0, isEditMode = false, on
                     key={lvl}
                     onClick={() => setLevel(lvl)}
                     className={cn(
-                      "flex-1 rounded-[10px] p-[12px] text-[13px] font-medium border scale-on-click",
+                      "flex-1 rounded-[10px] p-[12px] text-[14px] font-medium border scale-on-click",
                       level === lvl
                         ? "bg-[#22C55E] border-[#22C55E] text-[#052e16]"
                         : "bg-white dark:bg-[#1E293B] border-slate-200 dark:border-[#334155] text-slate-600 dark:text-[#94A3B8]"
@@ -195,7 +195,7 @@ export default function OnboardingFlow({ initialStep = 0, isEditMode = false, on
                       key={sub}
                       onClick={() => toggleSubject(sub)}
                       className={cn(
-                        "rounded-[20px] px-[12px] py-[6px] text-[11px] font-medium border scale-on-click truncate",
+                        "rounded-[20px] px-[12px] py-[6px] text-[12px] font-medium border scale-on-click truncate",
                         isSelected
                           ? "bg-green-50 dark:bg-[#14532D] border-[#22C55E] text-green-700 dark:text-[#86EFAC]"
                           : "bg-white dark:bg-[#1E293B] border-slate-200 dark:border-[#334155] text-slate-600 dark:text-[#94A3B8]"
@@ -212,14 +212,14 @@ export default function OnboardingFlow({ initialStep = 0, isEditMode = false, on
                 <select
                   value={examMonth}
                   onChange={(e) => setExamMonth(e.target.value)}
-                  className="flex-1 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] rounded-[8px] p-[10px] text-[14px] text-slate-900 dark:text-[#F1F5F9] outline-none focus:border-[#22C55E] appearance-none"
+                  className="flex-1 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] rounded-[8px] p-[10px] text-[15px] text-slate-900 dark:text-[#F1F5F9] outline-none focus:border-[#22C55E] appearance-none"
                 >
                   {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
                 <select
                   value={examYear}
                   onChange={(e) => setExamYear(e.target.value)}
-                  className="flex-1 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] rounded-[8px] p-[10px] text-[14px] text-slate-900 dark:text-[#F1F5F9] outline-none focus:border-[#22C55E] appearance-none"
+                  className="flex-1 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155] rounded-[8px] p-[10px] text-[15px] text-slate-900 dark:text-[#F1F5F9] outline-none focus:border-[#22C55E] appearance-none"
                 >
                   {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
                 </select>
@@ -229,7 +229,7 @@ export default function OnboardingFlow({ initialStep = 0, isEditMode = false, on
             <button
               onClick={handleSubmit}
               disabled={!name.trim() || subjects.length === 0}
-              className="w-full mt-4 bg-[#22C55E] text-[#052e16] rounded-[12px] p-[14px] text-[14px] font-medium disabled:opacity-50 scale-on-click"
+              className="w-full mt-4 bg-[#22C55E] text-[#052e16] rounded-[12px] p-[14px] text-[15px] font-medium disabled:opacity-50 scale-on-click"
             >
               {isEditMode ? 'Save changes' : 'Start learning →'}
             </button>

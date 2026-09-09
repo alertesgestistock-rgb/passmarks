@@ -43,8 +43,8 @@ export default function QuizResultsScreen({ navigate, viewState }) {
 
         <Trophy size={56} className="text-[#EAB308] mb-6 drop-shadow-[0_0_20px_rgba(234,179,8,0.4)]" />
 
-        <h1 className="text-[24px] font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Quiz Complete!</h1>
-        <p className="text-slate-500 dark:text-[#94A3B8] text-[15px] mb-8 font-medium">{subject} · {totalQuestions} Questions</p>
+        <h1 className="text-[25px] font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Quiz Complete!</h1>
+        <p className="text-slate-500 dark:text-[#94A3B8] text-[16px] mb-8 font-medium">{subject} · {totalQuestions} Questions</p>
 
         {/* Circular Progress */}
         <div className="relative w-[140px] h-[140px] mb-8 flex items-center justify-center">
@@ -58,23 +58,23 @@ export default function QuizResultsScreen({ navigate, viewState }) {
             />
           </svg>
           <div className="absolute flex flex-col items-center justify-center">
-            <span className="text-[32px] font-bold text-slate-900 dark:text-white leading-none tracking-tighter" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            <span className="text-[33px] font-bold text-slate-900 dark:text-white leading-none tracking-tighter" style={{ fontVariantNumeric: 'tabular-nums' }}>
               {percentage}%
             </span>
           </div>
         </div>
 
-        <div className="text-[24px] font-bold text-slate-900 dark:text-white mb-4">
+        <div className="text-[25px] font-bold text-slate-900 dark:text-white mb-4">
           {score} <span className="text-slate-400 dark:text-[#64748B]">/</span> {totalQuestions} Correct
         </div>
 
-        <div className={`px-5 py-2 rounded-full border text-[14px] font-bold uppercase tracking-wider mb-8 ${gradeBadge.colors}`}>
+        <div className={`px-5 py-2 rounded-full border text-[15px] font-bold uppercase tracking-wider mb-8 ${gradeBadge.colors}`}>
           {gradeBadge.text}
         </div>
 
         <button
           onClick={() => setIsShareOpen(true)}
-          className="mb-12 bg-[#22C55E] text-[#052e16] px-5 py-2.5 rounded-xl text-[14px] font-bold flex items-center gap-2 hover:brightness-110 active:scale-95 transition-all shadow-md"
+          className="mb-12 bg-[#22C55E] text-[#052e16] px-5 py-2.5 rounded-xl text-[15px] font-bold flex items-center gap-2 hover:brightness-110 active:scale-95 transition-all shadow-md"
         >
           <Share2 size={16} /> Share my score
         </button>
@@ -82,14 +82,14 @@ export default function QuizResultsScreen({ navigate, viewState }) {
         <div className="w-full flex flex-col gap-4">
           <button
             onClick={() => navigate('quiz-setup')}
-            className="w-full bg-white dark:bg-[#1E293B] text-slate-900 dark:text-white border border-slate-200 dark:border-[#334155] rounded-xl py-4 text-[16px] font-bold flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-[#334155] active:scale-[0.98] transition-all"
+            className="w-full bg-white dark:bg-[#1E293B] text-slate-900 dark:text-white border border-slate-200 dark:border-[#334155] rounded-xl py-4 text-[17px] font-bold flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-[#334155] active:scale-[0.98] transition-all"
           >
             <RefreshCw size={20} /> New Quiz
           </button>
 
           <button
             onClick={() => navigate('home')}
-            className="w-full bg-slate-100 dark:bg-[#0F172A] text-slate-500 dark:text-[#94A3B8] border border-slate-200 dark:border-[#334155] rounded-xl py-4 text-[16px] font-bold flex items-center justify-center gap-2 hover:text-slate-900 dark:hover:text-[#F1F5F9] hover:border-slate-300 dark:hover:border-[#475569] active:scale-[0.98] transition-all"
+            className="w-full bg-slate-100 dark:bg-[#0F172A] text-slate-500 dark:text-[#94A3B8] border border-slate-200 dark:border-[#334155] rounded-xl py-4 text-[17px] font-bold flex items-center justify-center gap-2 hover:text-slate-900 dark:hover:text-[#F1F5F9] hover:border-slate-300 dark:hover:border-[#475569] active:scale-[0.98] transition-all"
           >
             <Home size={18} /> Home
           </button>

@@ -80,10 +80,10 @@ export default function TokenShopModal({ onClose }) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-0">
           <div>
-            <div className="text-[18px] font-bold text-slate-900 dark:text-[#F1F5F9]">
+            <div className="text-[19px] font-bold text-slate-900 dark:text-[#F1F5F9]">
               {lang === 'fr' ? 'Acheter des tokens' : 'Buy Tokens'}
             </div>
-            <div className="text-[12px] text-slate-400 dark:text-[#64748B] mt-0.5">
+            <div className="text-[13px] text-slate-400 dark:text-[#64748B] mt-0.5">
               {lang === 'fr' ? 'Solde actuel :' : 'Current balance:'}{' '}
               <span className="text-[#22C55E] font-bold">{tokenBalance ?? 0}</span> tokens
             </div>
@@ -99,7 +99,7 @@ export default function TokenShopModal({ onClose }) {
         {/* Packs */}
         <div className="p-4 flex flex-col gap-2.5">
           {loading && (
-            <div className="text-center py-8 text-slate-400 dark:text-[#64748B] text-[14px]">
+            <div className="text-center py-8 text-slate-400 dark:text-[#64748B] text-[15px]">
               {lang === 'fr' ? 'Chargement…' : 'Loading…'}
             </div>
           )}
@@ -122,7 +122,7 @@ export default function TokenShopModal({ onClose }) {
                 {/* Popular badge */}
                 {pkg.is_popular && (
                   <div
-                    className="absolute -top-2.5 left-4 flex items-center gap-1 px-2 py-0.5 rounded-full text-white text-[10px] font-bold tracking-wider"
+                    className="absolute -top-2.5 left-4 flex items-center gap-1 px-2 py-0.5 rounded-full text-white text-[11px] font-bold tracking-wider"
                     style={{ background: color }}
                   >
                     <Flame size={10} />
@@ -140,23 +140,23 @@ export default function TokenShopModal({ onClose }) {
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <div className="font-bold text-[15px]" style={{ color: textPrimary }}>{pkg.name}</div>
-                  <div className="text-[12px] text-slate-500 dark:text-[#94A3B8] mt-0.5">
+                  <div className="font-bold text-[16px]" style={{ color: textPrimary }}>{pkg.name}</div>
+                  <div className="text-[13px] text-slate-500 dark:text-[#94A3B8] mt-0.5">
                     <span className="font-bold" style={{ color }}>{pkg.tokens}</span> tokens
                     {' · '}
-                    <span className="text-[11px]">{Math.round(pkg.price_xaf / pkg.tokens)} XAF/token</span>
+                    <span className="text-[12px]">{Math.round(pkg.price_xaf / pkg.tokens)} XAF/token</span>
                   </div>
                 </div>
 
                 {/* Price + Buy */}
                 <div className="text-right shrink-0">
-                  <div className="text-[16px] font-extrabold" style={{ color: textPrimary }}>
+                  <div className="text-[17px] font-extrabold" style={{ color: textPrimary }}>
                     {pkg.price_xaf.toLocaleString()} XAF
                   </div>
                   <button
                     onClick={() => handleBuy(pkg)}
                     disabled={buying === pkg.id}
-                    className="mt-1.5 px-3.5 py-1.5 rounded-lg text-white font-bold text-[12px] transition-all disabled:opacity-60 hover:brightness-110 active:scale-95"
+                    className="mt-1.5 px-3.5 py-1.5 rounded-lg text-white font-bold text-[13px] transition-all disabled:opacity-60 hover:brightness-110 active:scale-95"
                     style={{ background: color }}
                   >
                     {buying === pkg.id
@@ -170,7 +170,7 @@ export default function TokenShopModal({ onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="px-5 pb-5 text-[11px] text-slate-400 dark:text-[#475569] text-center leading-relaxed">
+        <div className="px-5 pb-5 text-[12px] text-slate-400 dark:text-[#475569] text-center leading-relaxed">
           {lang === 'fr'
             ? 'Paiement sécurisé via Chariow · MTN MoMo · Orange Money · Carte'
             : 'Secure payment via Chariow · MTN MoMo · Orange Money · Card'}

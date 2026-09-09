@@ -69,8 +69,8 @@ export default function ShareSheet({ isOpen, onClose, shareType = 'general', qui
         
         <div className="flex justify-between items-center mb-6 mt-4">
           <div>
-            <h2 className="text-[16px] font-bold text-[#F1F5F9] tracking-tight">Share PassMark</h2>
-            <p className="text-[12px] text-[#94A3B8] font-medium mt-0.5">Help your classmates discover PassMark</p>
+            <h2 className="text-[17px] font-bold text-[#F1F5F9] tracking-tight">Share PassMark</h2>
+            <p className="text-[13px] text-[#94A3B8] font-medium mt-0.5">Help your classmates discover PassMark</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 bg-[#0F172A] rounded-full flex items-center justify-center text-[#94A3B8] hover:text-[#F1F5F9] transition-colors">
             <X size={18} />
@@ -87,7 +87,7 @@ export default function ShareSheet({ isOpen, onClose, shareType = 'general', qui
             <div className="w-11 h-11 bg-[#22C55E]/10 text-[#22C55E] rounded-full flex items-center justify-center group-hover:bg-[#22C55E] group-hover:text-white transition-colors">
               <MessageCircle size={22} />
             </div>
-            <span className="text-[12px] font-semibold text-[#94A3B8] group-hover:text-[#F1F5F9]">WhatsApp</span>
+            <span className="text-[13px] font-semibold text-[#94A3B8] group-hover:text-[#F1F5F9]">WhatsApp</span>
           </a>
 
           <a 
@@ -99,7 +99,7 @@ export default function ShareSheet({ isOpen, onClose, shareType = 'general', qui
             <div className="w-11 h-11 bg-[#3B82F6]/10 text-[#3B82F6] rounded-full flex items-center justify-center group-hover:bg-[#3B82F6] group-hover:text-white transition-colors">
               <Send size={22} className="ml-[-2px]" />
             </div>
-            <span className="text-[12px] font-semibold text-[#94A3B8] group-hover:text-[#F1F5F9]">Telegram</span>
+            <span className="text-[13px] font-semibold text-[#94A3B8] group-hover:text-[#F1F5F9]">Telegram</span>
           </a>
 
           <button 
@@ -109,7 +109,7 @@ export default function ShareSheet({ isOpen, onClose, shareType = 'general', qui
             <div className={cn("w-11 h-11 rounded-full flex items-center justify-center transition-colors", copiedLink ? "bg-[#22C55E] text-white" : "bg-[#334155]/50 text-[#94A3B8] group-hover:bg-[#334155] group-hover:text-[#F1F5F9]")}>
               {copiedLink ? <Check size={22} /> : <Copy size={22} />}
             </div>
-            <span className={cn("text-[12px] font-semibold transition-colors", copiedLink ? "text-[#22C55E]" : "text-[#94A3B8] group-hover:text-[#F1F5F9]")}>
+            <span className={cn("text-[13px] font-semibold transition-colors", copiedLink ? "text-[#22C55E]" : "text-[#94A3B8] group-hover:text-[#F1F5F9]")}>
               {copiedLink ? 'Copied! ✓' : 'Copy Link'}
             </span>
           </button>
@@ -121,7 +121,7 @@ export default function ShareSheet({ isOpen, onClose, shareType = 'general', qui
             <div className="w-11 h-11 bg-[#334155]/50 text-[#94A3B8] rounded-full flex items-center justify-center group-hover:bg-[#334155] group-hover:text-[#F1F5F9] transition-colors">
               <FileTextIcon />
             </div>
-            <span className="text-[12px] font-semibold text-[#94A3B8] group-hover:text-[#F1F5F9]">Copy Message</span>
+            <span className="text-[13px] font-semibold text-[#94A3B8] group-hover:text-[#F1F5F9]">Copy Message</span>
           </button>
         </div>
       </div>

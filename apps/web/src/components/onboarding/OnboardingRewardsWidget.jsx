@@ -109,10 +109,10 @@ export default function OnboardingRewardsWidget({ navigate, dismissible = false 
             <Gift size={20} />
           </div>
           <div>
-            <h3 className="text-[15px] font-bold text-slate-900 dark:text-white">
+            <h3 className="text-[16px] font-bold text-slate-900 dark:text-white">
               {lang === 'fr' ? 'Récompenses de bienvenue' : 'Welcome rewards'}
             </h3>
-            <p className="text-[12px] text-slate-500 dark:text-[#94A3B8]">
+            <p className="text-[13px] text-slate-500 dark:text-[#94A3B8]">
               {lang === 'fr'
                 ? `Débloque jusqu'à ${ONBOARDING_REWARD_TOTAL} tokens gratuits avec tes premiers pas.`
                 : `Unlock up to ${ONBOARDING_REWARD_TOTAL} free tokens with your first steps.`}
@@ -120,7 +120,7 @@ export default function OnboardingRewardsWidget({ navigate, dismissible = false 
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          <span className="text-[14px] font-bold text-slate-900 dark:text-white" style={{ fontVariantNumeric: 'tabular-nums' }}>
+          <span className="text-[15px] font-bold text-slate-900 dark:text-white" style={{ fontVariantNumeric: 'tabular-nums' }}>
             {completed} / {STEPS.length}
           </span>
           {collapsed ? <ChevronDown size={18} className="text-slate-400" /> : <ChevronUp size={18} className="text-slate-400" />}
@@ -164,10 +164,10 @@ export default function OnboardingRewardsWidget({ navigate, dismissible = false 
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <h4 className="text-[13px] font-semibold text-slate-900 dark:text-white truncate">{copy.title}</h4>
-                        <span className="text-[11px] font-bold text-[#F97316] shrink-0">+{state.tokens ?? '?'}</span>
+                        <h4 className="text-[14px] font-semibold text-slate-900 dark:text-white truncate">{copy.title}</h4>
+                        <span className="text-[12px] font-bold text-[#F97316] shrink-0">+{state.tokens ?? '?'}</span>
                       </div>
-                      <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] mt-0.5">
+                      <p className="text-[12px] text-slate-500 dark:text-[#94A3B8] mt-0.5">
                         {isStreak
                           ? (lang === 'fr'
                               ? `Série actuelle : ${state.current_streak ?? 0}/7 jours`
@@ -181,7 +181,7 @@ export default function OnboardingRewardsWidget({ navigate, dismissible = false 
                     onClick={() => act(step)}
                     disabled={state.claimed || claiming === step.key}
                     className={cn(
-                      'w-full mt-3 py-2 rounded-lg text-[12px] font-semibold transition-colors',
+                      'w-full mt-3 py-2 rounded-lg text-[13px] font-semibold transition-colors',
                       state.claimed
                         ? 'bg-transparent text-[#22C55E] cursor-default'
                         : state.eligible

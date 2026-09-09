@@ -50,7 +50,7 @@ export default function Footer() {
           {/* Navigation Column */}
           <div className="flex flex-col gap-3 sm:items-center">
             <div className="flex flex-col gap-3">
-              <h4 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#64748B] mb-1">Navigation</h4>
+              <h4 className="text-[12px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#64748B] mb-1">Navigation</h4>
               {navLinks.map(({ to, label }) => (
                 <Link
                   key={to}
@@ -66,7 +66,7 @@ export default function Footer() {
           {/* Contact Column */}
           <div className="flex flex-col gap-3 sm:items-end">
             <div className="flex flex-col gap-3 w-fit">
-              <h4 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#64748B] mb-1">Contact</h4>
+              <h4 className="text-[12px] font-bold uppercase tracking-widest text-slate-400 dark:text-[#64748B] mb-1">Contact</h4>
               {isTelegram ? (
                 <button
                   onClick={openTelegramContact}
@@ -99,10 +99,10 @@ export default function Footer() {
 
         {/* Divider */}
         <div className="border-t border-slate-200 dark:border-white/5 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-[11px] text-slate-450 dark:text-[#475569] text-center sm:text-left">
+          <p className="text-[12px] text-slate-450 dark:text-[#475569] text-center sm:text-left">
             {t('common.copyright')}
           </p>
-          <div className="flex items-center gap-1 text-[11px] text-slate-450 dark:text-[#475569]">
+          <div className="flex items-center gap-1 text-[12px] text-slate-450 dark:text-[#475569]">
             <span>GCE AI Tutor</span>
             <span className="text-slate-350 dark:text-[#334155]">·</span>
             <span>PWA</span>

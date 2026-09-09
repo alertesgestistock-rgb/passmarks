@@ -63,7 +63,7 @@ function MarkdownText({ content, streaming }) {
       if (m.index > last) parts.push(text.slice(last, m.index));
       if (m[2]) parts.push(<strong key={m.index}>{m[2]}</strong>);
       else if (m[3]) parts.push(<em key={m.index}>{m[3]}</em>);
-      else if (m[4]) parts.push(<code key={m.index} className="bg-slate-200 dark:bg-[#0F172A] px-1 py-0.5 rounded text-[12px] font-mono">{m[4]}</code>);
+      else if (m[4]) parts.push(<code key={m.index} className="bg-slate-200 dark:bg-[#0F172A] px-1 py-0.5 rounded text-[13px] font-mono">{m[4]}</code>);
       last = m.index + m[0].length;
     }
     if (last < text.length) parts.push(text.slice(last));
@@ -73,7 +73,7 @@ function MarkdownText({ content, streaming }) {
   while (i < lines.length) {
     const line = lines[i];
     if (/^#{1,3}\s/.test(line)) {
-      elements.push(<p key={i} className="font-bold text-[15px] mt-2 mb-0.5">{renderInline(line.replace(/^#+\s/, ''))}</p>);
+      elements.push(<p key={i} className="font-bold text-[16px] mt-2 mb-0.5">{renderInline(line.replace(/^#+\s/, ''))}</p>);
     } else if (/^[-*]\s/.test(line)) {
       const items = [];
       while (i < lines.length && /^[-*]\s/.test(lines[i])) {
@@ -99,7 +99,7 @@ function MarkdownText({ content, streaming }) {
   }
 
   return (
-    <div className="space-y-0.5 text-[14px] leading-relaxed">
+    <div className="space-y-0.5 text-[15px] leading-relaxed">
       {elements}
       {streaming && <span className="inline-block w-[2px] h-[14px] bg-slate-500 dark:bg-slate-400 animate-pulse ml-0.5 align-middle rounded-full" />}
     </div>
@@ -644,7 +644,7 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
     <div className="flex flex-col h-full overflow-hidden">
 
       {isOffline && (
-        <div className="bg-slate-100 dark:bg-[#1E293B] text-[#F97316] p-2 text-center text-[12px] shrink-0 rounded-xl mb-3">
+        <div className="bg-slate-100 dark:bg-[#1E293B] text-[#F97316] p-2 text-center text-[13px] shrink-0 rounded-xl mb-3">
           You're offline — AI Tutor requires an internet connection.
         </div>
       )}
@@ -662,7 +662,7 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
         <div className="w-[36px] h-[36px] rounded-xl bg-[#22C55E]/10 flex items-center justify-center shrink-0">
           <GraduationCap size={18} className="text-[#22C55E]" />
         </div>
-        <h2 className="text-[14px] font-medium text-slate-900 dark:text-white">AI Tutor</h2>
+        <h2 className="text-[15px] font-medium text-slate-900 dark:text-white">AI Tutor</h2>
       </div>
 
       {/* Messages */}
@@ -675,7 +675,7 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
             {msg.pdfName && (
               <div className="flex items-center gap-1.5 bg-[#14532D]/80 rounded-lg px-2.5 py-1.5 mb-1">
                 <FileText size={12} className="text-[#86efac] shrink-0" />
-                <span className="text-[11px] text-[#86efac] truncate max-w-[160px]">{msg.pdfName}</span>
+                <span className="text-[12px] text-[#86efac] truncate max-w-[160px]">{msg.pdfName}</span>
               </div>
             )}
             <div
@@ -683,9 +683,9 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
               className={cn(
                 'max-w-[85%] p-4 rounded-2xl leading-relaxed',
                 msg.role === 'user'
-                  ? 'bg-[#14532D] text-white rounded-br-sm text-[14px]'
+                  ? 'bg-[#14532D] text-white rounded-br-sm text-[15px]'
                   : msg.isError
-                    ? 'bg-red-50 dark:bg-[#450a0a] text-red-600 dark:text-[#EF4444] border border-red-200 dark:border-[#7f1d1d] rounded-bl-sm text-[14px]'
+                    ? 'bg-red-50 dark:bg-[#450a0a] text-red-600 dark:text-[#EF4444] border border-red-200 dark:border-[#7f1d1d] rounded-bl-sm text-[15px]'
                     : 'bg-slate-100 dark:bg-[#1E293B] text-slate-800 dark:text-[#F1F5F9] rounded-bl-sm border border-slate-200 dark:border-[#334155]/50'
               )}>
               {msg.role === 'assistant' && !msg.isError
@@ -694,7 +694,7 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
             </div>
             <div className="flex items-center gap-2 px-1">
               {msg.timestamp && (
-                <span className="text-[10px] text-slate-400 dark:text-[#64748B]">
+                <span className="text-[11px] text-slate-400 dark:text-[#64748B]">
                   {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               )}
@@ -708,7 +708,7 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
                     }
                   }}
                   title="Download as PDF"
-                  className="flex items-center gap-1 text-[10px] text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  className="flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
                   <Download size={11} />
                   <span>PDF</span>
@@ -724,7 +724,7 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
               <button
                 key={sub}
                 onClick={() => handleSend(getSuggestedQuestion(sub))}
-                className="bg-white dark:bg-[#1E293B] border border-[#22C55E]/50 text-[#22C55E] rounded-[20px] px-[14px] py-[6px] text-[12px] scale-on-click hover:bg-[#22C55E]/5 transition-colors"
+                className="bg-white dark:bg-[#1E293B] border border-[#22C55E]/50 text-[#22C55E] rounded-[20px] px-[14px] py-[6px] text-[13px] scale-on-click hover:bg-[#22C55E]/5 transition-colors"
               >
                 {getSuggestedQuestion(sub)}
               </button>
@@ -744,7 +744,7 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 text-slate-400 dark:text-[#64748B] active:bg-red-50 dark:active:bg-red-900/20 active:text-red-500 dark:active:text-red-400 active:border-red-200 dark:active:border-red-800 transition-colors"
             >
               <X size={13} />
-              <span className="text-[12px] font-medium">Cancel</span>
+              <span className="text-[13px] font-medium">Cancel</span>
             </button>
           </div>
         )}
@@ -765,8 +765,8 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
             <div className="flex items-center gap-2 bg-[#22C55E]/10 border border-[#22C55E]/30 rounded-xl px-3 py-2 max-w-[260px]">
               <FileText size={14} className="text-[#22C55E] shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-[12px] text-[#22C55E] font-medium truncate">{pendingPdf.name}</p>
-                <p className="text-[10px] text-[#22C55E]/70">
+                <p className="text-[13px] text-[#22C55E] font-medium truncate">{pendingPdf.name}</p>
+                <p className="text-[11px] text-[#22C55E]/70">
                   {pendingPdf.pdfPath
                     ? `Page ${pendingPdf.currentPage} · cached`
                     : pendingPdf.images
@@ -791,8 +791,8 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
       {pdfLoading && (
         <div className="shrink-0 mb-2 px-1">
           <div className="flex justify-between items-center mb-1">
-            <span className="text-[11px] text-slate-400 dark:text-[#64748B]">Processing PDF</span>
-            <span className="text-[12px] font-semibold text-[#22C55E]">{pdfProgress}%</span>
+            <span className="text-[12px] text-slate-400 dark:text-[#64748B]">Processing PDF</span>
+            <span className="text-[13px] font-semibold text-[#22C55E]">{pdfProgress}%</span>
           </div>
           <div className="h-1.5 w-full bg-slate-200 dark:bg-[#334155] rounded-full overflow-hidden">
             <div
@@ -821,7 +821,7 @@ function ChatView({ initConvId, convTitle, initialMessage, initialPdfPath, initi
           onKeyDown={handleKeyDown}
           placeholder="Ask a question..."
           disabled={isLoading || isOffline}
-          className="flex-1 bg-transparent border-none outline-none text-[14px] text-slate-900 dark:text-white px-2 placeholder:text-slate-400 dark:placeholder:text-[#64748B] disabled:opacity-50"
+          className="flex-1 bg-transparent border-none outline-none text-[15px] text-slate-900 dark:text-white px-2 placeholder:text-slate-400 dark:placeholder:text-[#64748B] disabled:opacity-50"
         />
         <button
           onClick={() => handleSend()}
@@ -844,12 +844,12 @@ function DesktopEmptyState({ onNewChat }) {
         <GraduationCap size={32} className="text-[#22C55E]" />
       </div>
       <div>
-        <p className="text-[16px] font-semibold text-slate-700 dark:text-[#F1F5F9]">AI Tutor PassMark</p>
-        <p className="text-[13px] text-slate-400 dark:text-[#64748B] mt-1 max-w-[240px]">
+        <p className="text-[17px] font-semibold text-slate-700 dark:text-[#F1F5F9]">AI Tutor PassMark</p>
+        <p className="text-[14px] text-slate-400 dark:text-[#64748B] mt-1 max-w-[240px]">
           Select a conversation or start a new one
         </p>
       </div>
-      <button onClick={onNewChat} className="flex items-center gap-2 bg-[#22C55E] text-white rounded-xl px-5 py-2.5 text-[13px] font-semibold scale-on-click">
+      <button onClick={onNewChat} className="flex items-center gap-2 bg-[#22C55E] text-white rounded-xl px-5 py-2.5 text-[14px] font-semibold scale-on-click">
         <Plus size={16} /> New conversation
       </button>
     </div>
@@ -969,7 +969,7 @@ export default function AITutorPage({ navigate, viewState }) {
         <div className="w-[28px] h-[28px] rounded-lg bg-[#22C55E]/10 flex items-center justify-center shrink-0">
           <GraduationCap size={14} className="text-[#22C55E]" />
         </div>
-        <span className="text-[13px] font-semibold text-slate-800 dark:text-[#F1F5F9] flex-1">AI Tutor</span>
+        <span className="text-[14px] font-semibold text-slate-800 dark:text-[#F1F5F9] flex-1">AI Tutor</span>
         <button
           onClick={toggleSidebar}
           title="Réduire"
@@ -983,7 +983,7 @@ export default function AITutorPage({ navigate, viewState }) {
       <div className="px-3 mb-3 shrink-0">
         <button
           onClick={openNewChat}
-          className="w-full flex items-center justify-center gap-2 bg-[#22C55E] hover:bg-[#16a34a] text-white rounded-xl px-3 py-2.5 text-[13px] font-semibold transition-colors scale-on-click"
+          className="w-full flex items-center justify-center gap-2 bg-[#22C55E] hover:bg-[#16a34a] text-white rounded-xl px-3 py-2.5 text-[14px] font-semibold transition-colors scale-on-click"
         >
           <Plus size={15} /> New conversation
         </button>
@@ -999,7 +999,7 @@ export default function AITutorPage({ navigate, viewState }) {
         ) : conversations.length === 0 ? (
           <div className="text-center py-8 px-3">
             <MessageSquare size={22} className="text-slate-300 dark:text-[#475569] mx-auto mb-2" />
-            <p className="text-[12px] text-slate-400 dark:text-[#64748B]">No conversations</p>
+            <p className="text-[13px] text-slate-400 dark:text-[#64748B]">No conversations</p>
           </div>
         ) : (
           conversations.map(conv => (
@@ -1022,16 +1022,16 @@ export default function AITutorPage({ navigate, viewState }) {
                       onChange={e => setEditingTitle(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') saveRename(conv.id); if (e.key === 'Escape') setEditingConvId(null); }}
                       onClick={e => e.stopPropagation()}
-                      className="w-full bg-white dark:bg-[#0F172A] border border-[#22C55E]/50 rounded px-1.5 py-0.5 text-[13px] text-slate-800 dark:text-[#F1F5F9] outline-none"
+                      className="w-full bg-white dark:bg-[#0F172A] border border-[#22C55E]/50 rounded px-1.5 py-0.5 text-[14px] text-slate-800 dark:text-[#F1F5F9] outline-none"
                     />
                   ) : (
-                    <p className={cn('text-[13px] truncate leading-tight font-medium',
+                    <p className={cn('text-[14px] truncate leading-tight font-medium',
                       activeConvId === conv.id ? 'text-[#22C55E]' : 'text-slate-700 dark:text-[#CBD5E1]'
                     )}>
                       {conv.title || 'Conversation'}
                     </p>
                   )}
-                  <p className="text-[11px] text-slate-400 dark:text-[#475569] mt-0.5">
+                  <p className="text-[12px] text-slate-400 dark:text-[#475569] mt-0.5">
                     {formatRelativeDate(conv.updated_at)}
                   </p>
                 </div>
@@ -1081,13 +1081,13 @@ export default function AITutorPage({ navigate, viewState }) {
               <GraduationCap size={22} className="text-[#22C55E]" />
             </div>
             <div>
-              <h1 className="text-[20px] font-bold text-slate-900 dark:text-white leading-tight">AI Tutor</h1>
-              <p className="text-[12px] text-slate-400 dark:text-[#64748B]">
+              <h1 className="text-[21px] font-bold text-slate-900 dark:text-white leading-tight">AI Tutor</h1>
+              <p className="text-[13px] text-slate-400 dark:text-[#64748B]">
                 {conversations.length > 0 ? `${conversations.length} conversation${conversations.length > 1 ? 's' : ''}` : 'No conversations yet'}
               </p>
             </div>
           </div>
-          <button onClick={openNewChat} className="w-full bg-[#22C55E] text-white rounded-2xl p-4 flex items-center justify-center gap-2 font-semibold text-[15px] mb-4 shrink-0 scale-on-click">
+          <button onClick={openNewChat} className="w-full bg-[#22C55E] text-white rounded-2xl p-4 flex items-center justify-center gap-2 font-semibold text-[16px] mb-4 shrink-0 scale-on-click">
             <Plus size={20} /> New conversation
           </button>
           {convLoading ? (
@@ -1095,7 +1095,7 @@ export default function AITutorPage({ navigate, viewState }) {
           ) : conversations.length === 0 ? (
             <div className="text-center py-16">
               <MessageSquare size={28} className="text-slate-300 dark:text-[#475569] mx-auto mb-3" />
-              <p className="text-[14px] font-medium text-slate-400 dark:text-[#64748B]">No conversations</p>
+              <p className="text-[15px] font-medium text-slate-400 dark:text-[#64748B]">No conversations</p>
             </div>
           ) : (
             <div className="flex-1 min-h-0 overflow-y-auto hide-scrollbar flex flex-col gap-2 pb-4">
@@ -1106,8 +1106,8 @@ export default function AITutorPage({ navigate, viewState }) {
                     <MessageSquare size={17} className="text-[#22C55E]" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[14px] font-medium text-slate-800 dark:text-[#F1F5F9] truncate">{conv.title || 'Conversation'}</p>
-                    <p className="text-[12px] text-slate-400 dark:text-[#64748B] mt-0.5">{formatRelativeDate(conv.updated_at)}</p>
+                    <p className="text-[15px] font-medium text-slate-800 dark:text-[#F1F5F9] truncate">{conv.title || 'Conversation'}</p>
+                    <p className="text-[13px] text-slate-400 dark:text-[#64748B] mt-0.5">{formatRelativeDate(conv.updated_at)}</p>
                   </div>
                 </button>
               ))}

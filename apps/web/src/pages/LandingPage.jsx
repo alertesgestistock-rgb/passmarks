@@ -83,7 +83,7 @@ export default function LandingPage() {
             </Reveal>
 
             <Reveal delay={0.32}>
-              <p className="text-[11px] text-slate-500 dark:text-[#64748B] font-semibold tracking-wide uppercase">
+              <p className="text-[12px] text-slate-500 dark:text-[#64748B] font-semibold tracking-wide uppercase">
                 {t('landing.hero.trust')}
               </p>
             </Reveal>
@@ -102,28 +102,28 @@ export default function LandingPage() {
                 {/* Simulated App Bar */}
                 <div className="px-4 py-3 border-b border-slate-200 dark:border-white/5 flex justify-between items-center bg-slate-50 dark:bg-slate-900/40">
                   <span className="text-xs font-black text-slate-800 dark:text-white">{t('landing.hero.phone_greeting')}</span>
-                  <span className="text-[9px] font-bold bg-[#14532D]/10 dark:bg-[#14532D] text-emerald-800 dark:text-[#86EFAC] px-2 py-0.5 rounded-full">{t('landing.hero.phone_days')}</span>
+                  <span className="text-[10px] font-bold bg-[#14532D]/10 dark:bg-[#14532D] text-emerald-800 dark:text-[#86EFAC] px-2 py-0.5 rounded-full">{t('landing.hero.phone_days')}</span>
                 </div>
                 {/* Screen contents */}
                 <div className="p-3.5 space-y-3.5 bg-white dark:bg-slate-950/20 flex-1">
                   {/* Streak widget */}
                   <div className="p-3 bg-slate-50 dark:bg-[#1E293B]/60 border border-slate-200 dark:border-white/5 rounded-2xl flex items-center justify-between">
                     <div>
-                      <div className="text-[8px] text-slate-500 dark:text-[#64748B] font-bold uppercase tracking-wider">{t('landing.features.f3_title')}</div>
+                      <div className="text-[9px] text-slate-500 dark:text-[#64748B] font-bold uppercase tracking-wider">{t('landing.features.f3_title')}</div>
                       <div className="text-xs font-bold text-slate-800 dark:text-white mt-0.5">🔥 12 days streak</div>
                     </div>
                     <div className="w-8 h-8 rounded-full bg-[#F97316]/10 flex items-center justify-center text-sm">🔥</div>
                   </div>
                   {/* Stats widget */}
                   <div className="p-3 bg-slate-50 dark:bg-[#1E293B]/60 border border-slate-200 dark:border-white/5 rounded-2xl space-y-2">
-                    <div className="text-[8px] text-slate-500 dark:text-[#64748B] font-bold uppercase tracking-wider">{t('landing.hero.phone_questions')}</div>
+                    <div className="text-[9px] text-slate-500 dark:text-[#64748B] font-bold uppercase tracking-wider">{t('landing.hero.phone_questions')}</div>
                     <div className="grid grid-cols-7 gap-1">
                       {[1, 2, 3, 4, 5, 6, 7].map((d, i) => (
                         <div key={i} className="flex flex-col items-center gap-1">
                           <div className={`w-full aspect-square rounded-sm ${
                             i === 5 ? 'bg-[#22C55E]' : 'bg-[#3B82F6]/60'
                           }`} />
-                          <span className="text-[7px] text-slate-400 dark:text-[#475569]">M</span>
+                          <span className="text-[8px] text-slate-400 dark:text-[#475569]">M</span>
                         </div>
                       ))}
                     </div>
@@ -132,11 +132,11 @@ export default function LandingPage() {
                   <div className="grid grid-cols-2 gap-2 pt-2">
                     <div className="p-2.5 bg-slate-50 dark:bg-[#1E293B]/40 border border-slate-200 dark:border-white/5 rounded-xl text-center flex flex-col items-center gap-1">
                       <span className="text-xs">🤖</span>
-                      <span className="text-[9px] font-bold text-slate-700 dark:text-[#94A3B8]">{t('landing.hero.phone_ai_tutor')}</span>
+                      <span className="text-[10px] font-bold text-slate-700 dark:text-[#94A3B8]">{t('landing.hero.phone_ai_tutor')}</span>
                     </div>
                     <div className="p-2.5 bg-slate-50 dark:bg-[#1E293B]/40 border border-slate-200 dark:border-white/5 rounded-xl text-center flex flex-col items-center gap-1">
                       <span className="text-xs">📄</span>
-                      <span className="text-[9px] font-bold text-slate-700 dark:text-[#94A3B8]">{t('landing.hero.phone_past_papers')}</span>
+                      <span className="text-[10px] font-bold text-slate-700 dark:text-[#94A3B8]">{t('landing.hero.phone_past_papers')}</span>
                     </div>
                   </div>
                 </div>
@@ -152,8 +152,8 @@ export default function LandingPage() {
                 <div className="px-4 py-3 border-b border-slate-200 dark:border-white/5 flex items-center gap-2 bg-slate-50 dark:bg-slate-900/60">
                   <div className="w-7 h-7 rounded-full bg-[#3B82F6]/10 flex items-center justify-center text-sm">🤖</div>
                   <div>
-                    <div className="text-[10px] font-bold text-slate-800 dark:text-white">{t('landing.hero.phone_ai_tutor')}</div>
-                    <div className="text-[8px] text-[#22C55E] flex items-center gap-1 font-semibold">
+                    <div className="text-[11px] font-bold text-slate-800 dark:text-white">{t('landing.hero.phone_ai_tutor')}</div>
+                    <div className="text-[9px] text-[#22C55E] flex items-center gap-1 font-semibold">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse" />
                       Active 24/7
                     </div>
@@ -168,13 +168,13 @@ export default function LandingPage() {
                   {/* AI message */}
                   <div className="px-3.5 py-2.5 rounded-2xl rounded-tl-sm bg-slate-50 dark:bg-[#1E293B]/90 border border-slate-200 dark:border-white/5 text-slate-600 dark:text-[#94A3B8] text-xs max-w-[90%] self-start space-y-1.5 leading-relaxed">
                     <p>{t('landing.hero.phone_answer')}</p>
-                    <div className="text-[9px] bg-[#14532D]/10 dark:bg-[#14532D]/70 border border-[#22C55E]/30 rounded-md p-1.5 text-emerald-800 dark:text-[#86EFAC] font-mono leading-tight">
+                    <div className="text-[10px] bg-[#14532D]/10 dark:bg-[#14532D]/70 border border-[#22C55E]/30 rounded-md p-1.5 text-emerald-800 dark:text-[#86EFAC] font-mono leading-tight">
                       ✓ GCE Grade A Solution
                     </div>
                   </div>
                   {/* Chat input box */}
                   <div className="mt-2 p-2 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-white/5 flex justify-between items-center gap-2">
-                    <span className="text-[10px] text-slate-400 dark:text-[#475569]">{t('landing.hero.phone_ask_placeholder')}</span>
+                    <span className="text-[11px] text-slate-400 dark:text-[#475569]">{t('landing.hero.phone_ask_placeholder')}</span>
                     <div className="w-6 h-6 rounded-lg bg-[#22C55E] flex items-center justify-center text-xs text-[#052e16] font-bold">⚡</div>
                   </div>
                 </div>
@@ -198,7 +198,7 @@ export default function LandingPage() {
             ].map(([num, label, color]) => (
               <div key={label} className="text-center space-y-1">
                 <div className="text-2xl md:text-3xl font-black" style={{ color }}>{num}</div>
-                <div className="text-[10px] sm:text-xs text-slate-500 dark:text-[#64748B] font-semibold tracking-wide uppercase">{label}</div>
+                <div className="text-[11px] sm:text-xs text-slate-500 dark:text-[#64748B] font-semibold tracking-wide uppercase">{label}</div>
               </div>
             ))}
           </div>
@@ -271,11 +271,11 @@ export default function LandingPage() {
                 </div>
 
                 <div className="mt-8 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-white/5 rounded-2xl p-4 space-y-3">
-                  <div className="flex justify-between items-center border-b border-slate-100 dark:border-white/5 pb-2 text-[10px] text-slate-500 dark:text-[#64748B] font-mono">
+                  <div className="flex justify-between items-center border-b border-slate-100 dark:border-white/5 pb-2 text-[11px] text-slate-500 dark:text-[#64748B] font-mono">
                     <span>Q: {t('landing.features.f1_preview_q')}</span>
                     <span className="text-[#22C55E]">Grade A check ✓</span>
                   </div>
-                  <div className="space-y-1.5 text-[11px] font-mono leading-relaxed text-slate-600 dark:text-[#94A3B8]">
+                  <div className="space-y-1.5 text-[12px] font-mono leading-relaxed text-slate-600 dark:text-[#94A3B8]">
                     <div>{t('landing.features.f1_preview_a1')}</div>
                     <div>{t('landing.features.f1_preview_a2')}</div>
                     <div className="text-slate-800 dark:text-white font-bold">{t('landing.features.f1_preview_a4')}</div>
@@ -323,7 +323,7 @@ export default function LandingPage() {
                       </div>
                     ))}
                   </div>
-                  <span className="text-[10px] bg-[#F97316]/15 text-[#F97316] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Streak</span>
+                  <span className="text-[11px] bg-[#F97316]/15 text-[#F97316] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Streak</span>
                 </div>
               </CardSpotlight>
             </div>
@@ -338,7 +338,7 @@ export default function LandingPage() {
                 </div>
 
                 <div className="mt-8 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-white/5 rounded-2xl p-4 space-y-3">
-                  <div className="text-[11px] font-bold text-slate-800 dark:text-white">{t('landing.features.f4_quiz_q')}</div>
+                  <div className="text-[12px] font-bold text-slate-800 dark:text-white">{t('landing.features.f4_quiz_q')}</div>
                   <div className="space-y-2">
                     <div className="p-2.5 rounded-xl bg-[#14532D]/10 dark:bg-[#14532D]/40 border border-[#22C55E]/30 text-emerald-700 dark:text-[#86EFAC] text-xs font-semibold flex items-center justify-between">
                       <span>{t('landing.features.f4_quiz_a1')}</span>
@@ -422,7 +422,7 @@ export default function LandingPage() {
             <Reveal delay={0.05}>
               <CardSpotlight hoverLift={true} spotlightColor="rgba(148,163,184,0.1)" className="p-6 border border-slate-200 dark:border-white/5 flex flex-col justify-between h-full bg-white dark:bg-[#1E293B]/20 shadow-sm">
                 <div className="space-y-4">
-                  <span className="inline-block text-[10px] font-bold text-slate-500 dark:text-[#94A3B8] uppercase tracking-wider bg-slate-100 dark:bg-white/5 px-2.5 py-1 rounded-full">{t('landing.pricing_teaser.free_badge')}</span>
+                  <span className="inline-block text-[11px] font-bold text-slate-500 dark:text-[#94A3B8] uppercase tracking-wider bg-slate-100 dark:bg-white/5 px-2.5 py-1 rounded-full">{t('landing.pricing_teaser.free_badge')}</span>
                   <div className="space-y-1">
                     <div className="text-3xl font-black text-slate-900 dark:text-white">{t('landing.pricing_teaser.free_price')}</div>
                     <div className="text-xs text-[#64748B]">{t('landing.pricing_teaser.free_period')}</div>
@@ -446,7 +446,7 @@ export default function LandingPage() {
             <Reveal delay={0.1}>
               <CardSpotlight hoverLift={true} spotlightColor="rgba(34,197,94,0.12)" className="p-6 border-2 border-[#22C55E] flex flex-col justify-between h-full bg-emerald-50/20 dark:bg-[#14532D]/10 shadow-[0_0_35px_rgba(34,197,94,0.05)] dark:shadow-[0_0_35px_rgba(34,197,94,0.1)] relative">
                 <div className="space-y-4">
-                  <span className="inline-block text-[10px] font-bold bg-[#22C55E] text-[#052e16] uppercase tracking-wider px-2.5 py-1 rounded-full">{t('landing.pricing_teaser.std_badge')}</span>
+                  <span className="inline-block text-[11px] font-bold bg-[#22C55E] text-[#052e16] uppercase tracking-wider px-2.5 py-1 rounded-full">{t('landing.pricing_teaser.std_badge')}</span>
                   <div className="space-y-1">
                     <div className="text-3.5xl font-black text-[#22C55E]">{t('landing.pricing_teaser.std_price')}</div>
                     <div className="text-xs text-[#64748B]">{t('landing.pricing_teaser.std_period')}</div>
@@ -465,7 +465,7 @@ export default function LandingPage() {
                   <button className="w-full py-2.5 rounded-lg bg-[#22C55E] text-[#052e16] font-bold text-xs shadow-md" onClick={() => goAuth('signup')}>
                     {t('landing.pricing_teaser.std_btn')}
                   </button>
-                  <div className="flex items-center justify-center gap-2 text-[9px] text-slate-500 dark:text-[#64748B]">
+                  <div className="flex items-center justify-center gap-2 text-[10px] text-slate-500 dark:text-[#64748B]">
                     <span>Pay with MoMo or Orange Money</span>
                   </div>
                 </div>
@@ -476,7 +476,7 @@ export default function LandingPage() {
             <Reveal delay={0.15}>
               <CardSpotlight hoverLift={true} spotlightColor="rgba(249,115,22,0.12)" className="p-6 border border-[#F97316]/30 flex flex-col justify-between h-full bg-orange-50/20 dark:bg-[#431407]/10 relative shadow-sm">
                 <div className="space-y-4">
-                  <span className="inline-block text-[10px] font-bold bg-amber-500/10 dark:bg-[#431407] text-amber-800 dark:text-[#FDBA74] border border-[#F97316]/30 uppercase tracking-wider px-2.5 py-1 rounded-full">{t('landing.pricing_teaser.prm_badge')}</span>
+                  <span className="inline-block text-[11px] font-bold bg-amber-500/10 dark:bg-[#431407] text-amber-800 dark:text-[#FDBA74] border border-[#F97316]/30 uppercase tracking-wider px-2.5 py-1 rounded-full">{t('landing.pricing_teaser.prm_badge')}</span>
                   <div className="space-y-1">
                     <div className="text-3xl font-black text-[#F97316]">{t('landing.pricing_teaser.prm_price')}</div>
                     <div className="text-xs text-[#64748B]">{t('landing.pricing_teaser.prm_period')}</div>
@@ -543,7 +543,7 @@ export default function LandingPage() {
                     </div>
                     <div>
                       <div className="text-xs font-extrabold text-slate-800 dark:text-white">{t(`landing.testimonials.${tk}_name`)}</div>
-                      <div className="text-[10px] text-slate-500 dark:text-[#64748B] font-medium leading-none mt-0.5">{t(`landing.testimonials.${tk}_school`)}</div>
+                      <div className="text-[11px] text-slate-500 dark:text-[#64748B] font-medium leading-none mt-0.5">{t(`landing.testimonials.${tk}_school`)}</div>
                     </div>
                   </div>
                 </CardSpotlight>

@@ -134,7 +134,7 @@ function EventModal({ onClose, onSave, onDelete, initialDate, event, subjects })
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-[#334155]/50 shrink-0">
-          <h2 className="text-[16px] font-bold text-slate-900 dark:text-white">
+          <h2 className="text-[17px] font-bold text-slate-900 dark:text-white">
             {event ? 'Edit Event' : 'New Event'}
           </h2>
           <button
@@ -150,7 +150,7 @@ function EventModal({ onClose, onSave, onDelete, initialDate, event, subjects })
 
           {/* Title */}
           <div>
-            <label className="block text-[12px] font-semibold text-slate-500 dark:text-[#94A3B8] mb-1.5 uppercase tracking-wide">
+            <label className="block text-[13px] font-semibold text-slate-500 dark:text-[#94A3B8] mb-1.5 uppercase tracking-wide">
               Title *
             </label>
             <input
@@ -158,13 +158,13 @@ function EventModal({ onClose, onSave, onDelete, initialDate, event, subjects })
               onChange={e => set('title', e.target.value)}
               placeholder="e.g. Chemistry Paper 2 Exam"
               autoFocus
-              className="w-full h-10 bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl px-3 text-[14px] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-[#64748B] outline-none focus:border-[#22C55E] transition-colors"
+              className="w-full h-10 bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl px-3 text-[15px] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-[#64748B] outline-none focus:border-[#22C55E] transition-colors"
             />
           </div>
 
           {/* Type */}
           <div>
-            <label className="block text-[12px] font-semibold text-slate-500 dark:text-[#94A3B8] mb-1.5 uppercase tracking-wide">
+            <label className="block text-[13px] font-semibold text-slate-500 dark:text-[#94A3B8] mb-1.5 uppercase tracking-wide">
               Event Type *
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -174,7 +174,7 @@ function EventModal({ onClose, onSave, onDelete, initialDate, event, subjects })
                   type="button"
                   onClick={() => set('type', t.id)}
                   className={cn(
-                    'h-9 rounded-xl text-[12px] font-semibold border transition-all',
+                    'h-9 rounded-xl text-[13px] font-semibold border transition-all',
                     form.type === t.id
                       ? 'text-white border-transparent'
                       : 'border-slate-200 dark:border-[#334155] text-slate-500 dark:text-[#94A3B8] bg-slate-50 dark:bg-[#0F172A] hover:border-slate-300 dark:hover:border-[#475569]'
@@ -189,13 +189,13 @@ function EventModal({ onClose, onSave, onDelete, initialDate, event, subjects })
 
           {/* Subject */}
           <div>
-            <label className="block text-[12px] font-semibold text-slate-500 dark:text-[#94A3B8] mb-1.5 uppercase tracking-wide">
+            <label className="block text-[13px] font-semibold text-slate-500 dark:text-[#94A3B8] mb-1.5 uppercase tracking-wide">
               Subject
             </label>
             <select
               value={form.subject}
               onChange={e => set('subject', e.target.value)}
-              className="w-full h-10 bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl px-3 text-[14px] text-slate-900 dark:text-white outline-none focus:border-[#22C55E] transition-colors"
+              className="w-full h-10 bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl px-3 text-[15px] text-slate-900 dark:text-white outline-none focus:border-[#22C55E] transition-colors"
             >
               <option value="">All subjects / General</option>
               {subjects.map(s => (
@@ -206,46 +206,46 @@ function EventModal({ onClose, onSave, onDelete, initialDate, event, subjects })
 
           {/* Date */}
           <div>
-            <label className="block text-[12px] font-semibold text-slate-500 dark:text-[#94A3B8] mb-1.5 uppercase tracking-wide">
+            <label className="block text-[13px] font-semibold text-slate-500 dark:text-[#94A3B8] mb-1.5 uppercase tracking-wide">
               Date *
             </label>
             <input
               type="date"
               value={form.date}
               onChange={e => set('date', e.target.value)}
-              className="w-full h-10 bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl px-3 text-[14px] text-slate-900 dark:text-white outline-none focus:border-[#22C55E] transition-colors"
+              className="w-full h-10 bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl px-3 text-[15px] text-slate-900 dark:text-white outline-none focus:border-[#22C55E] transition-colors"
             />
           </div>
 
           {/* Time */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[12px] font-semibold text-slate-500 dark:text-[#94A3B8] mb-1.5 uppercase tracking-wide">
+              <label className="block text-[13px] font-semibold text-slate-500 dark:text-[#94A3B8] mb-1.5 uppercase tracking-wide">
                 Start Time
               </label>
               <input
                 type="time"
                 value={form.start_time}
                 onChange={e => set('start_time', e.target.value)}
-                className="w-full h-10 bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl px-3 text-[14px] text-slate-900 dark:text-white outline-none focus:border-[#22C55E] transition-colors"
+                className="w-full h-10 bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl px-3 text-[15px] text-slate-900 dark:text-white outline-none focus:border-[#22C55E] transition-colors"
               />
             </div>
             <div>
-              <label className="block text-[12px] font-semibold text-slate-500 dark:text-[#94A3B8] mb-1.5 uppercase tracking-wide">
+              <label className="block text-[13px] font-semibold text-slate-500 dark:text-[#94A3B8] mb-1.5 uppercase tracking-wide">
                 End Time
               </label>
               <input
                 type="time"
                 value={form.end_time}
                 onChange={e => set('end_time', e.target.value)}
-                className="w-full h-10 bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl px-3 text-[14px] text-slate-900 dark:text-white outline-none focus:border-[#22C55E] transition-colors"
+                className="w-full h-10 bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl px-3 text-[15px] text-slate-900 dark:text-white outline-none focus:border-[#22C55E] transition-colors"
               />
             </div>
           </div>
 
           {/* Notes */}
           <div>
-            <label className="block text-[12px] font-semibold text-slate-500 dark:text-[#94A3B8] mb-1.5 uppercase tracking-wide">
+            <label className="block text-[13px] font-semibold text-slate-500 dark:text-[#94A3B8] mb-1.5 uppercase tracking-wide">
               Notes
             </label>
             <textarea
@@ -253,12 +253,12 @@ function EventModal({ onClose, onSave, onDelete, initialDate, event, subjects })
               onChange={e => set('notes', e.target.value)}
               placeholder="Optional notes..."
               rows={2}
-              className="w-full bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl px-3 py-2.5 text-[14px] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-[#64748B] outline-none focus:border-[#22C55E] transition-colors resize-none"
+              className="w-full bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl px-3 py-2.5 text-[15px] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-[#64748B] outline-none focus:border-[#22C55E] transition-colors resize-none"
             />
           </div>
 
           {error && (
-            <p className="text-[12px] text-red-500 font-medium">{error}</p>
+            <p className="text-[13px] text-red-500 font-medium">{error}</p>
           )}
         </div>
 
@@ -275,14 +275,14 @@ function EventModal({ onClose, onSave, onDelete, initialDate, event, subjects })
           )}
           <button
             onClick={onClose}
-            className="flex-1 h-10 rounded-xl border border-slate-200 dark:border-[#334155] text-slate-600 dark:text-[#94A3B8] text-[14px] font-semibold hover:bg-slate-50 dark:hover:bg-[#0F172A] transition-colors"
+            className="flex-1 h-10 rounded-xl border border-slate-200 dark:border-[#334155] text-slate-600 dark:text-[#94A3B8] text-[15px] font-semibold hover:bg-slate-50 dark:hover:bg-[#0F172A] transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex-1 h-10 rounded-xl bg-[#22C55E] text-white text-[14px] font-bold hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+            className="flex-1 h-10 rounded-xl bg-[#22C55E] text-white text-[15px] font-bold hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
           >
             {saving ? 'Saving…' : event ? 'Update' : 'Save Event'}
           </button>
@@ -480,16 +480,16 @@ export default function CalendarPage() {
       {/* ── Page Header ─────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-[20px] md:text-[22px] font-bold text-slate-900 dark:text-white tracking-tight">
+          <h1 className="text-[21px] md:text-[23px] font-bold text-slate-900 dark:text-white tracking-tight">
             My Study Calendar
           </h1>
-          <p className="text-[13px] text-slate-500 dark:text-[#94A3B8] mt-0.5">
+          <p className="text-[14px] text-slate-500 dark:text-[#94A3B8] mt-0.5">
             Track exams, mock tests, and study sessions
           </p>
         </div>
         <button
           onClick={() => openAdd(todayStr)}
-          className="flex items-center gap-2 h-10 px-4 bg-[#22C55E] text-white rounded-xl text-[13px] font-bold hover:brightness-110 active:scale-95 transition-all shadow-md shadow-green-500/20 shrink-0"
+          className="flex items-center gap-2 h-10 px-4 bg-[#22C55E] text-white rounded-xl text-[14px] font-bold hover:brightness-110 active:scale-95 transition-all shadow-md shadow-green-500/20 shrink-0"
         >
           <Plus size={16} />
           <span className="hidden sm:inline">Add Event</span>
@@ -509,7 +509,7 @@ export default function CalendarPage() {
             >
               <ChevronLeft size={18} />
             </button>
-            <h2 className="text-[16px] font-bold text-slate-900 dark:text-white">
+            <h2 className="text-[17px] font-bold text-slate-900 dark:text-white">
               {MONTHS[currentMonth]} {currentYear}
             </h2>
             <button
@@ -523,7 +523,7 @@ export default function CalendarPage() {
           {/* Day-of-week labels */}
           <div className="grid grid-cols-7 border-b border-slate-100 dark:border-[#334155]/50">
             {DAYS_SHORT.map(d => (
-              <div key={d} className="py-2.5 text-center text-[11px] font-semibold text-slate-400 dark:text-[#64748B] uppercase tracking-wider">
+              <div key={d} className="py-2.5 text-center text-[12px] font-semibold text-slate-400 dark:text-[#64748B] uppercase tracking-wider">
                 {d}
               </div>
             ))}
@@ -561,7 +561,7 @@ export default function CalendarPage() {
                   )}
                 >
                   <span className={cn(
-                    'w-7 h-7 flex items-center justify-center rounded-full text-[12px] font-medium mb-0.5 transition-all',
+                    'w-7 h-7 flex items-center justify-center rounded-full text-[13px] font-medium mb-0.5 transition-all',
                     isToday
                       ? 'bg-[#22C55E] text-white font-bold'
                       : isSelected
@@ -576,7 +576,7 @@ export default function CalendarPage() {
                       <EventDot key={ev.id} color={getTypeInfo(ev.event_type).color} />
                     ))}
                     {dayEvents.length > 3 && (
-                      <span className="text-[8px] text-slate-400 dark:text-[#64748B] font-medium">
+                      <span className="text-[9px] text-slate-400 dark:text-[#64748B] font-medium">
                         +{dayEvents.length - 3}
                       </span>
                     )}
@@ -591,7 +591,7 @@ export default function CalendarPage() {
             {EVENT_TYPES.map(t => (
               <div key={t.id} className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full" style={{ backgroundColor: t.color }} />
-                <span className="text-[11px] text-slate-400 dark:text-[#64748B]">{t.label}</span>
+                <span className="text-[12px] text-slate-400 dark:text-[#64748B]">{t.label}</span>
               </div>
             ))}
           </div>
@@ -604,12 +604,12 @@ export default function CalendarPage() {
           {selectedDay && (
             <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-[#22C55E]/30 shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-[#334155]/50">
-                <h3 className="text-[14px] font-bold text-slate-900 dark:text-white">
+                <h3 className="text-[15px] font-bold text-slate-900 dark:text-white">
                   {MONTHS[currentMonth]} {selectedDay}
                 </h3>
                 <button
                   onClick={() => openAdd(toDateStr(currentYear, currentMonth, selectedDay))}
-                  className="flex items-center gap-1 text-[12px] text-[#22C55E] font-semibold hover:brightness-110 transition-all"
+                  className="flex items-center gap-1 text-[13px] text-[#22C55E] font-semibold hover:brightness-110 transition-all"
                 >
                   <Plus size={14} />
                   Add
@@ -618,7 +618,7 @@ export default function CalendarPage() {
 
               {selectedDayEvents.length === 0 ? (
                 <div className="px-4 py-6 text-center">
-                  <p className="text-[12px] text-slate-400 dark:text-[#64748B]">
+                  <p className="text-[13px] text-slate-400 dark:text-[#64748B]">
                     No events. Tap <strong>Add</strong> to create one.
                   </p>
                 </div>
@@ -637,20 +637,20 @@ export default function CalendarPage() {
                           style={{ backgroundColor: ti.color }}
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="text-[13px] font-semibold text-slate-900 dark:text-white truncate">
+                          <p className="text-[14px] font-semibold text-slate-900 dark:text-white truncate">
                             {ev.title}
                           </p>
                           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                            <span className="text-[11px] font-medium" style={{ color: ti.color }}>
+                            <span className="text-[12px] font-medium" style={{ color: ti.color }}>
                               {ti.label}
                             </span>
                             {ev.subject && (
-                              <span className="text-[11px] text-slate-400 dark:text-[#64748B]">
+                              <span className="text-[12px] text-slate-400 dark:text-[#64748B]">
                                 · {ev.subject}
                               </span>
                             )}
                             {ev.start_time && (
-                              <span className="text-[11px] text-slate-400 dark:text-[#64748B] flex items-center gap-1">
+                              <span className="text-[12px] text-slate-400 dark:text-[#64748B] flex items-center gap-1">
                                 <Clock size={10} />
                                 {formatTime(ev.start_time)}
                                 {ev.end_time && ` – ${formatTime(ev.end_time)}`}
@@ -658,7 +658,7 @@ export default function CalendarPage() {
                             )}
                           </div>
                           {ev.notes && (
-                            <p className="text-[11px] text-slate-400 dark:text-[#64748B] mt-0.5 truncate">
+                            <p className="text-[12px] text-slate-400 dark:text-[#64748B] mt-0.5 truncate">
                               {ev.notes}
                             </p>
                           )}
@@ -674,7 +674,7 @@ export default function CalendarPage() {
           {/* Upcoming Events */}
           <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-slate-200 dark:border-[#334155]/50 shadow-sm overflow-hidden">
             <div className="px-4 py-3 border-b border-slate-100 dark:border-[#334155]/50">
-              <h3 className="text-[14px] font-bold text-slate-900 dark:text-white">
+              <h3 className="text-[15px] font-bold text-slate-900 dark:text-white">
                 Upcoming Events
               </h3>
             </div>
@@ -688,10 +688,10 @@ export default function CalendarPage() {
                 <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-[#0F172A] flex items-center justify-center mx-auto mb-3">
                   <BookOpen size={18} className="text-slate-400 dark:text-[#64748B]" />
                 </div>
-                <p className="text-[13px] font-semibold text-slate-600 dark:text-[#94A3B8]">
+                <p className="text-[14px] font-semibold text-slate-600 dark:text-[#94A3B8]">
                   No upcoming events
                 </p>
-                <p className="text-[12px] text-slate-400 dark:text-[#64748B] mt-1">
+                <p className="text-[13px] text-slate-400 dark:text-[#64748B] mt-1">
                   Add your exam dates to stay on track
                 </p>
               </div>
@@ -717,27 +717,27 @@ export default function CalendarPage() {
                         className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                         style={{ backgroundColor: ti.color + '20' }}
                       >
-                        <span className="text-[10px] font-bold" style={{ color: ti.color }}>
+                        <span className="text-[11px] font-bold" style={{ color: ti.color }}>
                           {badge}
                         </span>
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-semibold text-slate-900 dark:text-white truncate">
+                        <p className="text-[14px] font-semibold text-slate-900 dark:text-white truncate">
                           {ev.title}
                         </p>
                         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                          <span className="text-[11px] text-slate-400 dark:text-[#64748B]">
+                          <span className="text-[12px] text-slate-400 dark:text-[#64748B]">
                             {evDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                           </span>
                           {ev.start_time && (
-                            <span className="text-[11px] text-slate-400 dark:text-[#64748B] flex items-center gap-1">
+                            <span className="text-[12px] text-slate-400 dark:text-[#64748B] flex items-center gap-1">
                               <Clock size={10} />
                               {formatTime(ev.start_time)}
                             </span>
                           )}
                           {ev.subject && (
-                            <span className="text-[11px] text-slate-400 dark:text-[#64748B] truncate">
+                            <span className="text-[12px] text-slate-400 dark:text-[#64748B] truncate">
                               · {ev.subject}
                             </span>
                           )}

@@ -40,19 +40,19 @@ const STEPS = [
     bullets: ['O Level or A Level selector', 'Choose your specific subjects', 'Guest Mode ready immediately', 'Takes less than 30 seconds'],
     visual: (
       <div className="space-y-3">
-        <div className="text-[9px] text-slate-500 dark:text-[#64748B] font-bold uppercase tracking-wider">Create My Profile</div>
+        <div className="text-[10px] text-slate-500 dark:text-[#64748B] font-bold uppercase tracking-wider">Create My Profile</div>
         <div className="space-y-2">
-          <div className="text-[10px] text-slate-600 dark:text-[#94A3B8] font-semibold">Exam Level</div>
+          <div className="text-[11px] text-slate-600 dark:text-[#94A3B8] font-semibold">Exam Level</div>
           <div className="flex gap-2">
             <div className="px-3 py-1.5 rounded-lg bg-[#14532D]/10 dark:bg-[#14532D]/60 border border-[#22C55E]/40 text-[#16A34A] dark:text-[#86EFAC] text-xs font-bold">✓ A Level</div>
             <div className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-slate-500 dark:text-[#64748B] text-xs">O Level</div>
           </div>
         </div>
         <div className="space-y-2">
-          <div className="text-[10px] text-slate-600 dark:text-[#94A3B8] font-semibold">My Subjects</div>
+          <div className="text-[11px] text-slate-600 dark:text-[#94A3B8] font-semibold">My Subjects</div>
           <div className="flex flex-wrap gap-1.5">
             {['Physics ✓', 'Chemistry ✓', 'Maths ✓', '+ Add'].map((s, i) => (
-              <span key={s} className={`px-2 py-1 rounded text-[9px] font-bold ${
+              <span key={s} className={`px-2 py-1 rounded text-[10px] font-bold ${
                 i < 3 ? 'bg-[#22C55E]/10 border border-[#22C55E]/30 text-[#16A34A] dark:text-[#86EFAC]'
                 : 'bg-slate-100 dark:bg-white/5 border border-dashed border-slate-300 dark:border-white/10 text-slate-400 dark:text-[#475569]'
               }`}>{s}</span>
@@ -83,8 +83,8 @@ const STEPS = [
       <div className="space-y-2.5">
         <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-white/5">
           <div className="w-6 h-6 rounded-full bg-[#3B82F6]/15 flex items-center justify-center text-sm">🤖</div>
-          <span className="text-[10px] font-bold text-slate-800 dark:text-white">PassMark AI Tutor</span>
-          <span className="ml-auto text-[9px] text-[#22C55E] flex items-center gap-1">
+          <span className="text-[11px] font-bold text-slate-800 dark:text-white">PassMark AI Tutor</span>
+          <span className="ml-auto text-[10px] text-[#22C55E] flex items-center gap-1">
             <span className="w-1 h-1 rounded-full bg-[#22C55E] animate-pulse" /> Claude
           </span>
         </div>
@@ -93,14 +93,14 @@ const STEPS = [
             Calculate Δ = b² - 4ac for 2x²-5x+3=0
           </div>
         </div>
-        <div className="px-3 py-2.5 rounded-xl rounded-tl-sm bg-slate-50 dark:bg-[#1E293B]/80 border border-slate-200 dark:border-white/5 text-[11px] text-slate-650 dark:text-[#94A3B8] space-y-1.5 leading-relaxed max-w-[92%]">
+        <div className="px-3 py-2.5 rounded-xl rounded-tl-sm bg-slate-50 dark:bg-[#1E293B]/80 border border-slate-200 dark:border-white/5 text-[12px] text-slate-650 dark:text-[#94A3B8] space-y-1.5 leading-relaxed max-w-[92%]">
           <p>a=2, b=-5, c=3 → <span className="text-slate-900 dark:text-white font-mono">Δ = 25 - 24 = 1</span></p>
-          <div className="bg-[#14532D]/10 dark:bg-[#14532D]/60 border border-[#22C55E]/30 rounded-lg p-1.5 text-[#16A34A] dark:text-[#86EFAC] font-mono text-[9px]">
+          <div className="bg-[#14532D]/10 dark:bg-[#14532D]/60 border border-[#22C55E]/30 rounded-lg p-1.5 text-[#16A34A] dark:text-[#86EFAC] font-mono text-[10px]">
             x = (5 ± 1) / 4 → x = 1.5 or x = 1 ✓
           </div>
         </div>
         <div className="flex gap-2 pt-1">
-          <div className="flex-1 bg-slate-100 dark:bg-[#1E293B]/50 border border-slate-200 dark:border-white/5 rounded-lg px-2 py-1.5 text-[9px] text-slate-400 dark:text-[#475569]">
+          <div className="flex-1 bg-slate-100 dark:bg-[#1E293B]/50 border border-slate-200 dark:border-white/5 rounded-lg px-2 py-1.5 text-[10px] text-slate-400 dark:text-[#475569]">
             Ask a follow-up question...
           </div>
           <div className="w-7 h-7 rounded-lg bg-[#3B82F6] flex items-center justify-center text-xs text-white shrink-0">⚡</div>
@@ -125,8 +125,8 @@ const STEPS = [
     visual: (
       <div className="space-y-2">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-[9px] text-slate-500 dark:text-[#64748B] font-bold uppercase tracking-wider">Past Papers</span>
-          <span className="text-[8px] text-[#A78BFA] bg-[#3B0764]/10 dark:bg-[#3B0764]/40 border border-[#A78BFA]/20 px-1.5 py-0.5 rounded">2015–2024</span>
+          <span className="text-[10px] text-slate-500 dark:text-[#64748B] font-bold uppercase tracking-wider">Past Papers</span>
+          <span className="text-[9px] text-[#A78BFA] bg-[#3B0764]/10 dark:bg-[#3B0764]/40 border border-[#A78BFA]/20 px-1.5 py-0.5 rounded">2015–2024</span>
         </div>
         {[
           { sub: 'Physics', year: '2023 P1', grade: 'A Level' },
@@ -137,9 +137,9 @@ const STEPS = [
             <span className="text-[#A78BFA] text-sm">📄</span>
             <div className="flex-1">
               <div className="text-xs text-slate-800 dark:text-white font-semibold">{p.sub} – {p.year}</div>
-              <div className="text-[9px] text-slate-500 dark:text-[#64748B]">{p.grade}</div>
+              <div className="text-[10px] text-slate-500 dark:text-[#64748B]">{p.grade}</div>
             </div>
-            <span className="text-[9px] font-bold text-[#A78BFA] border border-[#A78BFA]/30 px-1.5 py-0.5 rounded">Ask AI</span>
+            <span className="text-[10px] font-bold text-[#A78BFA] border border-[#A78BFA]/30 px-1.5 py-0.5 rounded">Ask AI</span>
           </div>
         ))}
       </div>
@@ -162,23 +162,23 @@ const STEPS = [
     visual: (
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-[9px] text-slate-500 dark:text-[#64748B] font-bold uppercase tracking-wider">Quiz Results</span>
-          <span className="text-[9px] text-[#F97316]">Biology · O Level</span>
+          <span className="text-[10px] text-slate-500 dark:text-[#64748B] font-bold uppercase tracking-wider">Quiz Results</span>
+          <span className="text-[10px] text-[#F97316]">Biology · O Level</span>
         </div>
         <div className="flex items-center justify-between bg-[#431407]/10 dark:bg-[#431407]/40 border border-[#F97316]/20 rounded-xl p-3">
           <div>
-            <div className="text-[10px] text-slate-500 dark:text-[#64748B]">Final Score</div>
+            <div className="text-[11px] text-slate-500 dark:text-[#64748B]">Final Score</div>
             <div className="text-2xl font-black text-slate-800 dark:text-white mt-0.5">94%</div>
           </div>
           <div className="text-center">
-            <div className="text-[10px] text-slate-500 dark:text-[#64748B]">GCE Grade</div>
+            <div className="text-[11px] text-slate-500 dark:text-[#64748B]">GCE Grade</div>
             <div className="text-xl font-black text-[#F97316] mt-0.5">Grade A</div>
           </div>
         </div>
         <div className="space-y-1.5">
           {[['Physics', 92], ['Chemistry', 88], ['Mathematics', 97]].map(([sub, pct]) => (
             <div key={sub} className="flex items-center gap-2">
-              <span className="text-[9px] text-slate-600 dark:text-[#94A3B8] w-20 shrink-0">{sub}</span>
+              <span className="text-[10px] text-slate-600 dark:text-[#94A3B8] w-20 shrink-0">{sub}</span>
               <div className="flex-1 h-1.5 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
@@ -187,7 +187,7 @@ const STEPS = [
                   className="h-full bg-gradient-to-r from-[#F97316] to-[#FDBA74] rounded-full"
                 />
               </div>
-              <span className="text-[9px] font-bold text-[#F97316] w-8 text-right">{pct}%</span>
+              <span className="text-[10px] font-bold text-[#F97316] w-8 text-right">{pct}%</span>
             </div>
           ))}
         </div>
@@ -320,7 +320,7 @@ export default function HowItWorksPage() {
                   {step.num}
                 </div>
                 <div className="text-xs font-bold text-slate-800 dark:text-white leading-tight">{step.title}</div>
-                <div className="text-[10px] mt-1" style={{ color: activeStep === i ? step.color : '#64748B' }}>
+                <div className="text-[11px] mt-1" style={{ color: activeStep === i ? step.color : '#64748B' }}>
                   {step.duration}
                 </div>
               </button>
@@ -344,7 +344,7 @@ export default function HowItWorksPage() {
                     {/* Text */}
                     <div className="space-y-5">
                       <div
-                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border"
+                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border"
                         style={{ backgroundColor: step.colorBg, borderColor: step.colorBorder, color: step.color }}
                       >
                         <Icon size={11} />
@@ -439,7 +439,7 @@ export default function HowItWorksPage() {
                         <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                           <div className="flex-1 space-y-3">
                             <div>
-                              <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: step.color }}>
+                              <div className="text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: step.color }}>
                                 {step.duration}
                               </div>
                               <h3 className="text-lg md:text-xl font-black text-slate-900 dark:text-white">{step.emoji} {step.title}</h3>
@@ -491,7 +491,7 @@ export default function HowItWorksPage() {
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <div className="text-sm font-bold text-slate-900 dark:text-white">{persona.name}</div>
-                        <div className="text-[10px] text-slate-500 dark:text-[#64748B] mt-0.5">{persona.badge}</div>
+                        <div className="text-[11px] text-slate-500 dark:text-[#64748B] mt-0.5">{persona.badge}</div>
                       </div>
                       <span className="text-2xl">{persona.emoji}</span>
                     </div>
@@ -500,7 +500,7 @@ export default function HowItWorksPage() {
                     <p className="text-xs text-slate-600 dark:text-[#94A3B8] leading-relaxed">{persona.story}</p>
 
                     {/* Method */}
-                    <div className="text-[10px] font-bold text-slate-500 dark:text-[#64748B] bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-lg px-3 py-2">
+                    <div className="text-[11px] font-bold text-slate-500 dark:text-[#64748B] bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-lg px-3 py-2">
                       {persona.method}
                     </div>
                   </div>
@@ -578,7 +578,7 @@ export default function HowItWorksPage() {
               >
                 Study for Free →
               </button>
-              <p className="text-[10px] text-slate-500 dark:text-[#64748B]">
+              <p className="text-[11px] text-slate-500 dark:text-[#64748B]">
                 10 free daily AI questions · PWA friendly · Sleek Dark/Light Theme
               </p>
             </div>

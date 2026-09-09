@@ -8,7 +8,7 @@ export default function ProgressSection({ subjects, subjectAccuracy }) {
   if (subjects.length === 0) {
     return (
       <div className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/50 rounded-2xl p-5 shadow-sm">
-        <p className="text-[13px] text-slate-400 dark:text-[#64748B] text-center py-4">
+        <p className="text-[14px] text-slate-400 dark:text-[#64748B] text-center py-4">
           No subjects added yet. Edit your profile to add subjects.
         </p>
       </div>
@@ -29,8 +29,8 @@ export default function ProgressSection({ subjects, subjectAccuracy }) {
         return (
           <div key={sub}>
             <div className="flex justify-between items-center mb-2">
-              <span className="text-[13px] font-medium text-slate-800 dark:text-[#F1F5F9]">{sub}</span>
-              <span className="text-[11px] text-slate-500 dark:text-[#94A3B8]">{label}</span>
+              <span className="text-[14px] font-medium text-slate-800 dark:text-[#F1F5F9]">{sub}</span>
+              <span className="text-[12px] text-slate-500 dark:text-[#94A3B8]">{label}</span>
             </div>
             <div className="w-full h-1.5 bg-slate-200 dark:bg-[#334155] rounded-full overflow-hidden">
               <div

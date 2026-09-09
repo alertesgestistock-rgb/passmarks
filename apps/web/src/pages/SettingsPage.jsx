@@ -70,19 +70,19 @@ export default function SettingsPage({ navigate }) {
     }
   };
 
-  const sectionHead = "text-[12px] font-bold text-slate-400 dark:text-[#94A3B8] uppercase tracking-wider mb-2 px-1";
+  const sectionHead = "text-[13px] font-bold text-slate-400 dark:text-[#94A3B8] uppercase tracking-wider mb-2 px-1";
   const card = "bg-white dark:bg-[#1E293B] rounded-2xl overflow-hidden border border-slate-200 dark:border-[#334155]/50 shadow-sm";
 
   return (
     <div className="max-w-[600px] mx-auto pb-8">
       <button
         onClick={() => navigate('profile')}
-        className="flex items-center gap-1 text-[#22C55E] font-semibold text-[14px] mb-6 hover:underline active:scale-95 transition-all"
+        className="flex items-center gap-1 text-[#22C55E] font-semibold text-[15px] mb-6 hover:underline active:scale-95 transition-all"
       >
         <ArrowLeft size={18} /> Settings
       </button>
 
-      <h1 className="text-[28px] font-bold text-slate-900 dark:text-white mb-6 tracking-tight">Settings</h1>
+      <h1 className="text-[29px] font-bold text-slate-900 dark:text-white mb-6 tracking-tight">Settings</h1>
 
       <div className="flex flex-col gap-6">
 
@@ -101,7 +101,7 @@ export default function SettingsPage({ navigate }) {
           <div className={cn(card, "p-1")}>
 
             <div className="p-3 border-b border-slate-100 dark:border-[#334155]/50">
-              <label className="block text-[13px] font-medium text-slate-800 dark:text-[#F1F5F9] mb-3">Daily study goal</label>
+              <label className="block text-[14px] font-medium text-slate-800 dark:text-[#F1F5F9] mb-3">Daily study goal</label>
               <div className="flex gap-2">
                 {['15 min', '30 min', '1 hour'].map(opt => (
                   <Pill key={opt} active={settings.dailyGoal === opt} onClick={() => updateSetting('dailyGoal', opt)}>
@@ -112,11 +112,11 @@ export default function SettingsPage({ navigate }) {
             </div>
 
             <div className="p-3 border-b border-slate-100 dark:border-[#334155]/50">
-              <label className="block text-[13px] font-medium text-slate-800 dark:text-[#F1F5F9] mb-3">Preferred subjects order</label>
+              <label className="block text-[14px] font-medium text-slate-800 dark:text-[#F1F5F9] mb-3">Preferred subjects order</label>
               <div className="flex flex-col gap-2">
                 {user?.subjects?.map((sub) => (
                   <div key={sub} className="bg-slate-50 dark:bg-[#0F172A] rounded-lg p-2.5 px-3 flex justify-between items-center">
-                    <span className="text-[13px] text-slate-800 dark:text-[#F1F5F9] font-medium">{sub}</span>
+                    <span className="text-[14px] text-slate-800 dark:text-[#F1F5F9] font-medium">{sub}</span>
                     <div className="flex gap-2 text-slate-400 dark:text-[#64748B]">
                       <button className="hover:text-slate-700 dark:hover:text-[#F1F5F9]">↑</button>
                       <button className="hover:text-slate-700 dark:hover:text-[#F1F5F9]">↓</button>
@@ -127,7 +127,7 @@ export default function SettingsPage({ navigate }) {
             </div>
 
             <div className="p-3">
-              <label className="block text-[13px] font-medium text-slate-800 dark:text-[#F1F5F9] mb-3">Quiz difficulty</label>
+              <label className="block text-[14px] font-medium text-slate-800 dark:text-[#F1F5F9] mb-3">Quiz difficulty</label>
               <div className="flex gap-2">
                 {['Easy', 'Medium', 'Hard'].map(opt => (
                   <Pill key={opt} active={settings.quizDifficulty === opt} onClick={() => updateSetting('quizDifficulty', opt)}>
@@ -146,26 +146,26 @@ export default function SettingsPage({ navigate }) {
           <div className={cn(card, "p-1")}>
             <div className="p-3 border-b border-slate-100 dark:border-[#334155]/50 flex justify-between items-center">
               <div>
-                <label className="block text-[13px] font-medium text-slate-800 dark:text-[#F1F5F9]">Daily study reminder</label>
+                <label className="block text-[14px] font-medium text-slate-800 dark:text-[#F1F5F9]">Daily study reminder</label>
               </div>
               <div className="flex items-center gap-3">
                 <input
                   type="time"
                   value={settings.reminderTime}
                   onChange={(e) => updateSetting('reminderTime', e.target.value)}
-                  className="bg-slate-100 dark:bg-[#0F172A] text-slate-800 dark:text-[#F1F5F9] px-2 py-1 rounded-md text-[13px] border border-slate-200 dark:border-[#334155] outline-none"
+                  className="bg-slate-100 dark:bg-[#0F172A] text-slate-800 dark:text-[#F1F5F9] px-2 py-1 rounded-md text-[14px] border border-slate-200 dark:border-[#334155] outline-none"
                 />
                 <Toggle active={settings.dailyReminder} onChange={() => updateSetting('dailyReminder', !settings.dailyReminder)} />
               </div>
             </div>
 
             <div className="p-3 border-b border-slate-100 dark:border-[#334155]/50 flex justify-between items-center">
-              <label className="block text-[13px] font-medium text-slate-800 dark:text-[#F1F5F9]">Exam countdown alerts</label>
+              <label className="block text-[14px] font-medium text-slate-800 dark:text-[#F1F5F9]">Exam countdown alerts</label>
               <Toggle active={settings.examAlerts} onChange={() => updateSetting('examAlerts', !settings.examAlerts)} />
             </div>
 
             <div className="p-3 flex justify-between items-center">
-              <label className="block text-[13px] font-medium text-slate-800 dark:text-[#F1F5F9]">Streak reminder</label>
+              <label className="block text-[14px] font-medium text-slate-800 dark:text-[#F1F5F9]">Streak reminder</label>
               <Toggle active={settings.streakReminder} onChange={() => updateSetting('streakReminder', !settings.streakReminder)} />
             </div>
           </div>
@@ -176,12 +176,12 @@ export default function SettingsPage({ navigate }) {
           <h2 className={sectionHead}>Appearance</h2>
           <div className={cn(card, "p-1")}>
             <div className="p-3 border-b border-slate-100 dark:border-[#334155]/50">
-              <label className="block text-[13px] font-medium text-slate-800 dark:text-[#F1F5F9] mb-3">Theme</label>
+              <label className="block text-[14px] font-medium text-slate-800 dark:text-[#F1F5F9] mb-3">Theme</label>
               <div className="flex gap-2">
                 <button
                   onClick={() => setTheme('dark')}
                   className={cn(
-                    "flex-1 rounded-xl py-2 flex justify-center items-center gap-2 text-[13px] font-medium border transition-all",
+                    "flex-1 rounded-xl py-2 flex justify-center items-center gap-2 text-[14px] font-medium border transition-all",
                     theme === 'dark'
                       ? "bg-[#22C55E]/20 border-[#22C55E]/50 text-[#22C55E]"
                       : "bg-slate-100 dark:bg-[#0F172A] border-slate-200 dark:border-[#334155] text-slate-500 dark:text-[#64748B] hover:border-slate-300"
@@ -192,7 +192,7 @@ export default function SettingsPage({ navigate }) {
                 <button
                   onClick={() => setTheme('light')}
                   className={cn(
-                    "flex-1 rounded-xl py-2 flex justify-center items-center gap-2 text-[13px] font-medium border transition-all",
+                    "flex-1 rounded-xl py-2 flex justify-center items-center gap-2 text-[14px] font-medium border transition-all",
                     theme === 'light'
                       ? "bg-[#22C55E]/20 border-[#22C55E]/50 text-[#22C55E]"
                       : "bg-slate-100 dark:bg-[#0F172A] border-slate-200 dark:border-[#334155] text-slate-500 dark:text-[#64748B] hover:border-slate-300"
@@ -202,7 +202,7 @@ export default function SettingsPage({ navigate }) {
                 </button>
                 <button
                   disabled
-                  className="flex-1 bg-slate-100 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] text-slate-400 dark:text-[#64748B] rounded-xl py-2 flex justify-center items-center gap-2 text-[13px] font-medium opacity-50 cursor-not-allowed relative"
+                  className="flex-1 bg-slate-100 dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] text-slate-400 dark:text-[#64748B] rounded-xl py-2 flex justify-center items-center gap-2 text-[14px] font-medium opacity-50 cursor-not-allowed relative"
                 >
                   <Monitor size={16} /> System <Lock size={12} className="absolute top-1 right-1" />
                 </button>
@@ -210,7 +210,7 @@ export default function SettingsPage({ navigate }) {
             </div>
 
             <div className="p-3">
-              <label className="block text-[13px] font-medium text-slate-800 dark:text-[#F1F5F9] mb-3">Font size</label>
+              <label className="block text-[14px] font-medium text-slate-800 dark:text-[#F1F5F9] mb-3">Font size</label>
               <div className="flex gap-2">
                 {['Small', 'Normal', 'Large'].map(opt => (
                   <Pill key={opt} active={settings.fontSize === opt} onClick={() => updateSetting('fontSize', opt)}>
@@ -228,13 +228,13 @@ export default function SettingsPage({ navigate }) {
           <h2 className={sectionHead}>Data & Privacy</h2>
           <div className={card}>
             <button onClick={handleExport} className="w-full p-4 text-left flex justify-between items-center border-b border-slate-100 dark:border-[#334155]/50 hover:bg-slate-50 dark:hover:bg-[#334155]/30 transition-colors">
-              <span className="text-[13px] font-medium text-slate-800 dark:text-[#F1F5F9] flex items-center gap-2"><Download size={16} /> Export my data</span>
+              <span className="text-[14px] font-medium text-slate-800 dark:text-[#F1F5F9] flex items-center gap-2"><Download size={16} /> Export my data</span>
             </button>
             <button onClick={handleClearChat} className="w-full p-4 text-left flex justify-between items-center border-b border-slate-100 dark:border-[#334155]/50 hover:bg-orange-50 dark:hover:bg-[#431407]/30 transition-colors">
-              <span className="text-[13px] font-medium text-[#F97316] flex items-center gap-2"><Trash2 size={16} /> Clear chat history</span>
+              <span className="text-[14px] font-medium text-[#F97316] flex items-center gap-2"><Trash2 size={16} /> Clear chat history</span>
             </button>
             <button onClick={handleReset} className="w-full p-4 text-left flex justify-between items-center hover:bg-red-50 dark:hover:bg-[#450a0a]/30 transition-colors">
-              <span className="text-[13px] font-bold text-[#EF4444] flex items-center gap-2"><AlertTriangle size={16} /> Reset all data</span>
+              <span className="text-[14px] font-bold text-[#EF4444] flex items-center gap-2"><AlertTriangle size={16} /> Reset all data</span>
             </button>
           </div>
         </section>
@@ -244,16 +244,16 @@ export default function SettingsPage({ navigate }) {
           <h2 className={sectionHead}>About</h2>
           <div className={card}>
             <div className="p-4 border-b border-slate-100 dark:border-[#334155]/50 flex justify-between items-center">
-              <span className="text-[13px] font-medium text-slate-800 dark:text-[#F1F5F9]">PassMark version</span>
-              <span className="text-[12px] text-slate-400 dark:text-[#64748B]">v1.0.0</span>
+              <span className="text-[14px] font-medium text-slate-800 dark:text-[#F1F5F9]">PassMark version</span>
+              <span className="text-[13px] text-slate-400 dark:text-[#64748B]">v1.0.0</span>
             </div>
             <div className="p-4 flex justify-between items-center">
-              <span className="text-[13px] font-medium text-slate-800 dark:text-[#F1F5F9]">Powered by</span>
+              <span className="text-[14px] font-medium text-slate-800 dark:text-[#F1F5F9]">Powered by</span>
               <a
                 href="https://wa.me/237683982584?text=Hello%20sir%2C%20I%20got%20your%20number%20from%20PassMark%20App"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[12px] font-semibold text-[#25D366] flex items-center gap-1 hover:opacity-80 transition-opacity"
+                className="text-[13px] font-semibold text-[#25D366] flex items-center gap-1 hover:opacity-80 transition-opacity"
               >
                 Sylvel <ExternalLink size={12}/>
               </a>
@@ -275,7 +275,7 @@ function SettingRow({ label, onClick, isLast }) {
         !isLast && "border-b border-slate-100 dark:border-[#334155]/50"
       )}
     >
-      <span className="text-[13px] font-medium text-slate-800 dark:text-[#F1F5F9]">{label}</span>
+      <span className="text-[14px] font-medium text-slate-800 dark:text-[#F1F5F9]">{label}</span>
       <ChevronRight size={18} className="text-slate-400 dark:text-[#64748B]" />
     </button>
   );
@@ -286,7 +286,7 @@ function Pill({ children, active, onClick }) {
     <button
       onClick={onClick}
       className={cn(
-        "flex-1 py-2 rounded-xl text-[13px] font-medium transition-all active:scale-95 border",
+        "flex-1 py-2 rounded-xl text-[14px] font-medium transition-all active:scale-95 border",
         active
           ? "bg-[#22C55E]/20 border-[#22C55E]/50 text-[#22C55E]"
           : "bg-slate-100 dark:bg-[#0F172A] border-slate-200 dark:border-[#334155] text-slate-500 dark:text-[#94A3B8] hover:border-slate-300 dark:hover:border-[#475569]"

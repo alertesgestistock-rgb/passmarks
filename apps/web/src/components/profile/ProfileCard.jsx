@@ -51,7 +51,7 @@ export default function ProfileCard({ onEdit }) {
       <div className="absolute top-4 right-4 flex items-center gap-2">
         <button
           onClick={onEdit}
-          className="bg-slate-100 dark:bg-[#334155] text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white rounded-lg px-3 py-1.5 text-[11px] font-medium flex items-center gap-1.5 transition-colors scale-on-click"
+          className="bg-slate-100 dark:bg-[#334155] text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white rounded-lg px-3 py-1.5 text-[12px] font-medium flex items-center gap-1.5 transition-colors scale-on-click"
         >
           <Edit2 size={12} /> Edit
         </button>
@@ -83,7 +83,7 @@ export default function ProfileCard({ onEdit }) {
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full bg-[#22C55E] flex items-center justify-center text-[24px] font-medium text-[#052e16]">
+            <div className="w-full h-full bg-[#22C55E] flex items-center justify-center text-[25px] font-medium text-[#052e16]">
               {getInitials(user.name)}
             </div>
           )}
@@ -106,12 +106,12 @@ export default function ProfileCard({ onEdit }) {
 
       {uploadError && (
         <div className="w-full bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/30 rounded-lg px-3 py-2 mb-3 text-center">
-          <p className="text-[12px] text-red-600 dark:text-red-400 font-medium">{uploadError}</p>
+          <p className="text-[13px] text-red-600 dark:text-red-400 font-medium">{uploadError}</p>
         </div>
       )}
 
-      <h1 className="text-[20px] font-medium text-slate-900 dark:text-white mb-1">{user.name}</h1>
-      <p className="text-[13px] text-slate-500 dark:text-[#94A3B8] mb-4">
+      <h1 className="text-[21px] font-medium text-slate-900 dark:text-white mb-1">{user.name}</h1>
+      <p className="text-[14px] text-slate-500 dark:text-[#94A3B8] mb-4">
         {user.level} · {user.subjects.length} {user.subjects.length === 1 ? 'Subject' : 'Subjects'}
       </p>
 
@@ -119,25 +119,25 @@ export default function ProfileCard({ onEdit }) {
       <div className="flex flex-col items-center gap-1">
         {tokenBalance !== null ? (
           <>
-            <span className="bg-slate-100 dark:bg-[#334155]/50 border border-slate-200 dark:border-[#475569] text-slate-700 dark:text-[#F1F5F9] px-3.5 py-1 rounded-full text-[11px] font-medium flex items-center gap-1.5">
+            <span className="bg-slate-100 dark:bg-[#334155]/50 border border-slate-200 dark:border-[#475569] text-slate-700 dark:text-[#F1F5F9] px-3.5 py-1 rounded-full text-[12px] font-medium flex items-center gap-1.5">
               <Coins size={11} className="text-[#22C55E]" />
               {tokenBalance} token{tokenBalance !== 1 ? 's' : ''}
             </span>
             <button
               onClick={() => setShowTokenShop(true)}
-              className="text-[#F97316] text-[11px] underline mt-1"
+              className="text-[#F97316] text-[12px] underline mt-1"
             >
               Buy tokens
             </button>
           </>
         ) : (
           <>
-            <span className="bg-slate-100 dark:bg-[#334155]/50 border border-slate-200 dark:border-[#475569] text-slate-700 dark:text-[#F1F5F9] px-3.5 py-1 rounded-full text-[11px] font-medium">
+            <span className="bg-slate-100 dark:bg-[#334155]/50 border border-slate-200 dark:border-[#475569] text-slate-700 dark:text-[#F1F5F9] px-3.5 py-1 rounded-full text-[12px] font-medium">
               Free Plan
             </span>
             <button
               onClick={() => setShowTokenShop(true)}
-              className="text-[#F97316] text-[11px] underline mt-1"
+              className="text-[#F97316] text-[12px] underline mt-1"
             >
               Upgrade for unlimited AI · 3 500 FCFA/mo
             </button>

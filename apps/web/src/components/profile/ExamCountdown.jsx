@@ -50,8 +50,8 @@ export default function ExamCountdown({ examMonth, examYear }) {
         <CalendarClock size={16} className="text-[#22C55E]" />
       </div>
       <div>
-        <p className={`text-[13px] font-medium ${colorClass}`}>{message}</p>
-        <p className="text-[11px] text-slate-400 dark:text-[#64748B]">
+        <p className={`text-[14px] font-medium ${colorClass}`}>{message}</p>
+        <p className="text-[12px] text-slate-400 dark:text-[#64748B]">
           {countdown.examMonth} {countdown.examYear}
         </p>
       </div>

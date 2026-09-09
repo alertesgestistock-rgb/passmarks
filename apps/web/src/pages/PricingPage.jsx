@@ -320,7 +320,7 @@ export default function PricingPage() {
                   style={{ borderColor: pack.popular ? pack.color : undefined }}
                 >
                   {pack.popular && (
-                    <div className="absolute top-[-12px] left-1/2 -translate-x-1/2 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow flex items-center gap-1"
+                    <div className="absolute top-[-12px] left-1/2 -translate-x-1/2 text-white text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow flex items-center gap-1"
                       style={{ background: pack.color }}>
                       <Flame size={10} />
                       {lang === 'fr' ? 'Populaire' : 'Popular'}
@@ -397,7 +397,7 @@ export default function PricingPage() {
             ].map(([val, color, lk]) => (
               <div key={lk} className="text-center space-y-1">
                 <div className="text-2xl font-black" style={{ color }}>{val}</div>
-                <div className="text-[10px] text-slate-500 dark:text-[#64748B] font-bold uppercase tracking-wider">{t(`pricing.boosters.${lk}`)}</div>
+                <div className="text-[11px] text-slate-500 dark:text-[#64748B] font-bold uppercase tracking-wider">{t(`pricing.boosters.${lk}`)}</div>
               </div>
             ))}
           </div>
@@ -417,7 +417,7 @@ export default function PricingPage() {
             <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-950 flex items-center justify-center text-lg shrink-0">🤖</div>
             <div className="space-y-1">
               <h4 className="text-xs font-bold text-slate-800 dark:text-white">{t('pricing.boosters.authority_title')}</h4>
-              <p className="text-[10px] text-slate-550 dark:text-[#94A3B8] leading-relaxed">{t('pricing.boosters.authority_desc')}</p>
+              <p className="text-[11px] text-slate-550 dark:text-[#94A3B8] leading-relaxed">{t('pricing.boosters.authority_desc')}</p>
             </div>
           </div>
 
@@ -469,7 +469,7 @@ export default function PricingPage() {
             <a href="#pricing-cards" className="text-xs text-slate-500 dark:text-[#94A3B8] underline hover:text-slate-800 dark:hover:text-white transition-colors block mt-2">
               {t('pricing.cta.link')}
             </a>
-            <p className="text-[10px] text-slate-500 dark:text-[#64748B]">
+            <p className="text-[11px] text-slate-500 dark:text-[#64748B]">
               {t('pricing.cta.trust')}
             </p>
           </div>

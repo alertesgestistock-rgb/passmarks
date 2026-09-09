@@ -127,7 +127,7 @@ export default function SectionOfflineMode() {
                       className="flex items-center gap-2 p-2.5 rounded-lg bg-[#431407]/10 dark:bg-[#431407]/60 border border-[#F97316]/20 text-[#C2410C] dark:text-[#FDBA74]"
                     >
                       <WifiOff size={14} className="shrink-0" />
-                      <div className="text-[11px] leading-tight">
+                      <div className="text-[12px] leading-tight">
                         <span className="font-bold">Offline Mode Active</span> — Revise without consuming any data bundle.
                       </div>
                     </motion.div>
@@ -138,7 +138,7 @@ export default function SectionOfflineMode() {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center bg-slate-50 dark:bg-[#0F172A]/50 p-3 rounded-xl border border-slate-200 dark:border-white/5">
                     <div>
-                      <div className="text-[10px] text-slate-500 dark:text-[#64748B] font-bold uppercase tracking-wider">Collins Obi (U6)</div>
+                      <div className="text-[11px] text-slate-500 dark:text-[#64748B] font-bold uppercase tracking-wider">Collins Obi (U6)</div>
                       <div className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">Study Streak</div>
                     </div>
                     <div className="flex items-center gap-1 bg-[#22C55E]/10 text-[#22C55E] text-xs font-bold px-2 py-0.5 rounded-full">
@@ -149,7 +149,7 @@ export default function SectionOfflineMode() {
                   {/* Interactive solved exercises counter */}
                   <div className="bg-slate-50 dark:bg-[#0F172A]/50 p-3 rounded-xl border border-slate-200 dark:border-white/5 flex items-center justify-between">
                     <div>
-                      <div className="text-[10px] text-slate-500 dark:text-[#64748B] font-bold uppercase tracking-wider">Questions Solved</div>
+                      <div className="text-[11px] text-slate-500 dark:text-[#64748B] font-bold uppercase tracking-wider">Questions Solved</div>
                       <div className="text-lg font-black text-slate-900 dark:text-white mt-0.5">{solvedQuestionsCount}</div>
                     </div>
                     <button
@@ -173,7 +173,7 @@ export default function SectionOfflineMode() {
                 </div>
 
                 {/* Simulated persistence info */}
-                <div className="text-center text-[10px] text-slate-500 dark:text-[#64748B] pt-2 border-t border-slate-100 dark:border-white/5">
+                <div className="text-center text-[11px] text-slate-500 dark:text-[#64748B] pt-2 border-t border-slate-100 dark:border-white/5">
                   {isOnline ? (
                     <span className="flex items-center justify-center gap-1 text-[#22C55E]">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-ping" />

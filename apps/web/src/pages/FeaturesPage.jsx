@@ -47,8 +47,8 @@ const FEATURES = [
       <div className="bg-white dark:bg-[#080F1A] rounded-2xl p-4 border border-slate-200 dark:border-white/5 space-y-3 shadow-sm">
         <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-white/5">
           <div className="w-6 h-6 rounded-full bg-[#22C55E]/15 flex items-center justify-center text-sm">🤖</div>
-          <span className="text-[11px] font-bold text-slate-800 dark:text-white">PassMark AI</span>
-          <span className="ml-auto text-[9px] text-[#22C55E] flex items-center gap-1 font-semibold">
+          <span className="text-[12px] font-bold text-slate-800 dark:text-white">PassMark AI</span>
+          <span className="ml-auto text-[10px] text-[#22C55E] flex items-center gap-1 font-semibold">
             <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse" />
             Active 24/7
           </span>
@@ -56,10 +56,10 @@ const FEATURES = [
         <div className="px-3 py-2 rounded-xl bg-[#1E3A5F]/10 dark:bg-[#1E3A5F]/60 border border-[#3B82F6]/20 text-xs text-slate-800 dark:text-white self-end text-right">
           Solve: 2x² - 5x + 3 = 0
         </div>
-        <div className="px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-[#1E293B]/80 border border-slate-200 dark:border-white/5 text-[11px] text-slate-600 dark:text-[#94A3B8] space-y-1 leading-relaxed">
+        <div className="px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-[#1E293B]/80 border border-slate-200 dark:border-white/5 text-[12px] text-slate-600 dark:text-[#94A3B8] space-y-1 leading-relaxed">
           <p>Identify <span className="text-slate-900 dark:text-white font-mono">a=2, b=-5, c=3</span></p>
           <p>Discriminant: <span className="text-slate-900 dark:text-white font-mono">Δ = b² - 4ac = 1</span></p>
-          <div className="mt-2 bg-[#14532D]/10 dark:bg-[#14532D]/60 border border-[#22C55E]/30 rounded-lg p-2 font-mono text-[#16A34A] dark:text-[#86EFAC] text-[10px] font-bold">
+          <div className="mt-2 bg-[#14532D]/10 dark:bg-[#14532D]/60 border border-[#22C55E]/30 rounded-lg p-2 font-mono text-[#16A34A] dark:text-[#86EFAC] text-[11px] font-bold">
             x = 1.5 or x = 1 ✓ Grade A Answer
           </div>
         </div>
@@ -86,9 +86,9 @@ const FEATURES = [
     ],
     visual: (
       <div className="bg-white dark:bg-[#080F1A] rounded-2xl p-4 border border-slate-200 dark:border-white/5 space-y-2 shadow-sm">
-        <div className="text-[9px] text-slate-500 dark:text-[#64748B] font-bold uppercase tracking-wider mb-3 flex items-center justify-between">
+        <div className="text-[10px] text-slate-500 dark:text-[#64748B] font-bold uppercase tracking-wider mb-3 flex items-center justify-between">
           <span>GCE Past Papers</span>
-          <span className="bg-slate-100 dark:bg-[#1E3A5F] text-slate-600 dark:text-[#93C5FD] px-2 py-0.5 rounded text-[8px]">A Level · O Level</span>
+          <span className="bg-slate-100 dark:bg-[#1E3A5F] text-slate-600 dark:text-[#93C5FD] px-2 py-0.5 rounded text-[9px]">A Level · O Level</span>
         </div>
         {[
           { subject: 'Physics', year: '2023', paper: 'P1' },
@@ -99,7 +99,7 @@ const FEATURES = [
           <div key={i} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 dark:bg-[#1E293B]/60 border border-slate-200 dark:border-white/5 group">
             <span className="text-[#3B82F6] text-sm">📄</span>
             <span className="text-xs text-slate-700 dark:text-[#94A3B8] flex-1 font-medium">{p.subject} – {p.year} {p.paper}</span>
-            <span className="text-[9px] text-[#22C55E] opacity-0 group-hover:opacity-100 transition-opacity">Ask AI →</span>
+            <span className="text-[10px] text-[#22C55E] opacity-0 group-hover:opacity-100 transition-opacity">Ask AI →</span>
           </div>
         ))}
       </div>
@@ -125,7 +125,7 @@ const FEATURES = [
     ],
     visual: (
       <div className="bg-white dark:bg-[#080F1A] rounded-2xl p-4 border border-slate-200 dark:border-white/5 space-y-3 shadow-sm">
-        <div className="text-[9px] text-slate-500 dark:text-[#64748B] font-bold uppercase tracking-wider">Quiz · Biology O Level</div>
+        <div className="text-[10px] text-slate-500 dark:text-[#64748B] font-bold uppercase tracking-wider">Quiz · Biology O Level</div>
         <div className="text-xs font-bold text-slate-800 dark:text-white leading-relaxed">What is the powerhouse of the cell?</div>
         <div className="space-y-2">
           <div className="p-2.5 rounded-xl bg-[#14532D]/10 dark:bg-[#14532D]/40 border border-[#22C55E]/40 text-[#16A34A] dark:text-[#86EFAC] text-xs font-semibold flex items-center justify-between">
@@ -137,7 +137,7 @@ const FEATURES = [
           ))}
         </div>
         <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-white/5">
-          <span className="text-[10px] text-slate-500 dark:text-[#64748B]">Current Score</span>
+          <span className="text-[11px] text-slate-500 dark:text-[#64748B]">Current Score</span>
           <span className="text-sm font-black text-[#A78BFA]">Grade A · 94%</span>
         </div>
       </div>
@@ -164,24 +164,24 @@ const FEATURES = [
     visual: (
       <div className="bg-white dark:bg-[#080F1A] rounded-2xl p-4 border border-slate-200 dark:border-white/5 space-y-3 shadow-sm">
         <div className="flex items-center justify-between">
-          <span className="text-[9px] text-slate-500 dark:text-[#64748B] font-bold uppercase tracking-wider">Current Streak</span>
+          <span className="text-[10px] text-slate-500 dark:text-[#64748B] font-bold uppercase tracking-wider">Current Streak</span>
           <span className="text-xs font-black text-[#F97316]">🔥 12 Days</span>
         </div>
         <div className="grid grid-cols-7 gap-1">
           {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
             <div key={i} className="flex flex-col items-center gap-1">
-              <div className={`w-full aspect-square rounded-md flex items-center justify-center text-[10px] font-bold ${
+              <div className={`w-full aspect-square rounded-md flex items-center justify-center text-[11px] font-bold ${
                 i < 5 ? 'bg-[#F97316]/20 border border-[#F97316]/30 text-[#F97316]'
                 : i === 5 ? 'bg-[#22C55E]/20 border border-[#22C55E]/30 text-[#22C55E]'
                 : 'bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-slate-500 dark:text-[#475569]'
               }`}>
                 {i < 5 ? '🔥' : i === 5 ? '✓' : d}
               </div>
-              <span className="text-[8px] text-slate-500 dark:text-[#475569]">{d}</span>
+              <span className="text-[9px] text-slate-500 dark:text-[#475569]">{d}</span>
             </div>
           ))}
         </div>
-        <div className="bg-[#431407]/10 dark:bg-[#431407]/60 border border-[#F97316]/20 rounded-xl p-2.5 text-[10px] text-[#C2410C] dark:text-[#FDBA74]">
+        <div className="bg-[#431407]/10 dark:bg-[#431407]/60 border border-[#F97316]/20 rounded-xl p-2.5 text-[11px] text-[#C2410C] dark:text-[#FDBA74]">
           ⚡ Study 2 more days to unlock the Elite Badge!
         </div>
       </div>
@@ -207,7 +207,7 @@ const FEATURES = [
     ],
     visual: (
       <div className="bg-white dark:bg-[#080F1A] rounded-2xl p-4 border border-slate-200 dark:border-white/5 space-y-2 shadow-sm">
-        <div className="text-[9px] text-slate-500 dark:text-[#64748B] font-bold uppercase tracking-wider mb-1">Notifications</div>
+        <div className="text-[10px] text-slate-500 dark:text-[#64748B] font-bold uppercase tracking-wider mb-1">Notifications</div>
         {[
           { icon: '🔥', title: 'Streak in Danger!', msg: 'Revise before midnight', time: '2m ago', color: '#F97316' },
           { icon: '⏰', title: 'GCE 2026 in 68 Days', msg: 'Physics Paper 1 — June 10', time: 'today', color: '#3B82F6' },
@@ -216,10 +216,10 @@ const FEATURES = [
           <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50 dark:bg-[#1E293B]/50 border border-slate-200 dark:border-white/5">
             <span className="text-sm shrink-0 mt-0.5">{n.icon}</span>
             <div className="flex-1 min-w-0">
-              <div className="text-[10px] font-bold text-slate-800 dark:text-white truncate">{n.title}</div>
-              <div className="text-[9px] text-slate-500 dark:text-[#64748B]">{n.msg}</div>
+              <div className="text-[11px] font-bold text-slate-800 dark:text-white truncate">{n.title}</div>
+              <div className="text-[10px] text-slate-500 dark:text-[#64748B]">{n.msg}</div>
             </div>
-            <span className="text-[8px] text-slate-400 dark:text-[#475569] shrink-0">{n.time}</span>
+            <span className="text-[9px] text-slate-400 dark:text-[#475569] shrink-0">{n.time}</span>
           </div>
         ))}
       </div>
@@ -329,7 +329,7 @@ export default function FeaturesPage() {
                     {/* Badge */}
                     <div className="flex items-center gap-2">
                       <span
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border"
                         style={{ backgroundColor: feature.colorBg, borderColor: feature.colorBorder, color: feature.color }}
                       >
                         <Icon size={11} />
@@ -459,7 +459,7 @@ export default function FeaturesPage() {
               >
                 Create my free profile →
               </button>
-              <p className="text-[10px] text-slate-500 dark:text-[#64748B]">
+              <p className="text-[11px] text-slate-500 dark:text-[#64748B]">
                 No card required · PWA installable · Works offline
               </p>
             </div>

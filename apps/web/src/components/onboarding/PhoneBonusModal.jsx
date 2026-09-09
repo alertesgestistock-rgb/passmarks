@@ -41,7 +41,7 @@ export default function PhoneBonusModal({ onClose, onClaimed }) {
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 pt-5 pb-2">
-          <div className="text-[17px] font-bold text-slate-900 dark:text-[#F1F5F9]">
+          <div className="text-[18px] font-bold text-slate-900 dark:text-[#F1F5F9]">
             {lang === 'fr' ? 'Ton numéro de téléphone' : 'Your phone number'}
           </div>
           <button
@@ -53,7 +53,7 @@ export default function PhoneBonusModal({ onClose, onClaimed }) {
         </div>
 
         <div className="px-5 pb-5 flex flex-col gap-3">
-          <p className="text-[13px] text-slate-500 dark:text-[#94A3B8]">
+          <p className="text-[14px] text-slate-500 dark:text-[#94A3B8]">
             {lang === 'fr'
               ? "Pour te prévenir avant tes examens et t'envoyer des rappels de révision."
               : "So we can remind you before your exams and send study reminders."}
@@ -65,15 +65,15 @@ export default function PhoneBonusModal({ onClose, onClaimed }) {
             value={phone}
             onChange={e => setPhone(e.target.value)}
             placeholder="6XX XX XX XX"
-            className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl p-3 text-[14px] text-slate-900 dark:text-[#F1F5F9] outline-none focus:border-[#22C55E]"
+            className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl p-3 text-[15px] text-slate-900 dark:text-[#F1F5F9] outline-none focus:border-[#22C55E]"
           />
 
-          {error && <p className="text-[12px] text-red-500">{error}</p>}
+          {error && <p className="text-[13px] text-red-500">{error}</p>}
 
           <button
             onClick={handleSubmit}
             disabled={!phone.trim() || submitting}
-            className="mt-1 w-full bg-[#22C55E] text-[#052e16] rounded-[12px] p-[14px] text-[14px] font-medium disabled:opacity-50 scale-on-click"
+            className="mt-1 w-full bg-[#22C55E] text-[#052e16] rounded-[12px] p-[14px] text-[15px] font-medium disabled:opacity-50 scale-on-click"
           >
             {submitting
               ? (lang === 'fr' ? 'Envoi...' : 'Sending...')

@@ -7,8 +7,8 @@ function StatCard({ icon: Icon, label, value, color }) {
       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${color}`}>
         <Icon size={15} />
       </div>
-      <p className="text-[22px] font-semibold text-slate-900 dark:text-white leading-none">{value}</p>
-      <p className="text-[11px] text-slate-500 dark:text-[#94A3B8]">{label}</p>
+      <p className="text-[23px] font-semibold text-slate-900 dark:text-white leading-none">{value}</p>
+      <p className="text-[12px] text-slate-500 dark:text-[#94A3B8]">{label}</p>
     </div>
   );
 }

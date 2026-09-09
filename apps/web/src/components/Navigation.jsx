@@ -31,7 +31,7 @@ export function Sidebar({ activeTab, setActiveTab }) {
     <div className="hidden lg:flex fixed top-0 left-0 h-screen w-[220px] xl:w-[260px] bg-white dark:bg-[#1E293B] border-r border-slate-200 dark:border-[#334155]/50 flex-col z-50">
       <div className="h-[64px] flex items-center px-4 gap-2 shrink-0">
         <img src="/icon-192.jpg" alt="PassMark" width="28" height="28" className="shrink-0 rounded-lg" />
-        <span className="text-[20px] font-semibold tracking-tight text-slate-900 dark:text-white">PassMark</span>
+        <span className="text-[21px] font-semibold tracking-tight text-slate-900 dark:text-white">PassMark</span>
       </div>
 
       <nav className="flex-1 px-4 py-6 flex flex-col gap-2 overflow-y-auto">
@@ -52,7 +52,7 @@ export function Sidebar({ activeTab, setActiveTab }) {
                 <div className="absolute left-2 top-1/2 -translate-y-1/2 w-1 h-1 bg-[#22C55E] rounded-full fade-in" />
               )}
               <item.icon size={20} className={cn("shrink-0 transition-transform duration-100", isActive && "scale-110")} />
-              <span className="text-[14px]">{item.label}</span>
+              <span className="text-[15px]">{item.label}</span>
             </button>
           );
         })}
@@ -64,7 +64,7 @@ export function Sidebar({ activeTab, setActiveTab }) {
         ) : (
           <button
             onClick={() => setShowTokenShop(true)}
-            className="w-full bg-[#F97316] text-white rounded-lg py-[10px] text-[13px] font-medium hover:brightness-110 scale-on-click"
+            className="w-full bg-[#F97316] text-white rounded-lg py-[10px] text-[14px] font-medium hover:brightness-110 scale-on-click"
           >
             Buy Tokens
           </button>
@@ -113,7 +113,7 @@ export function TopNav({ setActiveTab }) {
         {/* Mobile Logo */}
         <div className="flex lg:hidden items-center gap-2 shrink-0">
           <img src="/icon-192.jpg" alt="PassMark" width="26" height="26" className="shrink-0 rounded-lg" />
-          <span className="text-[18px] font-semibold text-slate-900 dark:text-white hidden min-[390px]:inline-block">PassMark</span>
+          <span className="text-[19px] font-semibold text-slate-900 dark:text-white hidden min-[390px]:inline-block">PassMark</span>
         </div>
 
         {/* Desktop sidebar placeholder */}
@@ -126,7 +126,7 @@ export function TopNav({ setActiveTab }) {
             <input
               type="text"
               placeholder="Search subject or question..."
-              className="w-full bg-slate-100 dark:bg-[#1E293B] text-slate-900 dark:text-[#F1F5F9] rounded-[20px] py-2 pl-9 pr-4 text-[13px] outline-none border border-transparent focus:border-slate-300 dark:focus:border-[#334155] placeholder:text-slate-400 dark:placeholder:text-[#64748B] transition-all"
+              className="w-full bg-slate-100 dark:bg-[#1E293B] text-slate-900 dark:text-[#F1F5F9] rounded-[20px] py-2 pl-9 pr-4 text-[14px] outline-none border border-transparent focus:border-slate-300 dark:focus:border-[#334155] placeholder:text-slate-400 dark:placeholder:text-[#64748B] transition-all"
             />
           </div>
         </div>
@@ -137,7 +137,7 @@ export function TopNav({ setActiveTab }) {
           {isOffline && (
             <div
               title="No internet connection"
-              className="flex items-center gap-1.5 px-2.5 h-[36px] rounded-full bg-red-100 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-500 text-[12px] font-medium fade-in"
+              className="flex items-center gap-1.5 px-2.5 h-[36px] rounded-full bg-red-100 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-500 text-[13px] font-medium fade-in"
             >
               <WifiOff size={15} />
               <span className="hidden sm:inline">Offline</span>
@@ -204,7 +204,7 @@ export function TopNav({ setActiveTab }) {
                   setShowProfileMenu(v => !v);
                 }
               }}
-              className="w-[36px] h-[36px] rounded-full overflow-hidden bg-gradient-to-br from-[#22C55E] to-[#16A34A] flex items-center justify-center text-white text-[14px] font-bold shadow-md hover:brightness-110 scale-on-click"
+              className="w-[36px] h-[36px] rounded-full overflow-hidden bg-gradient-to-br from-[#22C55E] to-[#16A34A] flex items-center justify-center text-white text-[15px] font-bold shadow-md hover:brightness-110 scale-on-click"
             >
               {user?.avatarUrl ? (
                 <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
@@ -223,21 +223,21 @@ export function TopNav({ setActiveTab }) {
                 <div className="absolute right-0 top-[44px] z-50 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-[#334155]/80 rounded-xl shadow-xl overflow-hidden min-w-[150px] fade-in">
                   <button
                     onClick={() => { setActiveTab('profile'); setShowProfileMenu(false); }}
-                    className="flex items-center gap-2.5 w-full px-4 py-3 text-[13px] font-medium text-slate-700 dark:text-[#F1F5F9] hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+                    className="flex items-center gap-2.5 w-full px-4 py-3 text-[14px] font-medium text-slate-700 dark:text-[#F1F5F9] hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
                   >
                     <User size={15} className="text-slate-400 dark:text-[#64748B]" />
                     Profile
                   </button>
                   <button
                     onClick={() => { setActiveTab('referrals'); setShowProfileMenu(false); }}
-                    className="flex items-center gap-2.5 w-full px-4 py-3 text-[13px] font-medium text-slate-700 dark:text-[#F1F5F9] hover:bg-slate-50 dark:hover:bg-white/5 transition-colors border-t border-slate-100 dark:border-[#334155]/50"
+                    className="flex items-center gap-2.5 w-full px-4 py-3 text-[14px] font-medium text-slate-700 dark:text-[#F1F5F9] hover:bg-slate-50 dark:hover:bg-white/5 transition-colors border-t border-slate-100 dark:border-[#334155]/50"
                   >
                     <Users size={15} className="text-[#A855F7]" />
                     Referrals
                   </button>
                   <button
                     onClick={() => { toggleTheme(); setShowProfileMenu(false); }}
-                    className="flex items-center gap-2.5 w-full px-4 py-3 text-[13px] font-medium text-slate-700 dark:text-[#F1F5F9] hover:bg-slate-50 dark:hover:bg-white/5 transition-colors border-t border-slate-100 dark:border-[#334155]/50"
+                    className="flex items-center gap-2.5 w-full px-4 py-3 text-[14px] font-medium text-slate-700 dark:text-[#F1F5F9] hover:bg-slate-50 dark:hover:bg-white/5 transition-colors border-t border-slate-100 dark:border-[#334155]/50"
                   >
                     {theme === 'dark'
                       ? <Sun size={15} className="text-amber-400" />
@@ -283,7 +283,7 @@ export function BottomNav({ activeTab, setActiveTab }) {
               <div className="absolute top-1 w-1 h-1 bg-[#22C55E] rounded-full fade-in" />
             )}
             <item.icon className={cn("w-6 h-6 md:w-[24px] md:h-[24px] transition-transform duration-100", isActive && "scale-110")} />
-            <span className="text-[11px] font-medium">{item.label}</span>
+            <span className="text-[12px] font-medium">{item.label}</span>
           </button>
         );
       })}

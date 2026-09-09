@@ -61,7 +61,7 @@ export default function AcquisitionSourceModal({ onClose, onClaimed }) {
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 pt-5 pb-2">
-          <div className="text-[17px] font-bold text-slate-900 dark:text-[#F1F5F9]">
+          <div className="text-[18px] font-bold text-slate-900 dark:text-[#F1F5F9]">
             {lang === 'fr' ? 'Comment as-tu connu PassMark ?' : 'How did you hear about PassMark?'}
           </div>
           <button
@@ -78,7 +78,7 @@ export default function AcquisitionSourceModal({ onClose, onClaimed }) {
               key={s.key}
               onClick={() => { setSource(s.key); setError(null); }}
               className={cn(
-                'text-left px-4 py-3 rounded-xl text-[14px] font-medium border transition-all',
+                'text-left px-4 py-3 rounded-xl text-[15px] font-medium border transition-all',
                 source === s.key
                   ? 'bg-[#22C55E]/10 border-[#22C55E] text-[#22C55E]'
                   : 'bg-slate-50 dark:bg-white/5 border-transparent text-slate-700 dark:text-[#F1F5F9] hover:border-slate-300 dark:hover:border-white/20'
@@ -95,16 +95,16 @@ export default function AcquisitionSourceModal({ onClose, onClaimed }) {
               value={otherText}
               onChange={e => setOtherText(e.target.value.slice(0, 300))}
               placeholder={lang === 'fr' ? 'Précise...' : 'Tell us more...'}
-              className="mt-1 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl p-3 text-[14px] text-slate-900 dark:text-[#F1F5F9] outline-none focus:border-[#22C55E]"
+              className="mt-1 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#334155] rounded-xl p-3 text-[15px] text-slate-900 dark:text-[#F1F5F9] outline-none focus:border-[#22C55E]"
             />
           )}
 
-          {error && <p className="text-[12px] text-red-500 mt-1">{error}</p>}
+          {error && <p className="text-[13px] text-red-500 mt-1">{error}</p>}
 
           <button
             onClick={handleSubmit}
             disabled={!source || submitting}
-            className="mt-3 w-full bg-[#22C55E] text-[#052e16] rounded-[12px] p-[14px] text-[14px] font-medium disabled:opacity-50 scale-on-click"
+            className="mt-3 w-full bg-[#22C55E] text-[#052e16] rounded-[12px] p-[14px] text-[15px] font-medium disabled:opacity-50 scale-on-click"
           >
             {submitting
               ? (lang === 'fr' ? 'Envoi...' : 'Sending...')

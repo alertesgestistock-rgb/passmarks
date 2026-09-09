@@ -49,14 +49,14 @@ export function OnboardingRewardsBanner({ onVisibleChange }) {
     >
       <div className="flex items-center gap-2 min-w-0">
         <Gift size={16} className="text-[#F97316] shrink-0" />
-        <span className="text-[12px] md:text-[13px] font-medium text-slate-700 dark:text-[#F1F5F9] truncate">
+        <span className="text-[13px] md:text-[14px] font-medium text-slate-700 dark:text-[#F1F5F9] truncate">
           {lang === 'fr'
             ? `Encore ${remainingTokens} tokens gratuits à récupérer — ${completed}/${total} étapes terminées.`
             : `${remainingTokens} free tokens still up for grabs — ${completed}/${total} steps done.`}
         </span>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <span className="hidden sm:inline text-[12px] font-bold text-[#F97316] whitespace-nowrap">
+        <span className="hidden sm:inline text-[13px] font-bold text-[#F97316] whitespace-nowrap">
           {lang === 'fr' ? 'Voir mes récompenses →' : 'See my rewards →'}
         </span>
         <button

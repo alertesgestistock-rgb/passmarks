@@ -104,37 +104,37 @@ export default function PDFReader({ url, subject, year, paperNumber, onClose, na
     <div className="fixed inset-0 z-[1000] bg-[#0F172A] flex flex-col w-full h-full overflow-hidden">
       {/* Top Bar */}
       <div className="h-[56px] bg-[#1E293B] flex items-center justify-between px-4 shrink-0 shadow-sm z-10">
-        <button onClick={onClose} className="flex items-center gap-1 text-[#22C55E] font-medium text-[13px] active:scale-95 transition-transform p-1">
+        <button onClick={onClose} className="flex items-center gap-1 text-[#22C55E] font-medium text-[14px] active:scale-95 transition-transform p-1">
           <ArrowLeft size={16} /> Back
         </button>
-        <div className="text-[13px] font-medium text-[#F1F5F9] truncate px-2 max-w-[50%]">
+        <div className="text-[14px] font-medium text-[#F1F5F9] truncate px-2 max-w-[50%]">
           {subject} {year} — Paper {paperNumber}
         </div>
-        <div className="text-[#94A3B8] text-[12px] min-w-[40px] text-right">
+        <div className="text-[#94A3B8] text-[13px] min-w-[40px] text-right">
           {pageNum} / {totalPages || '?'}
         </div>
       </div>
 
       {/* Toolbar */}
       <div className="h-[44px] bg-[#1E293B] border-b border-[#334155] flex items-center justify-center gap-2 px-2 shrink-0 overflow-x-auto hide-scrollbar z-10">
-        <button onClick={handleZoomOut} className="bg-[#334155] text-[#F1F5F9] rounded-md px-2.5 py-1 text-[11px] flex items-center gap-1 active:bg-[#475569]">
+        <button onClick={handleZoomOut} className="bg-[#334155] text-[#F1F5F9] rounded-md px-2.5 py-1 text-[12px] flex items-center gap-1 active:bg-[#475569]">
           <ZoomOut size={14} /> <span className="hidden sm:inline">Zoom −</span>
         </button>
-        <button onClick={handleZoomIn} className="bg-[#334155] text-[#F1F5F9] rounded-md px-2.5 py-1 text-[11px] flex items-center gap-1 active:bg-[#475569]">
+        <button onClick={handleZoomIn} className="bg-[#334155] text-[#F1F5F9] rounded-md px-2.5 py-1 text-[12px] flex items-center gap-1 active:bg-[#475569]">
           <ZoomIn size={14} /> <span className="hidden sm:inline">Zoom +</span>
         </button>
         <div className="w-[1px] h-[20px] bg-[#475569] mx-1"></div>
-        <button onClick={handlePrevPage} disabled={pageNum <= 1} className="bg-[#334155] text-[#F1F5F9] rounded-md px-2.5 py-1 text-[11px] flex items-center gap-1 disabled:opacity-50 active:bg-[#475569]">
+        <button onClick={handlePrevPage} disabled={pageNum <= 1} className="bg-[#334155] text-[#F1F5F9] rounded-md px-2.5 py-1 text-[12px] flex items-center gap-1 disabled:opacity-50 active:bg-[#475569]">
           <ChevronLeft size={14} /> <span className="hidden sm:inline">Page −</span>
         </button>
-        <button onClick={handleNextPage} disabled={pageNum >= totalPages} className="bg-[#334155] text-[#F1F5F9] rounded-md px-2.5 py-1 text-[11px] flex items-center gap-1 disabled:opacity-50 active:bg-[#475569]">
+        <button onClick={handleNextPage} disabled={pageNum >= totalPages} className="bg-[#334155] text-[#F1F5F9] rounded-md px-2.5 py-1 text-[12px] flex items-center gap-1 disabled:opacity-50 active:bg-[#475569]">
           <span className="hidden sm:inline">Page +</span> <ChevronRight size={14} />
         </button>
         <div className="w-[1px] h-[20px] bg-[#475569] mx-1"></div>
-        <button className="bg-[#334155] text-[#F1F5F9] rounded-md px-2.5 py-1 text-[11px] flex items-center gap-1 active:bg-[#475569]">
+        <button className="bg-[#334155] text-[#F1F5F9] rounded-md px-2.5 py-1 text-[12px] flex items-center gap-1 active:bg-[#475569]">
           <Search size={14} />
         </button>
-        <button onClick={extractTextAndAskAI} className="bg-[#22C55E]/20 text-[#22C55E] border border-[#22C55E]/50 rounded-md px-3 py-1 text-[11px] font-medium flex items-center gap-1 ml-auto shrink-0 active:scale-95 transition-transform">
+        <button onClick={extractTextAndAskAI} className="bg-[#22C55E]/20 text-[#22C55E] border border-[#22C55E]/50 rounded-md px-3 py-1 text-[12px] font-medium flex items-center gap-1 ml-auto shrink-0 active:scale-95 transition-transform">
           <Sparkles size={14} /> Ask AI ✨
         </button>
       </div>

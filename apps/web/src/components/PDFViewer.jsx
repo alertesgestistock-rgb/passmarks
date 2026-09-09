@@ -135,19 +135,19 @@ function PDFPage({ pageNum, pdfPath, watermark, token, onVisible }) {
           {state === 'loading' && (
             <>
               <div className="w-6 h-6 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin" />
-              <span className="text-[11px] text-slate-400 dark:text-[#64748B]">Page {pageNum}</span>
+              <span className="text-[12px] text-slate-400 dark:text-[#64748B]">Page {pageNum}</span>
             </>
           )}
           {state === 'idle' && (
-            <span className="text-[11px] text-slate-300 dark:text-[#475569]">Page {pageNum}</span>
+            <span className="text-[12px] text-slate-300 dark:text-[#475569]">Page {pageNum}</span>
           )}
           {state === 'error' && (
             <button
               onClick={() => { fetchedRef.current = false; setState('idle'); drawPage(); }}
-              className="text-[11px] text-red-500 font-medium hover:underline flex flex-col items-center gap-1 bg-red-500/5 px-3 py-2 rounded-lg border border-red-500/10"
+              className="text-[12px] text-red-500 font-medium hover:underline flex flex-col items-center gap-1 bg-red-500/5 px-3 py-2 rounded-lg border border-red-500/10"
             >
               <span>Page {pageNum} — retry</span>
-              <span className="text-[9px] text-slate-400 font-normal">Check connection</span>
+              <span className="text-[10px] text-slate-400 font-normal">Check connection</span>
             </button>
           )}
         </div>
@@ -245,13 +245,13 @@ export default function PDFViewer({ pdfPath, pdfUrl, watermark, onPageChange }) 
   if (status === 'loading') return (
     <div className="flex-1 flex flex-col items-center justify-center gap-3">
       <div className="w-8 h-8 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin" />
-      <span className="text-[12px] text-slate-400 dark:text-[#64748B]">Loading paper…</span>
+      <span className="text-[13px] text-slate-400 dark:text-[#64748B]">Loading paper…</span>
     </div>
   );
 
   if (status === 'not_converted') return (
     <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center">
-      <p className="text-[13px] text-slate-500 dark:text-[#94A3B8]">
+      <p className="text-[14px] text-slate-500 dark:text-[#94A3B8]">
         This paper is being prepared for mobile viewing.
       </p>
       {pdfUrl && (
@@ -259,7 +259,7 @@ export default function PDFViewer({ pdfPath, pdfUrl, watermark, onPageChange }) 
           href={pdfUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="px-4 py-2 rounded-xl bg-[#22C55E] text-white text-[13px] font-medium"
+          className="px-4 py-2 rounded-xl bg-[#22C55E] text-white text-[14px] font-medium"
         >
           Open in browser ↗
         </a>
@@ -269,11 +269,11 @@ export default function PDFViewer({ pdfPath, pdfUrl, watermark, onPageChange }) 
 
   if (status === 'error') return (
     <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center">
-      <p className="text-[13px] text-red-400">Unable to load paper. Network timeout or offline.</p>
+      <p className="text-[14px] text-red-400">Unable to load paper. Network timeout or offline.</p>
       <div className="flex gap-2">
         <button
           onClick={() => setRetryKey(k => k + 1)}
-          className="px-4 py-2 rounded-xl bg-[#22C55E] text-white text-[13px] font-semibold hover:brightness-115 transition-all"
+          className="px-4 py-2 rounded-xl bg-[#22C55E] text-white text-[14px] font-semibold hover:brightness-115 transition-all"
         >
           Retry Connection
         </button>
@@ -282,7 +282,7 @@ export default function PDFViewer({ pdfPath, pdfUrl, watermark, onPageChange }) 
             href={pdfUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#1E293B] text-slate-600 dark:text-[#94A3B8] text-[13px] font-medium"
+            className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#1E293B] text-slate-600 dark:text-[#94A3B8] text-[14px] font-medium"
           >
             Open in browser ↗
           </a>

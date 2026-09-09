@@ -16,6 +16,21 @@ module.exports = {
       },
     },
     extend: {
+      // Global typography bump: every named text-* size shifted up one step
+      // in Tailwind's own scale (text-xs now renders at the old text-sm
+      // size, and so on) — text only, deliberately not touching spacing/
+      // radius/icon sizes, which stay at their tuned values.
+      fontSize: {
+        xs: ['0.875rem', { lineHeight: '1.25rem' }],   // was xs (0.75rem/1rem) → old sm
+        sm: ['1rem', { lineHeight: '1.5rem' }],          // was sm → old base
+        base: ['1.125rem', { lineHeight: '1.75rem' }],   // was base → old lg
+        lg: ['1.25rem', { lineHeight: '1.75rem' }],      // was lg → old xl
+        xl: ['1.5rem', { lineHeight: '2rem' }],          // was xl → old 2xl
+        '2xl': ['1.875rem', { lineHeight: '2.25rem' }],  // was 2xl → old 3xl
+        '3xl': ['2.25rem', { lineHeight: '2.5rem' }],    // was 3xl → old 4xl
+        '4xl': ['3rem', { lineHeight: '1' }],            // was 4xl → old 5xl
+        '5xl': ['3.75rem', { lineHeight: '1' }],         // was 5xl → old 6xl
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

@@ -104,16 +104,16 @@ const SCI_ROWS = [
 
 function CBtn({ label, type = 'digit', wide = false, onClick }) {
   const styles = {
-    digit: 'bg-slate-100 dark:bg-[#1E293B] text-slate-800 dark:text-white text-[18px]',
-    op:    'bg-[#22C55E]/20 text-[#22C55E] dark:text-[#4ADE80] text-[18px] font-bold',
-    equal: 'bg-[#22C55E] text-[#052e16] text-[20px] font-bold',
-    clear: 'bg-red-100 dark:bg-[#EF4444]/20 text-red-500 dark:text-[#F87171] text-[14px] font-bold',
-    back:  'bg-slate-200 dark:bg-[#334155] text-slate-500 dark:text-[#94A3B8] text-[15px]',
-    pct:   'bg-slate-200 dark:bg-[#334155] text-slate-500 dark:text-[#94A3B8] text-[15px]',
-    sign:  'bg-slate-200 dark:bg-[#334155] text-slate-500 dark:text-[#94A3B8] text-[15px]',
-    fn:    'bg-blue-50 dark:bg-[#3B82F6]/15 text-blue-500 dark:text-[#93C5FD] text-[11px] font-semibold',
-    const: 'bg-purple-50 dark:bg-[#A855F7]/15 text-purple-500 dark:text-[#C4B5FD] text-[13px] font-semibold',
-    paren: 'bg-slate-200/60 dark:bg-[#475569]/40 text-slate-500 dark:text-[#94A3B8] text-[15px]',
+    digit: 'bg-slate-100 dark:bg-[#1E293B] text-slate-800 dark:text-white text-[19px]',
+    op:    'bg-[#22C55E]/20 text-[#22C55E] dark:text-[#4ADE80] text-[19px] font-bold',
+    equal: 'bg-[#22C55E] text-[#052e16] text-[21px] font-bold',
+    clear: 'bg-red-100 dark:bg-[#EF4444]/20 text-red-500 dark:text-[#F87171] text-[15px] font-bold',
+    back:  'bg-slate-200 dark:bg-[#334155] text-slate-500 dark:text-[#94A3B8] text-[16px]',
+    pct:   'bg-slate-200 dark:bg-[#334155] text-slate-500 dark:text-[#94A3B8] text-[16px]',
+    sign:  'bg-slate-200 dark:bg-[#334155] text-slate-500 dark:text-[#94A3B8] text-[16px]',
+    fn:    'bg-blue-50 dark:bg-[#3B82F6]/15 text-blue-500 dark:text-[#93C5FD] text-[12px] font-semibold',
+    const: 'bg-purple-50 dark:bg-[#A855F7]/15 text-purple-500 dark:text-[#C4B5FD] text-[14px] font-semibold',
+    paren: 'bg-slate-200/60 dark:bg-[#475569]/40 text-slate-500 dark:text-[#94A3B8] text-[16px]',
   };
   return (
     <button
@@ -198,12 +198,12 @@ function StandardCalc({ scientific }) {
     <div>
       {/* Display */}
       <div className="bg-slate-100 dark:bg-[#0F172A] rounded-xl p-4 mb-3 text-right select-text cursor-text">
-        <div className="text-[11px] text-slate-400 dark:text-slate-500 min-h-[16px] truncate font-mono">{s.expr || ' '}</div>
+        <div className="text-[12px] text-slate-400 dark:text-slate-500 min-h-[16px] truncate font-mono">{s.expr || ' '}</div>
         <div className={cn(
           'text-slate-900 dark:text-white font-mono font-bold mt-1 truncate transition-all',
-          s.display.length > 14 ? 'text-[18px]' :
-          s.display.length > 10 ? 'text-[24px]' :
-          s.display.length > 7  ? 'text-[28px]' : 'text-[36px]'
+          s.display.length > 14 ? 'text-[19px]' :
+          s.display.length > 10 ? 'text-[25px]' :
+          s.display.length > 7  ? 'text-[29px]' : 'text-[37px]'
         )}>
           {s.display}
         </div>
@@ -237,16 +237,16 @@ function StandardCalc({ scientific }) {
 function InputField({ label, value, onChange, suffix }) {
   return (
     <div>
-      <label className="text-[11px] text-slate-500 dark:text-slate-400 mb-1 block">{label}</label>
+      <label className="text-[12px] text-slate-500 dark:text-slate-400 mb-1 block">{label}</label>
       <div className="flex items-center bg-slate-100 dark:bg-[#0F172A] rounded-lg px-3 h-10 border border-slate-200 dark:border-[#1E293B] focus-within:border-[#22C55E] transition-colors gap-2">
         <input
           type="number"
           value={value}
           onChange={e => onChange(e.target.value)}
-          className="flex-1 bg-transparent text-slate-900 dark:text-white text-[14px] outline-none placeholder:text-slate-400 dark:placeholder:text-slate-600"
+          className="flex-1 bg-transparent text-slate-900 dark:text-white text-[15px] outline-none placeholder:text-slate-400 dark:placeholder:text-slate-600"
           placeholder="0"
         />
-        {suffix && <span className="text-slate-400 dark:text-slate-500 text-[12px] shrink-0">{suffix}</span>}
+        {suffix && <span className="text-slate-400 dark:text-slate-500 text-[13px] shrink-0">{suffix}</span>}
       </div>
     </div>
   );
@@ -260,8 +260,8 @@ function ResultRow({ label, value, highlight }) {
         ? 'bg-[#22C55E]/15 border border-[#22C55E]/30'
         : 'bg-slate-100 dark:bg-[#0F172A]'
     )}>
-      <div className="text-[10px] text-slate-400 dark:text-slate-500">{label}</div>
-      <div className={cn('text-[15px] font-bold font-mono mt-0.5', highlight ? 'text-[#22C55E]' : 'text-slate-900 dark:text-white')}>{value}</div>
+      <div className="text-[11px] text-slate-400 dark:text-slate-500">{label}</div>
+      <div className={cn('text-[16px] font-bold font-mono mt-0.5', highlight ? 'text-[#22C55E]' : 'text-slate-900 dark:text-white')}>{value}</div>
     </div>
   );
 }
@@ -270,7 +270,7 @@ function ActionBtn({ label, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="w-full h-10 bg-[#22C55E] text-[#052e16] rounded-xl font-bold text-[14px] hover:brightness-110 active:scale-95 transition-all"
+      className="w-full h-10 bg-[#22C55E] text-[#052e16] rounded-xl font-bold text-[15px] hover:brightness-110 active:scale-95 transition-all"
     >
       {label}
     </button>
@@ -285,7 +285,7 @@ function SubTabBar({ tabs, active, onChange }) {
           key={t.id ?? t.val}
           onClick={() => onChange(t.id ?? t.val)}
           className={cn(
-            'flex-1 h-8 rounded-lg text-[11px] font-medium transition-all whitespace-nowrap',
+            'flex-1 h-8 rounded-lg text-[12px] font-medium transition-all whitespace-nowrap',
             (active === (t.id ?? t.val))
               ? 'bg-[#22C55E] text-[#052e16]'
               : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
@@ -421,7 +421,7 @@ function TVASection() {
       />
       <InputField label={isHT ? 'Pre-tax amount (HT)' : 'Tax-inclusive amount (TTC)'} value={amount} onChange={setAmount} suffix="FCFA" />
       <InputField label="VAT rate" value={tvaRate} onChange={setTvaRate} suffix="%" />
-      <p className="text-[10px] text-slate-400 dark:text-slate-600">💡 Default VAT: Cameroon 19.25%</p>
+      <p className="text-[11px] text-slate-400 dark:text-slate-600">💡 Default VAT: Cameroon 19.25%</p>
       <ActionBtn label="Calculate" onClick={calc} />
       {res && (
         <div className="space-y-1.5">
@@ -492,7 +492,7 @@ function StatisticsCalc() {
   return (
     <div className="space-y-3">
       <div>
-        <label className="text-[11px] text-slate-500 dark:text-slate-400 mb-1.5 block">
+        <label className="text-[12px] text-slate-500 dark:text-slate-400 mb-1.5 block">
           Data (comma, space or semicolon)
         </label>
         <textarea
@@ -500,26 +500,26 @@ function StatisticsCalc() {
           onChange={e => setInput(e.target.value)}
           placeholder="e.g. 12, 15, 18, 22, 9, 31..."
           rows={3}
-          className="w-full bg-slate-100 dark:bg-[#0F172A] text-slate-900 dark:text-white text-[14px] rounded-xl p-3 outline-none border border-slate-200 dark:border-[#1E293B] focus:border-[#22C55E] resize-none placeholder:text-slate-400 dark:placeholder:text-slate-600 font-mono transition-colors"
+          className="w-full bg-slate-100 dark:bg-[#0F172A] text-slate-900 dark:text-white text-[15px] rounded-xl p-3 outline-none border border-slate-200 dark:border-[#1E293B] focus:border-[#22C55E] resize-none placeholder:text-slate-400 dark:placeholder:text-slate-600 font-mono transition-colors"
         />
       </div>
-      {error && <p className="text-[12px] text-red-500 dark:text-[#F87171]">{error}</p>}
+      {error && <p className="text-[13px] text-red-500 dark:text-[#F87171]">{error}</p>}
       <button
         onClick={calculate}
-        className="w-full h-10 bg-[#22C55E] text-[#052e16] rounded-xl font-bold text-[14px] hover:brightness-110 active:scale-95 transition-all"
+        className="w-full h-10 bg-[#22C55E] text-[#052e16] rounded-xl font-bold text-[15px] hover:brightness-110 active:scale-95 transition-all"
       >
         Calculate statistics
       </button>
       {stats && (
         <div className="space-y-2">
-          <p className="text-[11px] text-slate-400 dark:text-slate-500">
+          <p className="text-[12px] text-slate-400 dark:text-slate-500">
             {stats.n} value{stats.n > 1 ? 's' : ''} analysed
           </p>
           <div className="grid grid-cols-2 gap-1.5">
             {ITEMS.map(({ label, value }) => (
               <div key={label} className="bg-slate-100 dark:bg-[#0F172A] rounded-lg p-2.5">
-                <div className="text-[10px] text-slate-400 dark:text-slate-500">{label}</div>
-                <div className="text-[14px] font-bold text-slate-900 dark:text-white font-mono">{value}</div>
+                <div className="text-[11px] text-slate-400 dark:text-slate-500">{label}</div>
+                <div className="text-[15px] font-bold text-slate-900 dark:text-white font-mono">{value}</div>
               </div>
             ))}
           </div>
@@ -574,7 +574,7 @@ export default function Calculator({ onClose }) {
             <div className="w-8 h-8 rounded-lg bg-[#22C55E]/10 flex items-center justify-center text-[#22C55E]">
               <CalcIcon size={16} />
             </div>
-            <h2 className="text-slate-900 dark:text-white font-bold text-[15px]">Calculator</h2>
+            <h2 className="text-slate-900 dark:text-white font-bold text-[16px]">Calculator</h2>
           </div>
           <button
             onClick={onClose}
@@ -591,7 +591,7 @@ export default function Calculator({ onClose }) {
               key={m.id}
               onClick={() => setMode(m.id)}
               className={cn(
-                'whitespace-nowrap px-3 py-1.5 rounded-full text-[12px] font-medium transition-all shrink-0',
+                'whitespace-nowrap px-3 py-1.5 rounded-full text-[13px] font-medium transition-all shrink-0',
                 mode === m.id
                   ? 'bg-[#22C55E] text-[#052e16] shadow-sm'
                   : 'bg-slate-100 dark:bg-[#0F172A] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
