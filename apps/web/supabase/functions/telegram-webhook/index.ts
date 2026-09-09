@@ -231,6 +231,18 @@ async function handleMessage(supabase: any, botToken: string, message: any): Pro
   const telegramId = String(message.from?.id ?? '');
   if (!chatId || !telegramId) return;
 
+  // Service messages (bot/member added or left, title/photo changed, pinned
+  // message, …) arrive as a normal `message` update — even under Privacy
+  // Mode — but carry no text/caption/media. Nothing to answer here; without
+  // this the "no readable content" fallback below used to fire the moment
+  // the bot was added to a group.
+  const isServiceMessage = !!(
+    message.new_chat_members || message.left_chat_member || message.new_chat_title
+    || message.new_chat_photo || message.delete_chat_photo || message.group_chat_created
+    || message.pinned_message || message.migrate_to_chat_id || message.migrate_from_chat_id
+  );
+  if (isServiceMessage) return;
+
   // Group chats (vs. a private 1-to-1 chat): every reply below is threaded
   // under the message that triggered it, since several members can be
   // talking to the bot in the same group at once.
