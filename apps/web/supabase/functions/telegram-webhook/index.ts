@@ -11,7 +11,7 @@ import {
   TYPING_REFRESH_MS,
 } from '../_shared/telegramApi.ts';
 import { PDF_MAX_PAGES, pdfToJpegPages } from '../_shared/pdfToImages.ts';
-import { askTutor, TutorMessage } from '../_shared/aiTutor.ts';
+import { askTutor, transcribeVoice, voiceFloorTokens, TutorMessage } from '../_shared/aiTutor.ts';
 
 // PassMark's Telegram bot: lets a linked student use the same AI tutor and the
 // same token wallet straight from a Telegram chat, without opening the Mini App.
@@ -46,7 +46,8 @@ const COPY = {
   fileTooLarge: 'That file is too large for me to read. Try sending a photo of the specific question instead 📷',
   pdfTooManyPages: `That PDF has too many pages — I can read up to ${PDF_MAX_PAGES}. Send a photo of the question you're stuck on 📷`,
   pdfFailed: "I couldn't read that PDF. Try sending it again, or send a photo of the question 📷",
-  unsupported: 'I can read text, photos and PDF files. Send me a GCE question in one of those formats 📚',
+  unsupported: 'I can read text, photos, PDF files and voice messages. Send me a GCE question in one of those formats 📚',
+  voiceFailed: "I couldn't understand that voice message. Try recording again, or type your question instead 🎙️",
 };
 
 function openAppButton(): InlineButton[][] {
@@ -224,8 +225,13 @@ async function handleMessage(supabase: any, botToken: string, message: any): Pro
     return;
   }
 
-  // ── Build the question: text, photo, or PDF ───────────────────────────────
+  // ── Build the question: text, photo, PDF, or voice ────────────────────────
   const contentParts: any[] = [];
+  let questionText = text.trim();
+  // Set only for voice/audio: overrides askTutor's flat cost tiers with a
+  // floor based on how much text the recording turned into, and folds the
+  // transcription's own (tiny) real cost into the same debit as the answer.
+  let voiceBilling: { minTokens: number; transcriptionCostUsd: number } | null = null;
 
   if (message.photo?.length) {
     // Telegram sends several sizes; the last entry is the largest.
@@ -239,6 +245,30 @@ async function handleMessage(supabase: any, botToken: string, message: any): Pro
       type: 'image',
       source: { type: 'base64', media_type: 'image/jpeg', data: arrayBufferToBase64(bytes) },
     });
+  } else if (message.voice || message.audio) {
+    const voiceFile = message.voice ?? message.audio;
+    const mime: string = voiceFile.mime_type ?? '';
+    // Whisper's accepted containers, per OpenRouter's STT docs (verified 2026-09-09).
+    const format =
+      mime.includes('ogg') ? 'ogg'
+      : mime.includes('mp3') || mime.includes('mpeg') ? 'mp3'
+      : mime.includes('mp4') || mime.includes('m4a') ? 'm4a'
+      : mime.includes('wav') ? 'wav'
+      : mime.includes('webm') ? 'webm'
+      : 'ogg'; // Telegram voice notes (message.voice) are always OGG/Opus
+    await sendChatAction(botToken, chatId);
+    const bytes = await downloadFile(botToken, voiceFile.file_id);
+    if (!bytes) {
+      await sendMessage(botToken, chatId, COPY.fileTooLarge);
+      return;
+    }
+    const transcribed = await transcribeVoice(arrayBufferToBase64(bytes), format);
+    if (!transcribed.ok) {
+      await sendMessage(botToken, chatId, COPY.voiceFailed);
+      return;
+    }
+    questionText = transcribed.text;
+    voiceBilling = { minTokens: voiceFloorTokens(transcribed.text), transcriptionCostUsd: transcribed.costUsd };
   } else if (message.document) {
     const mime: string = message.document.mime_type ?? '';
     if (!mime.includes('pdf')) {
@@ -265,7 +295,6 @@ async function handleMessage(supabase: any, botToken: string, message: any): Pro
     }
   }
 
-  const questionText = text.trim();
   if (!questionText && contentParts.length === 0) {
     await sendMessage(botToken, chatId, COPY.unsupported);
     return;
@@ -275,7 +304,7 @@ async function handleMessage(supabase: any, botToken: string, message: any): Pro
   const promptText = questionText || 'Solve this GCE question step by step.';
   contentParts.push({ type: 'text', text: promptText });
 
-  await answerQuestion(supabase, botToken, chatId, profile, contentParts, promptText);
+  await answerQuestion(supabase, botToken, chatId, profile, contentParts, promptText, voiceBilling);
 }
 
 async function answerQuestion(
@@ -285,6 +314,7 @@ async function answerQuestion(
   profile: { id: string; telegram_active_conversation_id: string | null },
   contentParts: any[],
   storedUserText: string,
+  voiceBilling: { minTokens: number; transcriptionCostUsd: number } | null = null,
 ): Promise<void> {
   // Keep "typing…" alive while the model works (it expires after ~5s).
   await sendChatAction(botToken, chatId);
@@ -300,7 +330,10 @@ async function answerQuestion(
       { role: 'user', content: onlyText ? contentParts[0].text : contentParts },
     ];
 
-    const result = await askTutor(supabase, profile.id, messages);
+    const result = await askTutor(
+      supabase, profile.id, messages,
+      voiceBilling ? { minTokens: voiceBilling.minTokens, transcriptionCostUsd: voiceBilling.transcriptionCostUsd } : undefined,
+    );
 
     if (!result.ok) {
       const reply =

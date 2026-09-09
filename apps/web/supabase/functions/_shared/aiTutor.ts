@@ -9,8 +9,72 @@
 import { SYSTEM_PROMPT } from '../chat/systemPrompt.ts';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const OPENROUTER_TRANSCRIPTION_URL = 'https://openrouter.ai/api/v1/audio/transcriptions';
 const MODEL = 'anthropic/claude-sonnet-4-5';
 const MODEL_PRICING_USD_PER_MTOK = { input: 3, output: 15 };
+
+// Speech-to-text for voice messages/audio files sent to the bot. Whisper
+// Large V3 Turbo on OpenRouter — reuses the same OPENROUTER_API_KEY secret
+// already configured, no new provider integration needed. Verified pricing
+// and /audio/transcriptions request/response shape via OpenRouter's docs
+// (2026-09-09): input_audio as base64 JSON, response.text + response.usage.
+const TRANSCRIPTION_MODEL = 'openai/whisper-large-v3-turbo';
+const TRANSCRIPTION_PRICING_USD_PER_MTOK = 3.33; // prompt-only pricing, no completion cost
+
+// A voice question is billed like a typed one: cost scales with how much
+// text it turned into, not a flat "voice message" tax. 400 chars/token
+// mirrors a typical short GCE question (which floors at 1 token as plain
+// text) — so a quick spoken question costs the same as typing it, and only
+// a long dictated paragraph costs more, exactly like it would if typed out.
+const VOICE_CHARS_PER_TOKEN = 400;
+
+export function voiceFloorTokens(transcriptText: string): number {
+  return Math.max(1, Math.ceil(transcriptText.length / VOICE_CHARS_PER_TOKEN));
+}
+
+export type TranscriptionResult =
+  | { ok: true; text: string; costUsd: number }
+  | { ok: false; reason: 'empty' | 'transcription_failed' | 'not_configured' };
+
+/** Transcribes a voice message or audio file to text via OpenRouter. */
+export async function transcribeVoice(audioBase64: string, format: string): Promise<TranscriptionResult> {
+  const apiKey = Deno.env.get('OPENROUTER_API_KEY')?.trim();
+  if (!apiKey) return { ok: false, reason: 'not_configured' };
+
+  try {
+    const res = await fetch(OPENROUTER_TRANSCRIPTION_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': 'https://passmarks.vercel.app',
+        'X-Title': 'PassMark AI Tutor (Telegram)',
+      },
+      body: JSON.stringify({
+        model: TRANSCRIPTION_MODEL,
+        input_audio: { data: audioBase64, format },
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.text().catch(() => '');
+      console.error('[aiTutor] transcription upstream error:', res.status, err.slice(0, 500));
+      return { ok: false, reason: 'transcription_failed' };
+    }
+
+    const payload = await res.json();
+    const text: string = (payload?.text ?? '').trim();
+    if (!text) return { ok: false, reason: 'empty' };
+
+    const totalTokens = Number(payload?.usage?.total_tokens ?? 0);
+    const costUsd = (totalTokens * TRANSCRIPTION_PRICING_USD_PER_MTOK) / 1_000_000;
+
+    return { ok: true, text, costUsd };
+  } catch (err) {
+    console.error('[aiTutor] transcription request failed:', (err as Error).message);
+    return { ok: false, reason: 'transcription_failed' };
+  }
+}
 
 // Abuse guard. The web app is throttled in practice by its UI; a bot chat is
 // not — messages can be scripted — so AI actions are capped per rolling minute.
@@ -109,13 +173,20 @@ export async function askTutor(
   supabase: any,
   userId: string,
   messages: TutorMessage[],
+  // Set by the voice-message path: the char-based floor from
+  // voiceFloorTokens() (replaces detectCost's tier) and the transcription's
+  // own real cost (folded into the same debit as the answer, so a voice
+  // question is one line in token_transactions, not two).
+  voiceOverride?: { minTokens: number; transcriptionCostUsd: number },
 ): Promise<TutorResult> {
   const apiKey = Deno.env.get('OPENROUTER_API_KEY')?.trim();
   if (!apiKey) return { ok: false, reason: 'not_configured' };
 
   if (await isRateLimited(supabase, userId)) return { ok: false, reason: 'rate_limited' };
 
-  const { cost, actionType } = detectCost(messages);
+  const { cost, actionType } = voiceOverride
+    ? { cost: voiceOverride.minTokens, actionType: 'voice' }
+    : detectCost(messages);
 
   const { data: wallet } = await supabase
     .from('token_wallets')
@@ -169,7 +240,8 @@ export async function askTutor(
     if (usage?.prompt_tokens != null) {
       const providerCostUsd =
         (Number(usage.prompt_tokens) * MODEL_PRICING_USD_PER_MTOK.input +
-          Number(usage.completion_tokens ?? 0) * MODEL_PRICING_USD_PER_MTOK.output) / 1_000_000;
+          Number(usage.completion_tokens ?? 0) * MODEL_PRICING_USD_PER_MTOK.output) / 1_000_000
+        + (voiceOverride?.transcriptionCostUsd ?? 0);
       const { data } = await supabase.rpc('settle_ai_usage_cost', {
         p_user_id: userId,
         p_provider_cost_usd: providerCostUsd,

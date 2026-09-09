@@ -1,0 +1,11 @@
+-- Adds 'voice' to the token_action_type enum, used by the Telegram bot's
+-- voice-message billing (see _shared/aiTutor.ts: voiceFloorTokens,
+-- transcribeVoice). Without this, settle_ai_usage_cost('voice', ...) fails
+-- with "invalid input value for enum token_action_type" — caught by
+-- aiTutor.ts's own try/catch, so the answer still gets delivered, but the
+-- debit silently never happens (free, unbilled usage).
+--
+-- ALTER TYPE ... ADD VALUE cannot run inside the same transaction as a
+-- statement that uses the new value, so this migration only adds it — no
+-- other changes bundled in.
+alter type token_action_type add value if not exists 'voice';
