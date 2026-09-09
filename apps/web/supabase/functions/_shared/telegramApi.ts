@@ -156,6 +156,27 @@ export async function setMyCommands(token: string, commands: { command: string; 
   await callApi(token, 'setMyCommands', { commands });
 }
 
+/**
+ * Sets the persistent button next to the message input for one chat (per
+ * `chat_id`, so it can carry per-user text — unlike the native chat header,
+ * which Telegram renders and no Bot API method can touch).
+ *
+ * Used to keep a live-ish token balance visible without the user having to
+ * run /tokens: call this again whenever the balance changes. Text is capped
+ * at 64 chars by Telegram.
+ */
+export async function setChatMenuButton(
+  token: string,
+  chatId: number | string,
+  text: string,
+  webAppUrl: string,
+): Promise<void> {
+  await callApi(token, 'setChatMenuButton', {
+    chat_id: chatId,
+    menu_button: { type: 'web_app', text: text.slice(0, 64), web_app: { url: webAppUrl } },
+  });
+}
+
 export function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   let binary = '';

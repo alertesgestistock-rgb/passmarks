@@ -7,6 +7,7 @@ import {
   InlineButton,
   sendChatAction,
   sendMessage,
+  setChatMenuButton,
   TYPING_REFRESH_MS,
 } from '../_shared/telegramApi.ts';
 import { PDF_MAX_PAGES, pdfToJpegPages } from '../_shared/pdfToImages.ts';
@@ -56,6 +57,23 @@ function tokenShopButton(): InlineButton[][] {
   // ?screen=tokens is read by Dashboard.jsx on mount to open the token shop
   // modal directly, instead of landing on the home tab first.
   return [[{ text: '💳 Buy tokens', web_app: { url: `${MINI_APP_URL}?screen=tokens` } }]];
+}
+
+// Telegram gives bots no way to touch the native chat header (avatar/name),
+// but the persistent menu button next to the message box CAN carry per-user
+// text — the closest thing to an always-visible, near-real-time balance.
+// Called whenever the balance is known to have changed (never blocks a
+// reply: best-effort, errors are swallowed by callApi's own logging).
+async function updateBalanceMenuButton(botToken: string, chatId: number, balance: number): Promise<void> {
+  await setChatMenuButton(botToken, chatId, `💰 ${balance} token${balance === 1 ? '' : 's'}`, `${MINI_APP_URL}?screen=tokens`);
+}
+
+/** Reads the current balance and primes the menu button with it — used on
+ * /start and /app so the button shows a real number from the very first
+ * open, not just after the user's first billed question. */
+async function primeBalanceMenuButton(supabase: any, botToken: string, chatId: number, userId: string): Promise<void> {
+  const { data: wallet } = await supabase.from('token_wallets').select('balance').eq('user_id', userId).maybeSingle();
+  await updateBalanceMenuButton(botToken, chatId, wallet?.balance ?? 0);
 }
 
 serve(async (req: Request) => {
@@ -164,6 +182,7 @@ async function handleMessage(supabase: any, botToken: string, message: any): Pro
 
   if (command === '/start') {
     await sendMessage(botToken, chatId, COPY.welcome, { buttons: openAppButton() });
+    if (profile) await primeBalanceMenuButton(supabase, botToken, chatId, profile.id);
     return;
   }
 
@@ -185,6 +204,7 @@ async function handleMessage(supabase: any, botToken: string, message: any): Pro
 
   if (command === '/app') {
     await sendMessage(botToken, chatId, COPY.openApp, { buttons: openAppButton() });
+    await primeBalanceMenuButton(supabase, botToken, chatId, profile.id);
     return;
   }
 
@@ -200,6 +220,7 @@ async function handleMessage(supabase: any, botToken: string, message: any): Pro
       `You have **${balance}** token${balance === 1 ? '' : 's'} left.`,
       { buttons: tokenShopButton() },
     );
+    await updateBalanceMenuButton(botToken, chatId, balance);
     return;
   }
 
@@ -303,6 +324,10 @@ async function answerQuestion(
     await supabase.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', conversationId);
 
     await sendMessage(botToken, chatId, result.text);
+    // Keep the persistent menu button's balance current (best-effort — if
+    // billing hit its own hiccup and newBalance came back null, leave the
+    // button as-is rather than firing an extra query just for this).
+    if (result.newBalance !== null) await updateBalanceMenuButton(botToken, chatId, result.newBalance);
   } finally {
     clearInterval(typing);
   }
