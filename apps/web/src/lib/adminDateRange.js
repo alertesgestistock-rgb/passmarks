@@ -11,18 +11,17 @@ export function adminDateRangeToRpc(dateFilter) {
   const now = new Date();
   const startOfToday = new Date(now);
   startOfToday.setHours(0, 0, 0, 0);
-  const preset = dateFilter?.preset || '7 derniers jours';
+  const preset = dateFilter?.preset || 'Last 7 days';
 
   if (preset === 'Total') return { p_from: null, p_to: null };
-  if (preset === "Aujourd'hui") return { p_from: startOfToday.toISOString(), p_to: now.toISOString() };
+  if (preset === 'Today') return { p_from: startOfToday.toISOString(), p_to: now.toISOString() };
   if (preset === '24h') return { p_from: new Date(now.getTime() - DAY_MS).toISOString(), p_to: now.toISOString() };
-  if (preset === 'Hier') {
+  if (preset === 'Yesterday') {
     return { p_from: new Date(startOfToday.getTime() - DAY_MS).toISOString(), p_to: startOfToday.toISOString() };
   }
-  if (preset === 'Mois en cours') {
+  if (preset === 'This month') {
     return { p_from: new Date(now.getFullYear(), now.getMonth(), 1).toISOString(), p_to: now.toISOString() };
   }
-  const days = preset === '30 jours' ? 30 : 7;
+  const days = preset === 'Last 30 days' ? 30 : 7;
   return { p_from: new Date(now.getTime() - days * DAY_MS).toISOString(), p_to: now.toISOString() };
 }
-

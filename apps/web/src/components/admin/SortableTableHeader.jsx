@@ -7,7 +7,7 @@ function normalized(value) {
   if (typeof value === 'number' || typeof value === 'boolean') return Number(value);
   const text = String(value).trim();
   const timestamp = /^\d{4}-\d{2}-\d{2}(?:T|$)/.test(text) ? Date.parse(text) : NaN;
-  return Number.isNaN(timestamp) ? text.toLocaleLowerCase('fr-FR') : timestamp;
+  return Number.isNaN(timestamp) ? text.toLocaleLowerCase('en-US') : timestamp;
 }
 
 export function useAdminTableSort(rows, initialKey, initialDirection = 'desc') {
@@ -21,7 +21,7 @@ export function useAdminTableSort(rows, initialKey, initialDirection = 'desc') {
     if (b == null) return -1;
     const result = typeof a === 'number' && typeof b === 'number'
       ? a - b
-      : String(a).localeCompare(String(b), 'fr-FR', { numeric: true, sensitivity: 'base' });
+      : String(a).localeCompare(String(b), 'en-US', { numeric: true, sensitivity: 'base' });
     return sort.direction === 'asc' ? result : -result;
   }), [rows, sort]);
 
@@ -35,7 +35,7 @@ export function useAdminTableSort(rows, initialKey, initialDirection = 'desc') {
 export function SortableTableHeader({ label, sortKey, sort, onSort, align = 'left' }) {
   const active = sort.key === sortKey;
   const Icon = !active ? ArrowUpDown : sort.direction === 'asc' ? ArrowUp : ArrowDown;
-  return <button type="button" onClick={() => onSort(sortKey)} className={`inline-flex w-full items-center gap-1 rounded-sm py-1 font-medium hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${align === 'right' ? 'justify-end' : 'justify-start'}`} aria-label={`Trier ${label} ${active && sort.direction === 'desc' ? 'par ordre croissant' : 'par ordre décroissant'}`}>
+  return <button type="button" onClick={() => onSort(sortKey)} className={`inline-flex w-full items-center gap-1 rounded-sm py-1 font-medium hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${align === 'right' ? 'justify-end' : 'justify-start'}`} aria-label={`Sort ${label} ${active && sort.direction === 'desc' ? 'ascending' : 'descending'}`}>
     <span>{label}</span><Icon className={`h-3.5 w-3.5 ${active ? 'text-primary' : 'opacity-40'}`} />
   </button>;
 }

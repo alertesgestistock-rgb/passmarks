@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin verification code – PassMark</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0F172A;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0F172A;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:480px;">
+
+          <!-- Logo -->
+          <tr>
+            <td align="center" style="padding-bottom:32px;">
+              <img src="https://passmarks.vercel.app/icon-192.jpg"
+                   alt="PassMark"
+                   width="64" height="64"
+                   style="border-radius:16px;display:block;margin:0 auto;" />
+              <div style="margin-top:12px;font-size:22px;font-weight:800;color:#FFFFFF;letter-spacing:-0.02em;">
+                PassMark
+              </div>
+              <div style="font-size:13px;color:#64748B;margin-top:4px;">
+                GCE AI Tutor
+              </div>
+            </td>
+          </tr>
+
+          <!-- Card -->
+          <tr>
+            <td style="background-color:#1E293B;border-radius:20px;border:1px solid rgba(255,255,255,0.07);padding:40px 36px;">
+
+              <!-- Title -->
+              <h2 style="margin:0 0 12px;font-size:22px;font-weight:800;color:#FFFFFF;text-align:center;letter-spacing:-0.02em;">
+                Admin verification code
+              </h2>
+
+              <!-- Subtitle -->
+              <p style="margin:0 0 8px;font-size:15px;color:#94A3B8;text-align:center;line-height:1.6;">
+                Someone is trying to open the admin dashboard for
+              </p>
+              <p style="margin:0 0 32px;font-size:15px;color:#22C55E;font-weight:600;text-align:center;">
+                {{ .Email }}
+              </p>
+
+              <!-- Code box -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center">
+                    <div style="display:inline-block;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.35);border-radius:12px;padding:18px 32px;">
+                      <span style="font-size:34px;font-weight:800;letter-spacing:0.3em;color:#22C55E;font-family:'Courier New',Courier,monospace;">
+                        {{ .Token }}
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Expiry note -->
+              <p style="margin:20px 0 0;font-size:13px;color:#475569;text-align:center;line-height:1.6;">
+                This code expires in <strong style="color:#94A3B8;">5 minutes</strong>.
+              </p>
+
+              <!-- Divider -->
+              <div style="border-top:1px solid rgba(255,255,255,0.07);margin:32px 0;"></div>
+
+              <!-- Security note -->
+              <p style="margin:0;font-size:12px;color:#334155;text-align:center;line-height:1.6;">
+                If you didn't request access to the PassMark admin dashboard, ignore this email and consider changing your password — someone knows it.
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding-top:28px;">
+              <p style="margin:0;font-size:12px;color:#334155;line-height:1.6;">
+                © 2026 PassMark · GCE AI Tutor
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

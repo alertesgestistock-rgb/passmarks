@@ -21,15 +21,14 @@ import { Button } from '@/components/ui/button';
 //      Supabase Auth (signInWithOtp), plus de code affiché à l'écran. La
 //      personne colle le code reçu → verifyOtp.
 //
-// Deux réglages restent à faire côté Dashboard Supabase (pas accessibles
-// depuis le code / les outils MCP disponibles ici) :
-//   - Authentication > Providers > Email > "Email OTP expiration" → régler à
-//     300 secondes (5 min), demandé explicitement. Par défaut Supabase met
-//     3600s (1h).
-//   - Authentication > Email Templates > "Magic Link" → vérifier que le
-//     template contient bien {{ .Token }} (le code à 6 chiffres), sinon
-//     l'email envoyé ne contient qu'un lien "Se connecter" et pas de code à
-//     copier-coller.
+// Réglages côté Dashboard Supabase (pas accessibles depuis le code / les
+// outils MCP disponibles ici) :
+//   - Authentication > Providers > Email > "Email OTP expiration" → réglé à
+//     300 secondes (5 min) le 2026-09-09 (défaut Supabase : 3600s/1h).
+//   - Authentication > Email Templates > "Magic Link" → colle le contenu de
+//     apps/web/public/emails/admin-otp.html (contient {{ .Token }}, le code
+//     à 6 chiffres — sans ça l'email envoyé n'a qu'un lien "Se connecter" et
+//     pas de code à copier-coller).
 // -----------------------------------------------------------------------------
 
 const STEPUP_TTL_MS = 15 * 60 * 1000; // 15 minutes — durée de la session step-up une fois validée, distincte de l'expiration du code OTP (réglée côté Supabase, cf. ci-dessus).
